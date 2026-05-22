@@ -10,7 +10,8 @@ authors = [
     { name = "TheNathanSpace", email = "llm-rankings@usps.thenathan.space" }
 ]
 dependencies = [
-    "requests==2.34.2"
+    "requests==2.34.2",
+    "python-dotenv==1.2.2"
 ]
 requires-python = ">=3.12"
 

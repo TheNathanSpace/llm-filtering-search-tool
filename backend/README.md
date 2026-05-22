@@ -2,13 +2,11 @@
 
 ### API Details
 
-- API reference: https://artificialanalysis.ai/api-reference
-- Key endpoint: `GET /data/llms/models`
-- Authentication: `x-api-key` header
-
-Example:
-
-```bash
-curl -X GET https://artificialanalysis.ai/api/v2/data/llms/models \
-          -H "x-api-key: <my-api-key>"
-```
+- Artificial Analysis:
+    - API reference: https://artificialanalysis.ai/api-reference#models-endpoint
+    - Key endpoint: `GET /data/llms/models`
+    - Authentication: `x-api-key: <api-key>` header
+- OpenRouter:
+    - API reference: https://openrouter.ai/docs/api/api-reference/models/get-models
+    - Key endpoint: `GET /models`
+    - Authentication: `Authorization: Bearer <api-key>` header

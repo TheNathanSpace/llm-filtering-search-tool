@@ -3,11 +3,9 @@
 if [ ! -d "backend" ]; then
   echo "Error!"
   echo "Expected directory 'backend' does not exist. Are you running this from the correct location?"
-  echo "You should be executing: ./bin/setup-backend.sh"
+  echo "You should be executing: ./bin/run-precommit.sh"
   exit 1
 fi
 
-python -m venv .venv
-source .venv/bin/activate
-cd backend
-pip install -e .[dev]
+pre-commit install
+pre-commit run --all-files

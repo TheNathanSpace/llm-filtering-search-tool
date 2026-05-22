@@ -40,11 +40,13 @@ And then I could sort from highest to lowest intelligence, probably choosing the
 
 ## Technical Overview
 
-1. Download model data from the [Artificial Analysis API](https://artificialanalysis.ai/api-reference#free-api).
-2. Normalize and parse the model data into Python objects.
-3. Populate an SQLite database with the model data.
-4. Expose the data via a REST API back-end.
-5. Create a Next.js front-end to retrieve the data and display it in
+1. Download model data from the [Artificial Analysis API](https://artificialanalysis.ai/api-reference#models-endpoint).
+2. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
+3. Pair up Artificial Analysis benchmarks and OpenRouter models
+4. Normalize and parse the model data into Python objects.
+5. Populate an SQLite database with the model data.
+6. Expose the data via a REST API back-end.
+7. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
 ## Development

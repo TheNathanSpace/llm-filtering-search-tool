@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="sdkName" value="WSL (Ubuntu-24.04): (/home/nathan/my_projects/openrouter-rankings/.venv/bin/python)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="WSL (Ubuntu-24.04): (/home/nathan/my_projects/openrouter-rankings/.venv/bin/python)" project-jdk-type="Python SDK">
+  <component name="ProjectRootManager" version="2" project-jdk-name="WSL (Ubuntu-24.04): (/home/nathan/my_projects/llm-filtering-search-tool/.venv/bin/python) (2)" project-jdk-type="Python SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
 </project>

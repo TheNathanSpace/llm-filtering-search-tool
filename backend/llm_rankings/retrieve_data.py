@@ -70,22 +70,27 @@ def get_openrouter_models(or_api_key: str, root: str = "https://openrouter.ai/ap
     return response.json()
 
 
-if __name__ == "__main__":
-    setup_logging()
+def get_all_model_data() -> tuple[dict, dict]:
+    """
+    Retrieves LLM models from both Artificial Analysis and OpenRouter APIs.
+
+    :return: A tuple containing dictionaries with models data from Artificial Analysis and OpenRouter.
+    """
     validate_env_vars()
-    data_dir = get_data_dir()
 
     aa_api_key = get_env_var("AA_API_KEY")
     or_api_key = get_env_var("OR_API_KEY")
 
-    try:
-        aa_models = get_artificial_analysis_models(aa_api_key)
-        (data_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
-    except Exception as e:
-        logging.error(f"Failed to retrieve models from Artificial Analysis: {e}")
+    aa_models = get_artificial_analysis_models(aa_api_key)
+    or_models = get_openrouter_models(or_api_key)
 
-    try:
-        or_models = get_openrouter_models(or_api_key)
-        (data_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))
-    except Exception as e:
-        logging.error(f"Failed to retrieve models from OpenRouter: {e}")
+    return aa_models, or_models
+
+
+if __name__ == "__main__":
+    setup_logging()
+    aa_models, or_models = get_all_model_data()
+
+    data_dir = get_data_dir()
+    (data_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
+    (data_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))

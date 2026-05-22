@@ -11,7 +11,7 @@ repos:
     rev: v0.4.4
     hooks:
       - id: ruff
-        args: [--fix]
+        args: [--fix, --unsafe-fixes]
         files: ^backend/
       - id: ruff-format
         args: [--line-length=100]

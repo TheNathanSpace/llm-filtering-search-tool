@@ -1,3 +1,4 @@
+import datetime
 import logging
 import os
 import sys
@@ -58,3 +59,27 @@ def get_env_var(name: str) -> str:
     if not value:
         raise ValueError(f"Environment variable is not set: {name}")
     return value
+
+
+def unix_epoch_to_utc(timestamp: int) -> str:
+    """
+    Converts a Unix epoch timestamp to UTC ISO 8601 format.
+
+    :param timestamp: The Unix epoch timestamp.
+    :return: The timestamp in UTC ISO 8601 format.
+    """
+    return datetime.datetime.fromtimestamp(timestamp, datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def utc_to_unix_epoch(utc_datetime: datetime.datetime | str) -> int:
+    """
+    Converts a datetime object in UTC to a Unix epoch timestamp. Will forcibly set the timezone to UTC, so ensure
+    that the datetime object actually IS in UTC, or else the result will be unexpected.
+
+    :param utc_datetime: The datetime object in UTC.
+    :return: The Unix epoch timestamp.
+    """
+    if isinstance(utc_datetime, str):
+        utc_datetime = datetime.datetime.fromisoformat(utc_datetime)
+    # The .replace() forces the given datetime to be in UTC
+    return int(utc_datetime.replace(tzinfo=datetime.UTC).timestamp())

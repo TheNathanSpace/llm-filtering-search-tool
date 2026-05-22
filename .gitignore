@@ -1,4 +1,7 @@
-output
-build
+data
 *.egg-info
 **/__pycache__
+tmp/**
+*.tmp
+.env
+.venv

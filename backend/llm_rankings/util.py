@@ -1,18 +1,19 @@
 import datetime
 import logging
 import os
+import shutil
 import sys
 from pathlib import Path
 
 from dotenv import find_dotenv, load_dotenv
 
 
-def setup_logging():
+def setup_logging(level: str = "DEBUG"):
     """
     Sets up basic logging configuration.
     """
     logging.basicConfig(
-        level=logging.DEBUG,
+        level=level,
         format="%(asctime)s.%(msecs)03d | %(funcName)-25s | %(levelname)-8s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         stream=sys.stdout,
@@ -45,6 +46,16 @@ def get_data_dir():
     data_dir.mkdir(parents=True, exist_ok=True)
     logging.debug(f"Data directory is: {data_dir.as_posix()}")
     return data_dir
+
+
+def erase_data_dir():
+    logging.debug("Erasing data directory")
+    data_dir = get_data_dir()
+    if data_dir.exists():
+        shutil.rmtree(data_dir)
+        logging.debug(f"Data directory erased: {data_dir.as_posix()}")
+    else:
+        logging.debug(f"Data directory does not exist: {data_dir.as_posix()}")
 
 
 def get_env_var(name: str) -> str:
@@ -83,3 +94,21 @@ def utc_to_unix_epoch(utc_datetime: datetime.datetime | str) -> int:
         utc_datetime = datetime.datetime.fromisoformat(utc_datetime)
     # The .replace() forces the given datetime to be in UTC
     return int(utc_datetime.replace(tzinfo=datetime.UTC).timestamp())
+
+
+def invert_dict(d: dict) -> dict:
+    return {v: k for k, v in d.items()}
+
+
+def string_is_only_in_one(s: str, string_1: str, string_2: str) -> bool:
+    only_in_first = s in string_1 and s not in string_2
+    only_in_second = s in string_2 and s not in string_1
+    return only_in_first or only_in_second
+
+
+def sort_dict(d: dict, by_value: bool = False) -> dict:
+    return dict(sorted(d.items(), key=lambda item: item[1] if by_value else item[0]))
+
+
+def split_to_words(phrase: str) -> list[str]:
+    return [w for w in phrase.split(" ") if w]

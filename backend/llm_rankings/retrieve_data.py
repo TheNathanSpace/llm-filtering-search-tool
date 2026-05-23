@@ -74,23 +74,23 @@ def get_all_model_data() -> tuple[dict, dict]:
     """
     Retrieves LLM models from both Artificial Analysis and OpenRouter APIs.
 
-    :return: A tuple containing dictionaries with models data from Artificial Analysis and OpenRouter.
+    :return: A tuple containing dictionaries with models data from OpenRouter and Artificial Analysis.
     """
     validate_env_vars()
 
     aa_api_key = get_env_var("AA_API_KEY")
     or_api_key = get_env_var("OR_API_KEY")
 
-    aa_models = get_artificial_analysis_models(aa_api_key)
     or_models = get_openrouter_models(or_api_key)
+    aa_models = get_artificial_analysis_models(aa_api_key)
 
-    return aa_models, or_models
+    return or_models, aa_models
 
 
 if __name__ == "__main__":
     setup_logging()
-    aa_models, or_models = get_all_model_data()
+    or_models, aa_models = get_all_model_data()
 
     data_dir = get_data_dir()
-    (data_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
     (data_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))
+    (data_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))

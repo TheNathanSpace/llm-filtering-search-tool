@@ -11,7 +11,9 @@ authors = [
 ]
 dependencies = [
     "requests==2.34.2",
-    "python-dotenv==1.2.2"
+    "python-dotenv==1.2.2",
+    "levenshtein==0.27.3",
+    "python-slugify[unidecode]==8.0.4"
 ]
 requires-python = ">=3.12"
 

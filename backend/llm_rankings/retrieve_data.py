@@ -78,8 +78,8 @@ def get_openrouter_models(or_api_key: str, root: str = "https://openrouter.ai/ap
 def write_models_data(or_models: dict, aa_models: dict):
     logging.debug("Writing raw model data to files")
     intermediate_dir = get_intermediate_data_dir()
-    (intermediate_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))
-    (intermediate_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
+    (intermediate_dir / "raw_or_models.json").write_text(json.dumps(or_models, indent=4))
+    (intermediate_dir / "raw_aa_models.json").write_text(json.dumps(aa_models, indent=4))
 
 
 def get_all_model_data() -> tuple[dict, dict]:
@@ -95,6 +95,8 @@ def get_all_model_data() -> tuple[dict, dict]:
 
     or_models = get_openrouter_models(or_api_key)
     aa_models = get_artificial_analysis_models(aa_api_key)
+
+    write_models_data(or_models, aa_models)
 
     return or_models, aa_models
 

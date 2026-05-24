@@ -13,7 +13,8 @@ dependencies = [
     "requests==2.34.2",
     "python-dotenv==1.2.2",
     "levenshtein==0.27.3",
-    "python-slugify[unidecode]==8.0.4"
+    "python-slugify[unidecode]==8.0.4",
+    "pydantic==2.13.4"
 ]
 requires-python = ">=3.12"
 
@@ -30,11 +31,11 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
+    "E", # pycodestyle errors
+    "W", # pycodestyle warnings
+    "F", # pyflakes
+    "I", # isort
+    "B", # flake8-bugbear
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]

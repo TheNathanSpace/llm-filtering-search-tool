@@ -7,9 +7,10 @@ Read this file and `README.md` before acting.
 This is a Python project under a Linux filesystem.
 
 - A virtual environment already exists in the project under `.venv`.
-- Activate the virtual environment before running any command. (`source .venv/bin/activate`)
+- Activate the virtual environment before running Python commands. (`source .venv/bin/activate`)
 - When running multiple commands, prefer to run each command individually. Avoid chaining commands using `;`, `&&`, or
   `|`.
+- Ensure you are running Linux commands, NOT Windows commands.
 
 ## Implementation Guidelines
 

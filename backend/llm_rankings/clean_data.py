@@ -495,7 +495,6 @@ def combine_or_aa_models(
             safe_rename_dict_key(merged_model, "aa_pricing", "pricing")
 
         combined_models.append(sort_dict(merged_model))
-    # TODO: this is ending up with way too little
     return combined_models
 
 

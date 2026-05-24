@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/openrouter-rankings.iml" filepath="$PROJECT_DIR$/.idea/openrouter-rankings.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/llm-filtering-search-tool.iml" filepath="$PROJECT_DIR$/.idea/llm-filtering-search-tool.iml" />
     </modules>
   </component>
 </project>

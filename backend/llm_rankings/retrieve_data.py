@@ -3,6 +3,8 @@ import logging
 
 import requests
 
+from llm_rankings.aa_models import ArtificialAnalysisAPIResponse
+from llm_rankings.or_models import OpenRouterAPIResponse
 from llm_rankings.util import (
     get_env_var,
     get_intermediate_data_dir,
@@ -39,7 +41,7 @@ def validate_response(response: requests.Response):
 
 def get_artificial_analysis_models(
     aa_api_key: str, root: str = "https://artificialanalysis.ai/api/v2"
-) -> dict:
+) -> ArtificialAnalysisAPIResponse:
     """
     Retrieves LLM models from the Artificial Analysis API.
 
@@ -54,10 +56,13 @@ def get_artificial_analysis_models(
     headers = {"x-api-key": aa_api_key}
     response = requests.get(url, headers=headers)
     validate_response(response)
-    return response.json()
+    model = ArtificialAnalysisAPIResponse.model_validate(response.json())
+    return model
 
 
-def get_openrouter_models(or_api_key: str, root: str = "https://openrouter.ai/api/v1") -> dict:
+def get_openrouter_models(
+    or_api_key: str, root: str = "https://openrouter.ai/api/v1"
+) -> OpenRouterAPIResponse:
     """
     Retrieves LLM models from the OpenRouter API.
 
@@ -72,17 +77,22 @@ def get_openrouter_models(or_api_key: str, root: str = "https://openrouter.ai/ap
     headers = {"Authorization": f"Bearer {or_api_key}"}
     response = requests.get(url, headers=headers)
     validate_response(response)
-    return response.json()
+    model = OpenRouterAPIResponse.model_validate(response.json())
+    return model
 
 
-def write_models_data(or_models: dict, aa_models: dict):
+def write_models_data(or_models: OpenRouterAPIResponse, aa_models: ArtificialAnalysisAPIResponse):
     logging.debug("Writing raw model data to files")
     intermediate_dir = get_intermediate_data_dir()
-    (intermediate_dir / "raw_or_models.json").write_text(json.dumps(or_models, indent=4))
-    (intermediate_dir / "raw_aa_models.json").write_text(json.dumps(aa_models, indent=4))
+    (intermediate_dir / "raw_or_models.json").write_text(
+        json.dumps(or_models.model_dump(), indent=4)
+    )
+    (intermediate_dir / "raw_aa_models.json").write_text(
+        json.dumps(aa_models.model_dump(), indent=4)
+    )
 
 
-def get_all_model_data() -> tuple[dict, dict]:
+def get_all_model_data() -> tuple[OpenRouterAPIResponse, ArtificialAnalysisAPIResponse]:
     """
     Retrieves LLM models from both Artificial Analysis and OpenRouter APIs.
 
@@ -93,8 +103,8 @@ def get_all_model_data() -> tuple[dict, dict]:
     aa_api_key = get_env_var("AA_API_KEY")
     or_api_key = get_env_var("OR_API_KEY")
 
-    or_models = get_openrouter_models(or_api_key)
-    aa_models = get_artificial_analysis_models(aa_api_key)
+    or_models: OpenRouterAPIResponse = get_openrouter_models(or_api_key)
+    aa_models: ArtificialAnalysisAPIResponse = get_artificial_analysis_models(aa_api_key)
 
     write_models_data(or_models, aa_models)
 
@@ -104,4 +114,3 @@ def get_all_model_data() -> tuple[dict, dict]:
 if __name__ == "__main__":
     setup_logging()
     or_models, aa_models = get_all_model_data()
-    write_models_data(or_models, aa_models)

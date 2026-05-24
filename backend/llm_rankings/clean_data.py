@@ -7,7 +7,8 @@ from pathlib import Path
 from rapidfuzz.distance.metrics_cpp import levenshtein_distance
 from slugify import slugify
 
-from llm_rankings import util
+from llm_rankings.aa_models import ArtificialAnalysisAPIResponse
+from llm_rankings.or_models import OpenRouterAPIResponse
 from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import (
     erase_data_dir,
@@ -50,47 +51,6 @@ def write_matched_providers(or_aa_providers: dict[str, str]):
     )
 
 
-def clean_or_models(or_models: dict) -> list[dict]:
-    logging.debug("Cleaning OpenRouter models")
-    cleaned_models = [model for model in or_models["data"] if not model["id"].endswith(":free")]
-    cleaned_models = [model for model in cleaned_models if not model["id"].startswith("~")]
-    cleaned_models = [model for model in cleaned_models if not model["id"].startswith("openrouter")]
-    for model in cleaned_models:
-        model["created"] = util.unix_epoch_to_utc(model["created"])
-        safe_delete_key(model, "per_request_limit")
-        safe_delete_key(model, "default_parameters")
-        safe_delete_key(model, "supported_voices")
-        safe_delete_key(model, "expiration_date")
-        safe_delete_key(model, "top_provider")
-        safe_delete_key(model, "supported_parameters")
-        safe_delete_key(model, "hugging_face_id")
-        safe_delete_key(model, "name")
-        safe_delete_key(model, "per_request_limits")
-
-        if "architecture" in model:
-            if (
-                "text" not in model["architecture"]["input_modalities"]
-                or "text" not in model["architecture"]["output_modalities"]
-            ):
-                continue
-            else:
-                safe_delete_key(model, "architecture")
-
-        if "links" in model:
-            safe_delete_key(model, "links")
-            model["details"] = "https://openrouter.ai/" + model["canonical_slug"].lstrip("/")
-
-        if "pricing" in model:
-            to_remove_keys = []
-            for key, value in model["pricing"].items():
-                if "cache" in key:
-                    to_remove_keys.append(key)
-                model["pricing"][key] = round(float(value) * 1_000_000, 4)
-            for key in to_remove_keys:
-                del model["pricing"][key]
-    return cleaned_models
-
-
 def clean_aa_models(aa_models: dict) -> list[dict]:
     logging.debug("Cleaning Artificial Analysis models")
     cleaned_models = aa_models["data"]
@@ -128,10 +88,13 @@ def filter_models_to_shared_providers(
 
 def get_model_data() -> tuple[list[dict], list[dict]]:
     logging.debug("Retrieving and cleaning models data")
+    or_models: OpenRouterAPIResponse
+    aa_models: ArtificialAnalysisAPIResponse
     or_models, aa_models = get_all_model_data()
-    or_models = clean_or_models(or_models)
+
+    cleaned_or_models = or_models.get_minimal_models()
     aa_models = clean_aa_models(aa_models)
-    return or_models, aa_models
+    return cleaned_or_models, aa_models
 
 
 def extract_or_providers(or_models: list[dict]) -> set[str]:

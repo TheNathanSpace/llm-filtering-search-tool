@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import string
@@ -14,7 +15,9 @@ from llm_rankings.util import (
     get_intermediate_data_dir,
     invert_dict,
     merge_dicts,
-    rename_dict_key,
+    safe_add_null_key,
+    safe_delete_key,
+    safe_rename_dict_key,
     setup_logging,
     sort_dict,
     split_to_words,
@@ -45,11 +48,6 @@ def write_matched_providers(or_aa_providers: dict[str, str]):
     (get_intermediate_data_dir() / "or_to_aa_providers.json").write_text(
         json.dumps(sort_dict(or_aa_providers), indent=4)
     )
-
-
-def safe_delete_key(d: dict, key: str):
-    if key in d:
-        del d[key]
 
 
 def clean_or_models(or_models: dict) -> list[dict]:
@@ -216,8 +214,7 @@ def get_models_for_provider(
     else:
         raise ValueError(f"Provider not found in list of OR or AA providers: {provider}")
 
-    logging.debug(f"AA provider: {aa_provider}")
-    logging.debug(f"OR provider: {or_provider}")
+    logging.debug(f"AA provider: {aa_provider}. OR provider: {or_provider}")
 
     or_models_filtered = []
     aa_models_filtered = []
@@ -375,12 +372,11 @@ def write_matched_models(or_provider: str, matched_models: dict):
     (provider_dir / "matched_models.json").write_text(json.dumps(matched_models, indent=4))
 
 
-def write_unmatched_models(or_provider: str, provider_models: list[dict], is_aa: bool = False):
+def write_unmatched_models(or_provider: str, or_models: list[dict], aa_models: list[dict]):
     logging.debug(f"Writing unmatched models for provider {or_provider} to file")
     provider_dir = create_provider_dir(or_provider)
-    (provider_dir / f"unmatched_models_{('aa' if is_aa else 'or')}.json").write_text(
-        json.dumps(provider_models, indent=4)
-    )
+    (provider_dir / "unmatched_models_or.json").write_text(json.dumps(or_models, indent=4))
+    (provider_dir / "unmatched_models_aa.json").write_text(json.dumps(aa_models, indent=4))
 
 
 def process_provider(
@@ -393,8 +389,7 @@ def process_provider(
     or_models_for_provider, aa_models_for_provider = get_models_for_provider(
         or_provider, matched_providers, or_models_filtered, aa_models_filtered
     )
-    write_unmatched_models(or_provider, or_models_for_provider, is_aa=False)
-    write_unmatched_models(or_provider, aa_models_for_provider, is_aa=True)
+    write_unmatched_models(or_provider, or_models_for_provider, aa_models_for_provider)
 
     matched_models, remaining_or_models, remaining_aa_models = match_provider_models(
         or_provider, aa_provider, or_models_for_provider, aa_models_for_provider
@@ -421,8 +416,7 @@ def generisize_aa_model(aa_model: dict) -> dict:
     generisized_model = aa_model.copy()
     safe_delete_key(generisized_model, "id")
     safe_delete_key(generisized_model, "slug")
-    rename_dict_key(generisized_model, "pricing", "aa_pricing")
-    rename_dict_key(generisized_model, "release_date", "aa_release_date")
+    safe_rename_dict_key(generisized_model, "release_date", "aa_release_date")
     if "model_creator" in generisized_model and "name" in generisized_model["model_creator"]:
         generisized_model["creator"] = generisized_model["model_creator"]["name"]
         del generisized_model["model_creator"]
@@ -437,6 +431,11 @@ def generisize_aa_model(aa_model: dict) -> dict:
     if "details" in generisized_model:
         generisized_model["urls"] = {"aa_url": generisized_model["details"]}
         del generisized_model["details"]
+    if "pricing" in generisized_model:
+        safe_delete_key(generisized_model["pricing"], "price_1m_blended_3_to_1")
+        safe_rename_dict_key(generisized_model["pricing"], "price_1m_output_tokens", "output")
+        safe_rename_dict_key(generisized_model["pricing"], "price_1m_input_tokens", "input")
+    safe_rename_dict_key(generisized_model, "pricing", "aa_pricing")
     return generisized_model
 
 
@@ -444,11 +443,15 @@ def generisize_or_model(or_model: dict) -> dict:
     generisized_model = or_model.copy()
     safe_delete_key(generisized_model, "id")
     safe_delete_key(generisized_model, "canonical_slug")
-    rename_dict_key(generisized_model, "pricing", "or_pricing")
-    rename_dict_key(generisized_model, "created", "or_created")
+    safe_rename_dict_key(generisized_model, "created", "or_created")
     if "details" in generisized_model:
         generisized_model["urls"] = {"or_url": generisized_model["details"]}
-        del generisized_model["details"]
+        safe_delete_key(generisized_model, "details")
+    if "pricing" in generisized_model:
+        safe_rename_dict_key(generisized_model["pricing"], "prompt", "input")
+        safe_rename_dict_key(generisized_model["pricing"], "completion", "output")
+    safe_rename_dict_key(generisized_model, "pricing", "or_pricing")
+    safe_add_null_key(generisized_model, "knowledge_cutoff")
     return generisized_model
 
 
@@ -462,7 +465,37 @@ def combine_or_aa_models(
         or_model = generisize_or_model(or_model)
         aa_model = generisize_aa_model(aa_model)
         merged_model = merge_dicts(or_model, aa_model)
-        combined_models.append(merged_model)
+
+        # Use earliest release date
+        if "or_created" in merged_model and "aa_release_date" in merged_model:
+            or_created: datetime.datetime = datetime.datetime.fromisoformat(or_model["or_created"])
+            aa_created: datetime.datetime = datetime.datetime.strptime(
+                aa_model["aa_release_date"], "%Y-%m-%d"
+            ).replace(tzinfo=datetime.UTC)
+            earliest = min(or_created, aa_created)
+            merged_model["created"] = earliest.strftime("%Y-%m-%d")
+            safe_delete_key(merged_model, "or_created")
+            safe_delete_key(merged_model, "aa_release_date")
+        elif "or_created" in merged_model:
+            or_created: datetime.datetime = datetime.datetime.fromisoformat(or_model["or_created"])
+            merged_model["created"] = or_created.strftime("%Y-%m-%d")
+            safe_delete_key(merged_model, "created")
+        elif "aa_release_date" in merged_model:
+            aa_created: datetime.datetime = datetime.datetime.strptime(
+                aa_model["aa_release_date"], "%Y-%m-%d"
+            ).replace(tzinfo=datetime.UTC)
+            merged_model["created"] = aa_created.strftime("%Y-%m-%d")
+            safe_delete_key(merged_model, "aa_release_date")
+
+        # Fallback to AA pricing if OR does not exist
+        if "or_pricing" in merged_model:
+            safe_rename_dict_key(merged_model, "or_pricing", "pricing")
+            safe_delete_key(merged_model, "aa_pricing")
+        elif "aa_pricing" in merged_model:
+            safe_rename_dict_key(merged_model, "aa_pricing", "pricing")
+
+        combined_models.append(sort_dict(merged_model))
+    # TODO: this is ending up with way too little
     return combined_models
 
 
@@ -492,7 +525,9 @@ def get_and_clean_data() -> tuple[list[dict], list[dict]]:
         )
         all_matched_models.update(matched_models)
 
-    combined_models = combine_or_aa_models(matched_models, or_models_filtered, aa_models_filtered)
+    combined_models = combine_or_aa_models(
+        all_matched_models, or_models_filtered, aa_models_filtered
+    )
     write_combined_models(combined_models)
 
     return combined_models

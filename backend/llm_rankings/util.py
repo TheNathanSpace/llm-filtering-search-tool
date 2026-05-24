@@ -20,18 +20,27 @@ def setup_logging(level: str = "DEBUG"):
     )
 
 
+ENV_VARS_LOGGED = False
+
+
 def validate_env_vars() -> Path:
     """
     Validates the presence of an .env file and loads environment variables.
 
     :return: The Path to the .env file.
     """
-    logging.debug("Validating environment variables")
+    global ENV_VARS_LOGGED
+    if not ENV_VARS_LOGGED:
+        logging.debug("Validating environment variables")
+        ENV_VARS_LOGGED = True
     dotenv_path = find_dotenv()
     if not dotenv_path:
         raise ValueError("No .env file found")
     load_dotenv(dotenv_path)
     return Path(dotenv_path)
+
+
+DATA_DIR_LOGGED = False
 
 
 def get_data_dir():
@@ -40,12 +49,19 @@ def get_data_dir():
 
     :return: The Path to the data directory.
     """
-    logging.debug("Getting data directory")
+    global DATA_DIR_LOGGED
+    if not DATA_DIR_LOGGED:
+        logging.debug("Getting data directory")
     env_file = validate_env_vars()
     data_dir = env_file.parent / get_env_var("DATA_DIR")
     data_dir.mkdir(parents=True, exist_ok=True)
-    logging.debug(f"Data directory is: {data_dir.as_posix()}")
+    if not DATA_DIR_LOGGED:
+        DATA_DIR_LOGGED = True
+        logging.debug(f"Data directory is: {data_dir.as_posix()}")
     return data_dir
+
+
+INTERMEDIATE_DIR_LOGGED = False
 
 
 def get_intermediate_data_dir():
@@ -54,11 +70,15 @@ def get_intermediate_data_dir():
 
     :return: The Path to the intermediate data directory.
     """
-    logging.debug("Getting intermediate data directory")
+    global INTERMEDIATE_DIR_LOGGED
+    if not INTERMEDIATE_DIR_LOGGED:
+        logging.debug("Getting intermediate data directory")
     data_dir = get_data_dir()
     intermediate_dir = data_dir / "intermediate"
     intermediate_dir.mkdir(parents=True, exist_ok=True)
-    logging.debug(f"Intermediate data directory is: {intermediate_dir.as_posix()}")
+    if not INTERMEDIATE_DIR_LOGGED:
+        INTERMEDIATE_DIR_LOGGED = True
+        logging.debug(f"Intermediate data directory is: {intermediate_dir.as_posix()}")
     return intermediate_dir
 
 
@@ -72,6 +92,9 @@ def erase_data_dir():
         logging.debug(f"Data directory does not exist: {data_dir.as_posix()}")
 
 
+LOGGED_ENV_VARS = set()
+
+
 def get_env_var(name: str) -> str:
     """
     Retrieves the value of an environment variable.
@@ -79,7 +102,10 @@ def get_env_var(name: str) -> str:
     :param name: The name of the environment variable.
     :return: The value of the environment variable.
     """
-    logging.debug(f"Getting environment variable: {name}")
+    global LOGGED_ENV_VARS
+    if name not in LOGGED_ENV_VARS:
+        logging.debug(f"Getting environment variable: {name}")
+        LOGGED_ENV_VARS.add(name)
     value = os.environ.get(name)
     if not value:
         raise ValueError(f"Environment variable is not set: {name}")
@@ -94,20 +120,6 @@ def unix_epoch_to_utc(timestamp: int) -> str:
     :return: The timestamp in UTC ISO 8601 format.
     """
     return datetime.datetime.fromtimestamp(timestamp, datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def utc_to_unix_epoch(utc_datetime: datetime.datetime | str) -> int:
-    """
-    Converts a datetime object in UTC to a Unix epoch timestamp. Will forcibly set the timezone to UTC, so ensure
-    that the datetime object actually IS in UTC, or else the result will be unexpected.
-
-    :param utc_datetime: The datetime object in UTC.
-    :return: The Unix epoch timestamp.
-    """
-    if isinstance(utc_datetime, str):
-        utc_datetime = datetime.datetime.fromisoformat(utc_datetime)
-    # The .replace() forces the given datetime to be in UTC
-    return int(utc_datetime.replace(tzinfo=datetime.UTC).timestamp())
 
 
 def invert_dict(d: dict) -> dict:
@@ -128,9 +140,10 @@ def split_to_words(phrase: str) -> list[str]:
     return [w for w in phrase.split(" ") if w]
 
 
-def rename_dict_key(d: dict, old_key: str, new_key: str):
+def safe_rename_dict_key(d: dict, old_key: str, new_key: str):
     """Updates dict in-place."""
-    d[new_key] = d.pop(old_key)
+    if old_key in d:
+        d[new_key] = d.pop(old_key)
 
 
 def merge_dicts(dict1: dict, dict2: dict) -> dict:
@@ -152,3 +165,13 @@ def merge_dicts(dict1: dict, dict2: dict) -> dict:
         else:
             result[key] = value
     return result
+
+
+def safe_delete_key(d: dict, key: str):
+    if key in d:
+        del d[key]
+
+
+def safe_add_null_key(d: dict, key: str):
+    if key not in d:
+        d[key] = None

@@ -3,7 +3,12 @@ import logging
 
 import requests
 
-from llm_rankings.util import get_data_dir, get_env_var, setup_logging, validate_env_vars
+from llm_rankings.util import (
+    get_env_var,
+    get_intermediate_data_dir,
+    setup_logging,
+    validate_env_vars,
+)
 
 
 def form_endpoint(root: str, endpoint: str) -> str:
@@ -70,6 +75,13 @@ def get_openrouter_models(or_api_key: str, root: str = "https://openrouter.ai/ap
     return response.json()
 
 
+def write_models_data(or_models: dict, aa_models: dict):
+    logging.debug("Writing raw model data to files")
+    intermediate_dir = get_intermediate_data_dir()
+    (intermediate_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))
+    (intermediate_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
+
+
 def get_all_model_data() -> tuple[dict, dict]:
     """
     Retrieves LLM models from both Artificial Analysis and OpenRouter APIs.
@@ -90,7 +102,4 @@ def get_all_model_data() -> tuple[dict, dict]:
 if __name__ == "__main__":
     setup_logging()
     or_models, aa_models = get_all_model_data()
-
-    data_dir = get_data_dir()
-    (data_dir / "or_models.json").write_text(json.dumps(or_models, indent=4))
-    (data_dir / "aa_models.json").write_text(json.dumps(aa_models, indent=4))
+    write_models_data(or_models, aa_models)

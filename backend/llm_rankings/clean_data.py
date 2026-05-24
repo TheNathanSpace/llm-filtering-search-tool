@@ -11,7 +11,10 @@ from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import (
     erase_data_dir,
     get_data_dir,
+    get_intermediate_data_dir,
     invert_dict,
+    merge_dicts,
+    rename_dict_key,
     setup_logging,
     sort_dict,
     split_to_words,
@@ -21,26 +24,25 @@ from llm_rankings.util import (
 
 def write_models_data(or_models: list[dict], aa_models: list[dict], prefix: str = ""):
     logging.debug("Writing models data to files")
-    data_dir = get_data_dir()
-    (data_dir / f"{prefix}_or_models.json").write_text(json.dumps(or_models, indent=4))
-    (data_dir / f"{prefix}_aa_models.json").write_text(json.dumps(aa_models, indent=4))
+    intermediate_dir = get_intermediate_data_dir()
+    (intermediate_dir / f"{prefix}_or_models.json").write_text(json.dumps(or_models, indent=4))
+    (intermediate_dir / f"{prefix}_aa_models.json").write_text(json.dumps(aa_models, indent=4))
 
 
 def write_unmatched_providers(or_providers: list[str], aa_providers: list[str]):
     logging.debug("Writing providers data to files")
-    data_dir = get_data_dir()
-    (data_dir / "unmatched_or_providers.json").write_text(
+    intermediate_dir = get_intermediate_data_dir()
+    (intermediate_dir / "unmatched_or_providers.json").write_text(
         json.dumps(sorted(or_providers), indent=4)
     )
-    (data_dir / "unmatched_aa_providers.json").write_text(
+    (intermediate_dir / "unmatched_aa_providers.json").write_text(
         json.dumps(sorted(aa_providers), indent=4)
     )
 
 
 def write_matched_providers(or_aa_providers: dict[str, str]):
     logging.debug("Writing matched providers data to files")
-    data_dir = get_data_dir()
-    (data_dir / "or_to_aa_providers.json").write_text(
+    (get_intermediate_data_dir() / "or_to_aa_providers.json").write_text(
         json.dumps(sort_dict(or_aa_providers), indent=4)
     )
 
@@ -64,20 +66,38 @@ def clean_or_models(or_models: dict) -> list[dict]:
         safe_delete_key(model, "top_provider")
         safe_delete_key(model, "supported_parameters")
         safe_delete_key(model, "hugging_face_id")
+        safe_delete_key(model, "name")
+        safe_delete_key(model, "per_request_limits")
 
         if "architecture" in model:
             if (
                 "text" not in model["architecture"]["input_modalities"]
                 or "text" not in model["architecture"]["output_modalities"]
             ):
+                continue
+            else:
                 safe_delete_key(model, "architecture")
 
+        if "links" in model:
+            safe_delete_key(model, "links")
+            model["details"] = "https://openrouter.ai/" + model["canonical_slug"].lstrip("/")
+
+        if "pricing" in model:
+            to_remove_keys = []
+            for key, value in model["pricing"].items():
+                if "cache" in key:
+                    to_remove_keys.append(key)
+                model["pricing"][key] = round(float(value) * 1_000_000, 4)
+            for key in to_remove_keys:
+                del model["pricing"][key]
     return cleaned_models
 
 
 def clean_aa_models(aa_models: dict) -> list[dict]:
     logging.debug("Cleaning Artificial Analysis models")
     cleaned_models = aa_models["data"]
+    for model in cleaned_models:
+        model["details"] = f"https://artificialanalysis.ai/models/{model['slug']}"
     return cleaned_models
 
 
@@ -238,9 +258,6 @@ def validate_match(model_a: str, model_b: str) -> bool:
         return False
     if string_is_only_in_one("reasoning", model_a, model_b):
         return False
-    # Instruction tuned
-    # if string_is_only_in_one("it", model_a, model_b):
-    #     return False
 
     # Ensure same version
     a_words = split_to_words(model_a)
@@ -305,12 +322,20 @@ def match_provider_models(
     # Pair up using Levenshtein distance
     clean_matched_models: dict[str, str] = {}
     for clean_or in remaining_or_models.copy():
+        # TODO: Instead of matching with the lowest remaining,
+        #  look for the actual lowest across the whole space?
+        # qwen3 6 flash / qwen3 6 35b a3b : 7
+        # qwen3 6 flash / qwen3 6 27b     : 7
+        # qwen3 6 flash / qwen3 6 plus    : 3
+        # qwen3 6 flash / qwen3 6 max     : 4
         closest_match = None
         closest_distance = float("inf")
         for clean_aa in remaining_aa_models.copy():
             if not validate_match(clean_or, clean_aa):
                 continue
             distance = alphabetical_compare(clean_or, clean_aa)
+            if clean_or == "qwen3 6 flash":
+                logging.debug(f"{clean_or} / {clean_aa} : {distance}")
             if distance < closest_distance and distance <= 4:
                 closest_distance = distance
                 closest_match = clean_aa
@@ -337,9 +362,9 @@ def match_provider_models(
 
 
 def create_provider_dir(or_provider: str) -> Path:
-    data_dir = get_data_dir()
+    intermediate_dir = get_intermediate_data_dir()
     provider_slug = slugify(or_provider)
-    provider_dir = data_dir / provider_slug
+    provider_dir = intermediate_dir / provider_slug
     provider_dir.mkdir(parents=True, exist_ok=True)
     return provider_dir
 
@@ -364,7 +389,7 @@ def process_provider(
     matched_providers: dict[str, str],
     or_models_filtered: list[dict],
     aa_models_filtered: list[dict],
-):
+) -> dict[str, str]:
     or_models_for_provider, aa_models_for_provider = get_models_for_provider(
         or_provider, matched_providers, or_models_filtered, aa_models_filtered
     )
@@ -381,6 +406,71 @@ def process_provider(
     }
     write_matched_models(or_provider, provider_dict)
 
+    return matched_models
+
+
+def find_model(model_name: str, models: list[dict], is_aa=False) -> dict:
+    key = "slug" if is_aa else "id"
+    for model in models:
+        if model[key] == model_name:
+            return model
+    raise ValueError(f"Model not found: {model_name}")
+
+
+def generisize_aa_model(aa_model: dict) -> dict:
+    generisized_model = aa_model.copy()
+    safe_delete_key(generisized_model, "id")
+    safe_delete_key(generisized_model, "slug")
+    rename_dict_key(generisized_model, "pricing", "aa_pricing")
+    rename_dict_key(generisized_model, "release_date", "aa_release_date")
+    if "model_creator" in generisized_model and "name" in generisized_model["model_creator"]:
+        generisized_model["creator"] = generisized_model["model_creator"]["name"]
+        del generisized_model["model_creator"]
+    generisized_model["speed"]: dict[str, float] = {}
+    for key in [
+        "median_output_tokens_per_second",
+        "median_time_to_first_token_seconds",
+        "median_time_to_first_answer_token",
+    ]:
+        generisized_model["speed"][key] = generisized_model[key]
+        del generisized_model[key]
+    if "details" in generisized_model:
+        generisized_model["urls"] = {"aa_url": generisized_model["details"]}
+        del generisized_model["details"]
+    return generisized_model
+
+
+def generisize_or_model(or_model: dict) -> dict:
+    generisized_model = or_model.copy()
+    safe_delete_key(generisized_model, "id")
+    safe_delete_key(generisized_model, "canonical_slug")
+    rename_dict_key(generisized_model, "pricing", "or_pricing")
+    rename_dict_key(generisized_model, "created", "or_created")
+    if "details" in generisized_model:
+        generisized_model["urls"] = {"or_url": generisized_model["details"]}
+        del generisized_model["details"]
+    return generisized_model
+
+
+def combine_or_aa_models(
+    matched_models: dict[str, str], or_models: list[dict], aa_models: list[dict]
+) -> list[dict]:
+    combined_models: list[dict] = []
+    for or_name, aa_name in matched_models.items():
+        or_model = find_model(or_name, or_models, is_aa=False)
+        aa_model = find_model(aa_name, aa_models, is_aa=True)
+        or_model = generisize_or_model(or_model)
+        aa_model = generisize_aa_model(aa_model)
+        merged_model = merge_dicts(or_model, aa_model)
+        combined_models.append(merged_model)
+    return combined_models
+
+
+def write_combined_models(combined_models: list[dict]):
+    combined_models_path = get_data_dir() / "combined_models.json"
+    combined_models_path.write_text(json.dumps(combined_models, indent=4))
+    logging.info(f"Combined models written to {combined_models_path}")
+
 
 def get_and_clean_data() -> tuple[list[dict], list[dict]]:
     logging.debug("Retrieving and cleaning data")
@@ -395,15 +485,20 @@ def get_and_clean_data() -> tuple[list[dict], list[dict]]:
     )
     write_models_data(or_models_filtered, aa_models_filtered, "filtered")
 
+    all_matched_models: dict[str, str] = {}
     for or_provider, aa_provider in matched_providers.items():
-        process_provider(
+        matched_models = process_provider(
             or_provider, aa_provider, matched_providers, or_models_filtered, aa_models_filtered
         )
+        all_matched_models.update(matched_models)
 
-    return or_models_filtered, aa_models_filtered
+    combined_models = combine_or_aa_models(matched_models, or_models_filtered, aa_models_filtered)
+    write_combined_models(combined_models)
+
+    return combined_models
 
 
 if __name__ == "__main__":
-    setup_logging("INFO")
+    setup_logging("DEBUG")
     erase_data_dir()
-    or_models, aa_models = get_and_clean_data()
+    combined_models = get_and_clean_data()

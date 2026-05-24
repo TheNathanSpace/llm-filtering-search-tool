@@ -48,6 +48,20 @@ def get_data_dir():
     return data_dir
 
 
+def get_intermediate_data_dir():
+    """
+    Gets or creates the intermediate data directory (data/intermediate/).
+
+    :return: The Path to the intermediate data directory.
+    """
+    logging.debug("Getting intermediate data directory")
+    data_dir = get_data_dir()
+    intermediate_dir = data_dir / "intermediate"
+    intermediate_dir.mkdir(parents=True, exist_ok=True)
+    logging.debug(f"Intermediate data directory is: {intermediate_dir.as_posix()}")
+    return intermediate_dir
+
+
 def erase_data_dir():
     logging.debug("Erasing data directory")
     data_dir = get_data_dir()
@@ -112,3 +126,29 @@ def sort_dict(d: dict, by_value: bool = False) -> dict:
 
 def split_to_words(phrase: str) -> list[str]:
     return [w for w in phrase.split(" ") if w]
+
+
+def rename_dict_key(d: dict, old_key: str, new_key: str):
+    """Updates dict in-place."""
+    d[new_key] = d.pop(old_key)
+
+
+def merge_dicts(dict1: dict, dict2: dict) -> dict:
+    """
+    Merges two dictionaries. Recursively merges child dictionaries.
+    Throws a ValueError if there are overlapping non-dictionary keys.
+
+    :param dict1: The first dictionary.
+    :param dict2: The second dictionary.
+    :return: The merged dictionary.
+    """
+    result = dict1.copy()
+    for key, value in dict2.items():
+        if key in result:
+            if isinstance(result[key], dict) and isinstance(value, dict):
+                result[key] = merge_dicts(result[key], value)
+            else:
+                raise ValueError(f"Overlapping non-dictionary keys found: {key}")
+        else:
+            result[key] = value
+    return result

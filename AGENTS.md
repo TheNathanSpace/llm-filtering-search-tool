@@ -15,3 +15,4 @@ This is a Python project under a Linux filesystem.
 
 - Make small, targeted changes instead of building for hypothetical future needs.
 - If something is unclear, ask before making assumptions.
+- Place temporary tests in `tmp_tests/`. Ensure you create and remove this directory when done.

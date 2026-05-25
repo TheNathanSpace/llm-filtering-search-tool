@@ -17,4 +17,6 @@
 2. Extract providers from each Artificial Analysis model.
 3. De-duplicate each list of providers.
 4. Pair up OpenRouter and Artificial Analysis providers.
-5. For each provider, check Levenshtein distance between each model combination.
+5. For each provider, check Levenshtein distance between each model combination. Pair up models.
+6. Combine paired up models into single objects.
+7. Store models in SQLite database.

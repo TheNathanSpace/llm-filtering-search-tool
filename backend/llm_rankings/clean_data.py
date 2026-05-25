@@ -4,7 +4,7 @@ import logging
 from rapidfuzz.distance.metrics_cpp import levenshtein_distance
 
 from llm_rankings.aa_models import AAModel, ArtificialAnalysisAPIResponse
-from llm_rankings.combined_models import CombinedModel, CombinedSpeed, CombinedUrls
+from llm_rankings.combined_models import CombinedModel
 from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
 from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import (
@@ -76,8 +76,13 @@ def match_providers(
     """Returns OpenRouter -> Artificial Analysis provider mapping."""
     logging.debug("Matching providers")
     manual_mappings = {
+        "ai21": "AI21 Labs",
+        "allenai": "Allen Institute for AI",
+        "ibm-granite": "IBM",
+        "liquid": "Liquid AI",
         "meta-llama": "Meta",
         "mistralai": "Mistral",
+        "moonshotai": "Kimi",
         "kwaipilot": "KwaiKAT",
         "qwen": "Alibaba",
     }
@@ -250,26 +255,36 @@ def combine_or_aa_models(
 
         # Use OR then AA pricing
         pricing = or_model.get_minimal_pricing()
-        if pricing is None:
+        if len(pricing) == 0:
             pricing = aa_model.get_minimal_pricing()
+        prefix_pricing: dict[str, float] = {}
+        for key, value in pricing.items():
+            prefix_pricing[f"pricing_{key}"] = value
+
+        prefix_evaluations: dict[str, float] = {}
+        evaluations = (
+            aa_model.evaluations.model_dump(exclude_none=True, by_alias=False)
+            if aa_model.evaluations
+            else {}
+        )
+        for key, value in evaluations.items():
+            prefix_evaluations[f"benchmark_{key}"] = round(float(value), 4)
 
         combined_model = CombinedModel(
             name=aa_model.name,
+            creator=aa_model.get_provider(),
             description=or_model.description,
             created=release_date,
-            creator=aa_model.get_provider(),
-            urls=CombinedUrls(or_url=or_model.get_url(), aa_url=aa_model.get_url()),
+            url_openrouter=or_model.get_url(),
+            url_artificialanalysis=aa_model.get_url(),
             knowledge_cutoff=or_model.knowledge_cutoff,
             context_length=or_model.context_length,
-            evaluations=aa_model.evaluations,
-            pricing=pricing,
-            speed=CombinedSpeed(
-                tokens_per_second=aa_model.median_output_tokens_per_second,
-                time_to_first_token=aa_model.median_time_to_first_token_seconds,
-                time_to_first_answer_token=aa_model.median_time_to_first_answer_token,
-            ),
+            **prefix_pricing,
+            speed_tokens_per_second=aa_model.median_output_tokens_per_second,
+            speed_time_to_first_token=aa_model.median_time_to_first_token_seconds,
+            speed_time_to_first_answer_token=aa_model.median_time_to_first_answer_token,
+            **prefix_evaluations,
         )
-
         combined_models.append(combined_model)
     return combined_models
 

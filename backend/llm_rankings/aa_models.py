@@ -44,7 +44,7 @@ class AAPricing(AABaseModel):
     price_1m_input_tokens: float | None = None
     price_1m_output_tokens: float | None = None
 
-    def get_minimal(self) -> dict | None:
+    def get_minimal(self) -> dict[str, float]:
         return {
             **self.optional_field("input", self.price_1m_input_tokens),
             **self.optional_field("output", self.price_1m_output_tokens),
@@ -96,9 +96,9 @@ class AAModel(AABaseModel):
         else:
             return None
 
-    def get_minimal_pricing(self) -> dict | None:
+    def get_minimal_pricing(self) -> dict[str, float]:
         if self.pricing is None:
-            return None
+            return {}
         return self.pricing.get_minimal()
 
 
@@ -106,9 +106,6 @@ class ArtificialAnalysisAPIResponse(AABaseModel):
     status: int
     prompt_options: AAPromptOptions | None = None
     data: list[AAModel]
-
-    def get_minimal_models(self) -> list[dict]:
-        return [model.get_minimal() for model in self.data]
 
     def get_providers(self) -> list[str]:
         return list({model.get_provider() for model in self.data})

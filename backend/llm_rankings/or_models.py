@@ -43,7 +43,7 @@ class ORPricing(ORBaseModel):
             return None
         return round(float(value) * 1_000_000, 4)
 
-    def get_minimal(self) -> dict | None:
+    def get_minimal(self) -> dict[str, float]:
         return {
             **self.optional_field("input", self.get_per_million_tokens(self.prompt)),
             **self.optional_field("output", self.get_per_million_tokens(self.completion)),
@@ -105,9 +105,9 @@ class OpenRouterModel(ORBaseModel):
             return "https://openrouter.ai/" + self.canonical_slug.lstrip("/")
         return None
 
-    def get_minimal_pricing(self) -> dict | None:
+    def get_minimal_pricing(self) -> dict[str, float]:
         if self.pricing is None:
-            return None
+            return {}
         return self.pricing.get_minimal()
 
     def get_minimal_created(self) -> str | None:
@@ -117,27 +117,6 @@ class OpenRouterModel(ORBaseModel):
 
     def get_provider(self) -> str:
         return self.id.split("/")[0]
-
-    def get_minimal(self) -> dict | None:
-        """Return None if this model is excluding itself."""
-        # Exclude redundant openrouter models
-        # TODO: Ensure these are still filtered out when using the models
-        if self.id.endswith(":free") or self.id.startswith("~") or self.id.startswith("openrouter"):
-            return None
-        # Exclude non-text models
-        if self.architecture and not self.architecture.is_text():
-            return None
-
-        return {
-            "provider": self.get_provider(),
-            "name": self.get_name(),
-            **self.optional_field("pricing", self.get_minimal_pricing()),
-            **self.optional_field("description", self.description),
-            **self.optional_field("context_length", self.context_length),
-            **self.optional_field("url", self.get_url()),
-            **self.optional_field("knowledge_cutoff", self.knowledge_cutoff),
-            **self.optional_field("created", self.get_minimal_created()),
-        }
 
     def get_clean_name(self) -> str:
         """google/gemini-3.5-flash -> gemini 3 5 flash"""

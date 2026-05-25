@@ -1,3 +1,7 @@
+import datetime
+import string
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict
 
 # https://artificialanalysis.ai/api-reference/#models-endpoint
@@ -5,6 +9,10 @@ from pydantic import BaseModel, ConfigDict
 
 class AABaseModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    @staticmethod
+    def optional_field(key: str, value: Any) -> dict[str, Any]:
+        return {key: value} if value else {}
 
 
 class AACreator(AABaseModel):
@@ -36,6 +44,12 @@ class AAPricing(AABaseModel):
     price_1m_input_tokens: float | None = None
     price_1m_output_tokens: float | None = None
 
+    def get_minimal(self) -> dict | None:
+        return {
+            **self.optional_field("input", self.price_1m_input_tokens),
+            **self.optional_field("output", self.price_1m_output_tokens),
+        }
+
 
 class AAPromptOptions(AABaseModel):
     parallel_queries: int | None = None
@@ -52,10 +66,52 @@ class AAModel(AABaseModel):
     pricing: AAPricing | None = None
     median_output_tokens_per_second: float | None = None
     median_time_to_first_token_seconds: float | None = None
-    median_time_to_first_answer_token: float | None = None
+    median_time_to_first_answer_token: float | None = None  # Accounts for reasoning
+
+    def get_url(self):
+        return f"https://artificialanalysis.ai/models/{self.slug}"
+
+    def get_provider(self) -> str:
+        return self.model_creator.name
+
+    def get_clean_name(self) -> str:
+        """gemini-3-5-flash -> gemini 3 5 flash"""
+        name = self.slug
+        # Remove punctuation
+        name = (
+            name.translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
+            .strip()
+            .lower()
+        )
+        name = name.replace("thinking", "reasoning")
+        # Collapse extra spaces
+        name = " ".join(name.split())
+        return name
+
+    def get_created_date(self) -> datetime.datetime | None:
+        if self.release_date:
+            return datetime.datetime.strptime(self.release_date, "%Y-%m-%d").replace(
+                tzinfo=datetime.UTC
+            )
+        else:
+            return None
+
+    def get_minimal_pricing(self) -> dict | None:
+        if self.pricing is None:
+            return None
+        return self.pricing.get_minimal()
 
 
 class ArtificialAnalysisAPIResponse(AABaseModel):
     status: int
     prompt_options: AAPromptOptions | None = None
     data: list[AAModel]
+
+    def get_minimal_models(self) -> list[dict]:
+        return [model.get_minimal() for model in self.data]
+
+    def get_providers(self) -> list[str]:
+        return list({model.get_provider() for model in self.data})
+
+    def get_models_for_provider(self, provider: str) -> list[AAModel]:
+        return [model for model in self.data if model.get_provider() == provider]

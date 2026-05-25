@@ -73,6 +73,6 @@ source .venv/bin/activate
 
 ## Generative AI Disclosure
 
-This project was developed with the assistance of JetBrains' coding agent Junie. When work was fully off-loaded to the
-LLM, all aspects of its implementation were read, verified, and tested to ensure they were accurate by me (there were
-MANY fixes, changes, and enhancements implemented manually by me).
+This project was developed with the assistance of an LLM coding agent. When work was off-loaded to the LLM, all aspects
+of its implementation were read, verified, tested, and then modified by me to ensure they were accurate and up to my
+standards.

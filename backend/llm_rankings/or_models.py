@@ -1,4 +1,6 @@
+import datetime
 import logging
+import string
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
@@ -116,12 +118,10 @@ class OpenRouterModel(ORBaseModel):
     def get_provider(self) -> str:
         return self.id.split("/")[0]
 
-    def get_name(self) -> str:
-        return "/".join(self.id.split("/")[1:])
-
     def get_minimal(self) -> dict | None:
         """Return None if this model is excluding itself."""
         # Exclude redundant openrouter models
+        # TODO: Ensure these are still filtered out when using the models
         if self.id.endswith(":free") or self.id.startswith("~") or self.id.startswith("openrouter"):
             return None
         # Exclude non-text models
@@ -139,6 +139,25 @@ class OpenRouterModel(ORBaseModel):
             **self.optional_field("created", self.get_minimal_created()),
         }
 
+    def get_clean_name(self) -> str:
+        """google/gemini-3.5-flash -> gemini 3 5 flash"""
+        name = "/".join(self.id.split("/")[1:])
+        name = (
+            name.translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
+            .strip()
+            .lower()
+        )
+        name = name.replace("thinking", "reasoning")
+        # Collapse extra spaces
+        name = " ".join(name.split())
+        return name
+
+    def get_created_date(self) -> datetime.datetime | None:
+        if self.created:
+            return datetime.datetime.fromtimestamp(self.created, datetime.UTC)
+        else:
+            return None
+
 
 class OpenRouterAPIResponse(ORBaseModel):
     data: list[OpenRouterModel]
@@ -151,3 +170,9 @@ class OpenRouterAPIResponse(ORBaseModel):
             if minimal is not None:
                 all_minimal.append(minimal)
         return all_minimal
+
+    def get_providers(self) -> list[str]:
+        return list({model.get_provider() for model in self.data})
+
+    def get_models_for_provider(self, provider: str) -> list[OpenRouterModel]:
+        return [model for model in self.data if model.get_provider() == provider]

@@ -82,6 +82,13 @@ def get_intermediate_data_dir():
     return intermediate_dir
 
 
+def get_provider_dir() -> Path:
+    intermediate_dir = get_intermediate_data_dir()
+    provider_dir = intermediate_dir / "providers"
+    provider_dir.mkdir(parents=True, exist_ok=True)
+    return provider_dir
+
+
 def erase_data_dir():
     logging.debug("Erasing data directory")
     data_dir = get_data_dir()

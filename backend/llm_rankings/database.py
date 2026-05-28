@@ -34,7 +34,7 @@ def populate_with_models():
 
 def get_all_models() -> list[CombinedModel]:
     db: DataBase = initialize_database()
-    models: list[CombinedModel] = [model for model in db("models")]
+    models: list[CombinedModel] = list(db("models"))
     return models
 
 

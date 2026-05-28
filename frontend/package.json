@@ -3,12 +3,18 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev -p 3030",
         "build": "next build",
         "start": "next start",
         "lint": "prettier . --write && eslint . --fix"
     },
     "dependencies": {
+        "@emotion/cache": "^11.14.0",
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/material": "^9.0.1",
+        "@mui/material-nextjs": "^9.0.1",
+        "@mui/x-data-grid": "^9.3.0",
         "next": "16.2.6",
         "react": "19.2.4",
         "react-dom": "19.2.4"
@@ -22,8 +28,8 @@
         "eslint-config-next": "16.2.6",
         "eslint-plugin-unicorn": "^64.0.0",
         "eslint-plugin-unused-imports": "^4.4.1",
+        "prettier": "3.8.3",
         "tailwindcss": "^4",
-        "typescript": "^5",
-        "prettier": "3.8.3"
+        "typescript": "^5"
     }
 }

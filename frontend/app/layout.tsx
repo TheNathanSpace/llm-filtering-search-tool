@@ -22,7 +22,7 @@ const sixtyFour = Sixtyfour({
 export const metadata: Metadata = {
     title: "LLM Rankings",
     description:
-        " The goal is to consolidate multidimensional LLM metrics and benchmarks into a searchable platform.",
+        "The goal is to consolidate multidimensional LLM metrics and benchmarks into a searchable platform.",
 };
 
 export default function RootLayout({

@@ -2,16 +2,29 @@ import logging
 
 import uvicorn
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models, populate_with_models, wipe_database
-from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import setup_logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="LLM Rankings API")
+
+origins = [
+    "http://localhost:3030",
+    "http://localhost:8000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/health")
@@ -23,10 +36,6 @@ def health_check():
 def refresh_data():
     try:
         logger.info("Refreshing data from APIs...")
-        # Step 1: Retrieve data from APIs
-        get_all_model_data()
-
-        # Step 2: Wipe and repopulate database
         wipe_database()
         populate_with_models()
 

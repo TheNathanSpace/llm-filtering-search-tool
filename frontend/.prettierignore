@@ -4,3 +4,4 @@ coverage
 .next
 node_modules
 .open-next
+app/client

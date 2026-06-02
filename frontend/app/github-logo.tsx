@@ -9,7 +9,6 @@ export default function GithubLogo() {
             width="32"
             height="32"
             fill="currentColor"
-            display="inline-block"
             overflow="visible"
             style={{ verticalAlign: "text-bottom" }}
         >

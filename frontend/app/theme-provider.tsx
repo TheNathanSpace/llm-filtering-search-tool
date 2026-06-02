@@ -14,9 +14,9 @@ export default function AppThemeProvider({
     children: React.ReactNode;
 }>) {
     return (
-        <ThemeProvider theme={theme}>
+        <>
             <CssBaseline />
-            {children}
-        </ThemeProvider>
+            <ThemeProvider theme={theme}>{children}</ThemeProvider>
+        </>
     );
 }

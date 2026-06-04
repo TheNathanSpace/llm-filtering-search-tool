@@ -254,16 +254,15 @@ def combine_or_aa_models(
     combined_models: list[CombinedModel] = []
     for or_model, aa_model in matched_models:
         # Use earliest release date
-        release_date: str | None = None
+        release_date: float | None = None
         or_created = or_model.get_created_date()
         aa_created = aa_model.get_created_date()
         if or_created and aa_created:
-            earliest = min(or_created, aa_created)
-            release_date = earliest.strftime("%Y-%m-%d")
+            release_date = min(or_created, aa_created).timestamp()
         elif or_created:
-            release_date = or_created.strftime("%Y-%m-%d")
+            release_date = or_created.timestamp()
         elif aa_created:
-            release_date = aa_created.strftime("%Y-%m-%d")
+            release_date = aa_created.timestamp()
 
         # Use OR then AA pricing
         pricing = or_model.get_minimal_pricing()
@@ -289,7 +288,9 @@ def combine_or_aa_models(
             created=release_date,
             url_openrouter=or_model.get_url(),
             url_artificialanalysis=aa_model.get_url(),
-            knowledge_cutoff=or_model.knowledge_cutoff,
+            knowledge_cutoff=(
+                or_model.get_cutoff_date().timestamp() if or_model.get_cutoff_date() else None
+            ),
             context_length=or_model.context_length,
             **prefix_pricing,
             speed_tokens_per_second=aa_model.median_output_tokens_per_second,

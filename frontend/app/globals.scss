@@ -1,0 +1,32 @@
+@use "tailwind-entrypoint.css";
+
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-average-sans), sans-serif;
+}
+
+.flex-center-everything {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.vertically-centered {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.horizontally-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.left-aligned {
+    text-align: left;
+    @extend .vertically-centered;
+}

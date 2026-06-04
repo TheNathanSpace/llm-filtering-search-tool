@@ -137,6 +137,14 @@ class OpenRouterModel(ORBaseModel):
         else:
             return None
 
+    def get_cutoff_date(self) -> datetime.datetime | None:
+        if self.knowledge_cutoff:
+            return datetime.datetime.strptime(self.knowledge_cutoff, "%Y-%m-%d").replace(
+                tzinfo=datetime.UTC
+            )
+        else:
+            return None
+
     def __hash__(self) -> int:
         return self.id.__hash__()
 

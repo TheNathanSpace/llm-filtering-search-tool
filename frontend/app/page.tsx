@@ -26,7 +26,7 @@ export default function Home() {
         <div className={"flex-center-everything"}>
             <div style={{ width: "80%", textAlign: "center" }}>
                 <Typography variant="h1">LLM rankings app</Typography>
-                <Typography variant="h2" sx={{ marginTop: "1em" }}>
+                <Typography variant="h3" sx={{ marginTop: "1em" }}>
                     The goal is to consolidate multidimensional LLM metrics and
                     benchmarks into a searchable platform.
                 </Typography>
@@ -34,9 +34,10 @@ export default function Home() {
                     <Link
                         href="https://github.com/TheNathanSpace/llm-filtering-search-tool"
                         color="inherit"
+                        className={"inline-flex"}
                     >
                         <Typography
-                            variant="h4"
+                            variant="h5"
                             sx={{ marginRight: "1em" }}
                             className={"font-mono!"}
                         >
@@ -45,7 +46,7 @@ export default function Home() {
                         <GithubLogo />
                     </Link>
                 </div>
-                <div style={{ marginTop: "2em" }}>
+                <div style={{ marginTop: "2em", width: "100%" }}>
                     <ModelTable models={models} />
                 </div>
             </div>

@@ -23,7 +23,7 @@ export type CombinedModel = {
     /**
      * Created
      */
-    created?: string | null;
+    created?: number | null;
     /**
      * Url Openrouter
      */
@@ -35,7 +35,7 @@ export type CombinedModel = {
     /**
      * Knowledge Cutoff
      */
-    knowledge_cutoff?: string | null;
+    knowledge_cutoff?: number | null;
     /**
      * Context Length
      */

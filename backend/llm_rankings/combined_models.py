@@ -10,12 +10,12 @@ class CombinedModel(CombinedModelBase):
     name: str = None
     creator: str = None
     description: str | None = None
-    created: str | None = None
+    created: float | None = None
 
     url_openrouter: str | None = None
     url_artificialanalysis: str = None
 
-    knowledge_cutoff: str | None = None
+    knowledge_cutoff: float | None = None
     context_length: int | None = None
 
     pricing_input: float | None = None

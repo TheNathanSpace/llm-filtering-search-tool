@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/*
+ * https://github.com/tailwindlabs/tailwindcss-intellisense/issues/1154#issuecomment-2628101875
+ */
+
+:root {
+    --background: #ffffff;
+    --foreground: #171717;
+}
+
+@theme inline {
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-average-sans);
+    --font-casual: var(--font-mansalva);
+    --font-mono: var(--font-sixtyfour);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
+}

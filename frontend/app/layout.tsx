@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Average_Sans, Mansalva, Sixtyfour } from "next/font/google";
-import "./globals.css";
+import "./globals.scss";
 import "tailwindcss";
-import AppThemeProvider from "@/app/theme-provider";
+import GlobalThemeProvider from "@/app/global-theme-provider";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v13-appRouter";
 
 const averageSans = Average_Sans({
@@ -37,7 +37,7 @@ export default function RootLayout({
         >
             <body className="min-h-screen min-w-screen flex flex-col">
                 <AppRouterCacheProvider>
-                    <AppThemeProvider>{children}</AppThemeProvider>
+                    <GlobalThemeProvider>{children}</GlobalThemeProvider>
                 </AppRouterCacheProvider>
             </body>
         </html>

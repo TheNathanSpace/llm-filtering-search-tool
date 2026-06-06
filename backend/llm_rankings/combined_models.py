@@ -10,11 +10,13 @@ class CombinedModel(CombinedModelBase):
     name: str = None
     creator: str = None
     description: str | None = None
+    # Milliseconds since epoch
     created: float | None = None
 
     url_openrouter: str | None = None
     url_artificialanalysis: str = None
 
+    # Milliseconds since epoch
     knowledge_cutoff: float | None = None
     context_length: int | None = None
 

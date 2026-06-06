@@ -285,11 +285,13 @@ def combine_or_aa_models(
             name=aa_model.name,
             creator=aa_model.get_provider(),
             description=or_model.description,
-            created=release_date,
+            created=(release_date * 1000) if release_date else None,
             url_openrouter=or_model.get_url(),
             url_artificialanalysis=aa_model.get_url(),
             knowledge_cutoff=(
-                or_model.get_cutoff_date().timestamp() if or_model.get_cutoff_date() else None
+                or_model.get_cutoff_date().timestamp() * 1000
+                if or_model.get_cutoff_date()
+                else None
             ),
             context_length=or_model.context_length,
             **prefix_pricing,

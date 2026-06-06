@@ -2,8 +2,7 @@ export function formatTimestamp(value: number | undefined) {
     if (!value) {
         return value;
     }
-    // Python uses seconds; JavaScript uses milliseconds
-    return new Date(value * 1000).toLocaleDateString();
+    return new Date(value).toLocaleDateString();
 }
 
 export function formatPrice(value: number | undefined) {

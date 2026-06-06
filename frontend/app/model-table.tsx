@@ -1,16 +1,24 @@
 import { DataGrid } from "@mui/x-data-grid";
 import { CombinedModel } from "./client";
 import { MuiFontSans } from "@/app/mui-font";
-import { Autocomplete, Chip, TextField } from "@mui/material";
+import {
+    Autocomplete,
+    Chip,
+    FormControlLabel,
+    FormGroup,
+    Switch,
+    TextField,
+} from "@mui/material";
 import { columns } from "@/app/columns";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import FilterOption from "@/app/filter-option";
 import DateRangeFilter from "@/app/date-range-filter";
 import dayjs from "dayjs";
+import NumberRangeFilter from "@/app/number-range-filter";
 
 function getMinMax(
-    values: (number | undefined)[],
+    values: (number | null | undefined)[],
 ): [number | undefined, number | undefined] {
     const filtered = values.filter((v): v is number => typeof v === "number");
     if (filtered.length === 0) {
@@ -43,10 +51,19 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
     const [minKnowledgeCutoff, maxKnowledgeCutoff] = getMinMax(
         models.map((model) => model.knowledge_cutoff),
     );
+    const [minContextLength, maxContextLength] = getMinMax(
+        models.map((model) => model.context_length),
+    );
 
     return (
         <div style={{ width: "100%" }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <FormGroup sx={{ width: "max-content" }}>
+                    <FormControlLabel
+                        control={<Switch defaultChecked />}
+                        label="Treat entries with missing values as included in filters"
+                    />
+                </FormGroup>
                 <FilterOption name={"Creators"}>
                     <MuiFontSans style={{ width: "100%" }}>
                         <Autocomplete
@@ -99,6 +116,13 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
                         name={"Knowledge cutoff"}
                         minDate={dayjs(minKnowledgeCutoff)}
                         maxDate={dayjs(maxKnowledgeCutoff)}
+                    />
+                )}
+                {minContextLength && maxContextLength && (
+                    <NumberRangeFilter
+                        name={"Context length"}
+                        minValue={minContextLength}
+                        maxValue={maxContextLength}
                     />
                 )}
                 <MuiFontSans

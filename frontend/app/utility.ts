@@ -12,6 +12,14 @@ export function formatPrice(value: number | undefined) {
     return `$${value.toFixed(2)}`;
 }
 
+export function formatNumber(value: number | undefined) {
+    if (!value) {
+        return value;
+    }
+    const number_ = Math.round((value + Number.EPSILON) * 100) / 100;
+    return number_.toLocaleString();
+}
+
 export function toTitleCase(label: string) {
     // https://stackoverflow.com/a/6475125/7492795
     let index, index_, string_;

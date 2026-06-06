@@ -35,7 +35,7 @@ export default function RootLayout({
             lang="en"
             className={`${mansalva.variable} ${averageSans.variable} ${sixtyFour.variable} h-full antialiased`}
         >
-            <body className="min-h-screen min-w-screen flex flex-col">
+            <body className="h-screen w-screen flex flex-col">
                 <AppRouterCacheProvider>
                     <GlobalThemeProvider>{children}</GlobalThemeProvider>
                 </AppRouterCacheProvider>

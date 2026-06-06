@@ -1,6 +1,7 @@
 import { GridColDef } from "@mui/x-data-grid";
 import { formatPrice, formatTimestamp } from "@/app/utility";
 import { Link } from "@mui/material";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 
 export const columns: GridColDef[] = [
     { field: "name", headerName: "Name", width: 200 },
@@ -21,7 +22,16 @@ export const columns: GridColDef[] = [
             if (!value) {
                 return value;
             }
-            return <Link href={value}>openrouter.ai</Link>;
+            return (
+                <Link
+                    className={"vertically-centered"}
+                    href={value}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    openrouter.ai <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
+                </Link>
+            );
         },
     },
     {
@@ -33,7 +43,12 @@ export const columns: GridColDef[] = [
             if (!value) {
                 return value;
             }
-            return <Link href={value}>artificialanalysis.ai</Link>;
+            return (
+                <Link href={value} target="_blank" rel="noopener noreferrer">
+                    artificialanalysis.ai{" "}
+                    <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
+                </Link>
+            );
         },
     },
     {

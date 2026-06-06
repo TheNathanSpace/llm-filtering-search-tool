@@ -22,6 +22,8 @@ export default function Home() {
         });
     }, []);
 
+    // TODO: Do 25% / 75% split, text / table, to remove any scrolling
+
     return (
         <div className={"flex-center-everything"}>
             <div style={{ width: "80%", textAlign: "center" }}>

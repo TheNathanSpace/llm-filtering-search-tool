@@ -296,8 +296,16 @@ def combine_or_aa_models(
             context_length=or_model.context_length,
             **prefix_pricing,
             speed_tokens_per_second=aa_model.median_output_tokens_per_second,
-            speed_time_to_first_token=aa_model.median_time_to_first_token_seconds,
-            speed_time_to_first_answer_token=aa_model.median_time_to_first_answer_token,
+            speed_time_to_first_token=(
+                aa_model.median_time_to_first_token_seconds
+                if aa_model.median_time_to_first_token_seconds != 0
+                else None
+            ),
+            speed_time_to_first_answer_token=(
+                aa_model.median_time_to_first_answer_token
+                if aa_model.median_time_to_first_answer_token != 0
+                else None
+            ),
             **prefix_evaluations,
         )
         combined_models.append(combined_model)

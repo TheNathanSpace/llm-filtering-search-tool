@@ -12,6 +12,8 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    height: 100%;
+    width: 100%;
 }
 
 .vertically-centered {
@@ -20,13 +22,19 @@ body {
     align-items: center;
 }
 
-.horizontally-centered {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
 .left-aligned {
     text-align: left;
     @extend .vertically-centered;
+}
+
+.red-outline {
+    outline: 2px solid red;
+}
+
+.blue-outline {
+    outline: 2px solid cornflowerblue;
+}
+
+.green-outline {
+    outline: 2px solid lime;
 }

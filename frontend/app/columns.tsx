@@ -45,7 +45,7 @@ export const columns: GridColDef[] = [
             }
             return (
                 <Link href={value} target="_blank" rel="noopener noreferrer">
-                    artificialanalysis.ai{" "}
+                    artificialanalysis.ai
                     <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
                 </Link>
             );

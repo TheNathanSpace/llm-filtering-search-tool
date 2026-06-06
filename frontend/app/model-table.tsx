@@ -55,83 +55,86 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
         models.map((model) => model.context_length),
     );
 
-    return (
-        <div style={{ width: "100%" }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <FormGroup sx={{ width: "max-content" }}>
-                    <FormControlLabel
-                        control={<Switch defaultChecked />}
-                        label="Treat entries with missing values as included in filters"
-                    />
-                </FormGroup>
-                <FilterOption name={"Creators"}>
-                    <MuiFontSans style={{ width: "100%" }}>
-                        <Autocomplete
-                            multiple={true}
-                            options={getUniqueCreators(models)}
-                            disableCloseOnSelect={true}
-                            renderInput={(parameters) => (
-                                <TextField
-                                    {...parameters}
-                                    label="Pick creators"
-                                />
-                            )}
-                            filterSelectedOptions={true}
-                            fullWidth={true}
-                            renderValue={(value, getTagProperties) =>
-                                value.map((option, index) => {
-                                    const { onDelete, ...other } =
-                                        getTagProperties({
-                                            index,
-                                        });
+    // TODO: Fix horizontal scrolling
 
-                                    return (
-                                        <Chip
-                                            label={option}
-                                            onClick={(event) => {
-                                                event.stopPropagation();
-                                                if (onDelete) {
-                                                    onDelete(event);
-                                                }
-                                            }}
-                                            onDelete={onDelete}
-                                            {...other}
-                                            key={index}
-                                        />
-                                    );
-                                })
-                            }
+    return (
+        <div style={{ width: "100%", height: "100%" }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <div style={{ height: "50%" }}>
+                    <FormGroup sx={{ width: "max-content" }}>
+                        <FormControlLabel
+                            control={<Switch defaultChecked />}
+                            label="Treat entries with missing values as included in filters"
                         />
-                    </MuiFontSans>
-                </FilterOption>
-                {minCreationDate && maxCreationDate && (
-                    <DateRangeFilter
-                        name={"Creation date"}
-                        minDate={dayjs(minCreationDate)}
-                        maxDate={dayjs(maxCreationDate)}
-                    />
-                )}
-                {minKnowledgeCutoff && maxKnowledgeCutoff && (
-                    <DateRangeFilter
-                        name={"Knowledge cutoff"}
-                        minDate={dayjs(minKnowledgeCutoff)}
-                        maxDate={dayjs(maxKnowledgeCutoff)}
-                    />
-                )}
-                {minContextLength && maxContextLength && (
-                    <NumberRangeFilter
-                        name={"Context length"}
-                        minValue={minContextLength}
-                        maxValue={maxContextLength}
-                    />
-                )}
-                <MuiFontSans
-                    style={{ height: 600, width: "100%", marginTop: "1em" }}
-                >
+                    </FormGroup>
+                    <FilterOption name={"Creators"}>
+                        <MuiFontSans style={{ width: "100%" }}>
+                            <Autocomplete
+                                multiple={true}
+                                options={getUniqueCreators(models)}
+                                disableCloseOnSelect={true}
+                                renderInput={(parameters) => (
+                                    <TextField
+                                        {...parameters}
+                                        label="Pick creators"
+                                    />
+                                )}
+                                filterSelectedOptions={true}
+                                fullWidth={true}
+                                renderValue={(value, getTagProperties) =>
+                                    value.map((option, index) => {
+                                        const { onDelete, ...other } =
+                                            getTagProperties({
+                                                index,
+                                            });
+
+                                        return (
+                                            <Chip
+                                                label={option}
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    if (onDelete) {
+                                                        onDelete(event);
+                                                    }
+                                                }}
+                                                onDelete={onDelete}
+                                                {...other}
+                                                key={index}
+                                            />
+                                        );
+                                    })
+                                }
+                            />
+                        </MuiFontSans>
+                    </FilterOption>
+                    {minCreationDate && maxCreationDate && (
+                        <DateRangeFilter
+                            name={"Creation date"}
+                            minDate={dayjs(minCreationDate)}
+                            maxDate={dayjs(maxCreationDate)}
+                        />
+                    )}
+                    {minKnowledgeCutoff && maxKnowledgeCutoff && (
+                        <DateRangeFilter
+                            name={"Knowledge cutoff"}
+                            minDate={dayjs(minKnowledgeCutoff)}
+                            maxDate={dayjs(maxKnowledgeCutoff)}
+                        />
+                    )}
+                    {minContextLength && maxContextLength && (
+                        <NumberRangeFilter
+                            name={"Context length"}
+                            minValue={minContextLength}
+                            maxValue={maxContextLength}
+                        />
+                    )}
+                </div>
+                <MuiFontSans style={{ height: "50%", width: "100%" }}>
                     <DataGrid
                         rows={models}
                         columns={columns}
                         getRowId={(row) => row.name}
+                        // autoHeight={true}
                     />
                 </MuiFontSans>
             </LocalizationProvider>

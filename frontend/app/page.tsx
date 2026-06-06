@@ -1,11 +1,10 @@
 "use client";
 
-import { Link, Typography } from "@mui/material";
-import GithubLogo from "@/app/github-logo";
 import ModelTable from "@/app/model-table";
 import { useEffect, useState } from "react";
 import { CombinedModel, getModelsModelsGet } from "@/app/client";
 import { client } from "@/app/client/client.gen";
+import Titles from "@/app/titles";
 
 client.setConfig({
     baseUrl: "http://localhost:8000",
@@ -22,35 +21,22 @@ export default function Home() {
         });
     }, []);
 
-    // TODO: Do 25% / 75% split, text / table, to remove any scrolling
-
     return (
-        <div className={"flex-center-everything"}>
-            <div style={{ width: "80%", textAlign: "center" }}>
-                <Typography variant="h1">LLM rankings app</Typography>
-                <Typography variant="h3" sx={{ marginTop: "1em" }}>
-                    The goal is to consolidate multidimensional LLM metrics and
-                    benchmarks into a searchable platform.
-                </Typography>
-                <div style={{ marginTop: "2em" }}>
-                    <Link
-                        href="https://github.com/TheNathanSpace/llm-filtering-search-tool"
-                        color="inherit"
-                        className={"inline-flex"}
-                    >
-                        <Typography
-                            variant="h5"
-                            sx={{ marginRight: "1em" }}
-                            className={"font-mono!"}
-                        >
-                            View on GitHub
-                        </Typography>
-                        <GithubLogo />
-                    </Link>
-                </div>
-                <div style={{ marginTop: "2em", width: "100%" }}>
-                    <ModelTable models={models} />
-                </div>
+        <div
+            style={{ width: "100%", height: "100%" }}
+            className={"flex-center-everything"}
+        >
+            <div
+                style={{ width: "100%", height: "25%", overflow: "scroll" }}
+                className={"green-outline flex-center-everything"}
+            >
+                <Titles />
+            </div>
+            <div
+                style={{ width: "80%", height: "75%", overflow: "scroll" }}
+                className={"red-outline"}
+            >
+                <ModelTable models={models} />
             </div>
         </div>
     );

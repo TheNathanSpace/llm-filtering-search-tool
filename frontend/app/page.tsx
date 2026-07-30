@@ -7,7 +7,7 @@ import { client } from "@/app/client/client.gen";
 import Titles from "@/app/titles";
 
 client.setConfig({
-    baseUrl: "http://localhost:8000",
+    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
 });
 
 export default function Home() {

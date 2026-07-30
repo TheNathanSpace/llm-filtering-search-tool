@@ -69,8 +69,10 @@ More detail: [backend/README.md](backend/README.md), [frontend/README.md](fronte
    - `AA_API_KEY` — Artificial Analysis API key for benchmark data
    - `OR_API_KEY` — OpenRouter API key for model/pricing metadata
    - `DATA_DIR` — path for SQLite DB and related files (default `./data`, relative to the `.env` location)
+   - `NEXT_PUBLIC_BACKEND_URL` — FastAPI base URL for the Next.js front-end (default `http://localhost:8000`)
 
-`.env` is gitignored. The back-end loads it via `python-dotenv` when fetching or writing data.
+`.env` is gitignored. The back-end loads it via `python-dotenv`; the front-end loads the same file from the
+repo root via `frontend/next.config.ts`.
 
 ## Development
 

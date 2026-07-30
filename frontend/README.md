@@ -5,10 +5,7 @@
 - <https://mui.com/material-ui/all-components/>
 - <https://mui.com/x/react-data-grid/>
 
-I feel like it might be worth moving from MUI Data Grid to AG Grid. The filtering and sorting seem a lot more
-user-friendly, right out of the box. Ultimately, though, AG Grid filtering still takes several clicks to set up. I think
-that having some simple always-visible text boxes, e.g., 'Min Price' and 'Max Price:', would go a long way towards
-usability.
+Always-visible filter fields (e.g. Min Price / Max Price) would improve usability over multi-click column filters alone.
 
 ## Installation
 
@@ -21,7 +18,8 @@ From the repo root:
 
 `npm run dev` (from `frontend/`) also works; the app listens on port **3030**.
 
-Open [http://localhost:3030](http://localhost:3030). The UI expects the back-end at `http://localhost:8000`. For a full
+Open [http://localhost:3030](http://localhost:3030). The UI talks to the back-end URL from
+`NEXT_PUBLIC_BACKEND_URL` in the repo-root [`.env`](../.env.template) (default `http://localhost:8000`). For a full
 local stack, see the root [README](../README.md).
 
 ### API Client

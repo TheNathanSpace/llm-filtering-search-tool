@@ -49,36 +49,103 @@ And then I could sort from highest to lowest intelligence, probably choosing the
 6. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
+More detail: [backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md).
+
+## Prerequisites
+
+- Python 3.12+
+- Node.js and npm (recent LTS recommended)
+- Artificial Analysis and OpenRouter API keys (see [Configuration](#configuration))
+
+## Configuration
+
+1. Copy the env template and edit values:
+
+   ```bash
+   cp .env.template .env
+   ```
+
+2. Set the variables documented in [`.env.template`](.env.template):
+   - `AA_API_KEY` — Artificial Analysis API key for benchmark data
+   - `OR_API_KEY` — OpenRouter API key for model/pricing metadata
+   - `DATA_DIR` — path for SQLite DB and related files (default `./data`, relative to the `.env` location)
+
+`.env` is gitignored. The back-end loads it via `python-dotenv` when fetching or writing data.
+
 ## Development
 
-Set up `pre-commit`:
+### Install
+
+Set up the Python virtualenv and back-end package (creates `.venv` and installs `llm-rankings` editable with
+dev extras, including `pre-commit`):
 
 ```bash
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files
-```
-
-Install dependencies:
-
-```bash
-./bin/install-backend.sh
-```
-
-Activate the virtual environment:
-
-```bash
+./bin/setup-backend.sh
 source .venv/bin/activate
 ```
 
-## Usage
+Install front-end dependencies:
 
-The back-end API can be run with one of:
+```bash
+./bin/setup-frontend.sh
+```
+
+Install Git hooks and verify the tree passes lint (required for local development):
+
+```bash
+./bin/run-precommit.sh
+```
+
+That runs `pre-commit install` and `pre-commit run --all-files`. Hooks must stay installed so commits are checked
+automatically. Equivalent manual steps: `pip install pre-commit && pre-commit install && pre-commit run --all-files`.
+
+### Run
+
+Preferred (API on port 8000, Next.js on port 3030):
+
+```bash
+./bin/start-full-stack-live.sh
+```
+
+Or start each side separately:
+
+```bash
+./bin/start-backend-live.sh
+./bin/start-frontend-live.sh
+```
+
+With the virtualenv activated, you can also start the API manually:
 
 - `python backend/llm_rankings/api.py`
 - `uvicorn llm_rankings.api:app --reload`
 
-(Ensure the virtual environment is activated.)
+Then open the UI at [http://localhost:3030](http://localhost:3030). Interactive API docs are at
+[http://localhost:8000/docs](http://localhost:8000/docs).
+
+### Seed or refresh model data
+
+`DATA_DIR` is gitignored, so a fresh clone has no database until you populate it. With the API running and `.env`
+configured:
+
+```bash
+curl -X POST http://localhost:8000/refresh
+```
+
+Or, with the virtualenv activated and without starting the server:
+
+```bash
+python -m llm_rankings.database
+```
+
+That wipes `DATA_DIR/database.db` (if present), fetches from both APIs, matches models, and writes SQLite.
+
+### Regenerate the front-end API client
+
+After changing the FastAPI surface, regenerate OpenAPI and the TypeScript client:
+
+```bash
+./bin/install-frontend-api-client.sh
+```
 
 ## Generative AI Disclosure
 

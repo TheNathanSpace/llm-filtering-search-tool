@@ -12,13 +12,17 @@ usability.
 
 ## Installation
 
+From the repo root:
+
 ```bash
-npm run dev
+./bin/setup-frontend.sh
+./bin/start-frontend-live.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run dev` (from `frontend/`) also works; the app listens on port **3030**.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open [http://localhost:3030](http://localhost:3030). The UI expects the back-end at `http://localhost:8000`. For a full
+local stack, see the root [README](../README.md).
 
 ### API Client
 

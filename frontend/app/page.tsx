@@ -34,7 +34,7 @@ export default function Home() {
             </div>
             <div
                 style={{ width: "80%", height: "75%", overflow: "scroll" }}
-                className={"red-outline"}
+                className={"red-outline p-5"}
             >
                 <ModelTable models={models} />
             </div>

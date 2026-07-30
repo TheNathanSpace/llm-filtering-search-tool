@@ -7,6 +7,38 @@
 
 Always-visible filter fields (e.g. Min Price / Max Price) would improve usability over multi-click column filters alone.
 
+## Model filters
+
+Filter UI and logic live under `app/filters/`:
+
+| Module                                                                          | Role                                           |
+| ------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `model-filters.tsx`                                                             | Filter panel layout                            |
+| `filter-option.tsx`                                                             | Shared label + control row                     |
+| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` | Reusable controls                              |
+| `filter-types.ts`                                                               | Filter state and bounds types                  |
+| `filter-bounds.ts`                                                              | Derive min/max and unique creators from models |
+| `apply-filters.ts`                                                              | Pure `filterModels()`                          |
+| `use-model-filters.ts`                                                          | State + filtered rows for the table            |
+
+`model-table.tsx` only composes the filter panel and Data Grid.
+
+### Adding a new filter
+
+Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, or `NumberRangeFilter`) when possible. Only add a new
+control component if the interaction pattern is new.
+
+1. **`filter-types.ts`** — Add the field to `ModelFiltersState` and `UserFilterChoices` (and to `FilterBounds` if it
+   needs min/max or option lists derived from the data). Update `createInitialUserChoices` and `resolveFilters` with a
+   sensible default (e.g. `[]` for multi-select, `undefined` for bounds-backed ranges).
+2. **`filter-bounds.ts`** — If the filter needs bounds or options from the model list, compute them in
+   `getFilterBounds`.
+3. **`apply-filters.ts`** — Teach `filterModels` how to apply the new field. Respect `includeMissing` for nullable model
+   properties.
+4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`.
+
+No changes to `model-table.tsx` are needed for a new filter.
+
 ## Installation
 
 From the repo root:

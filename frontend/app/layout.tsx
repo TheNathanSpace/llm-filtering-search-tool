@@ -38,12 +38,10 @@ export default function RootLayout({
             <body className="h-screen w-screen">
                 <div
                     style={{
-                        marginTop: "1em",
-                        marginLeft: "1em",
-                        marginBottom: "1em",
-                        marginRight: "1em",
-                        maxHeight: "100%",
-                        maxWidth: "100%", // todo: this isn't working :(
+                        padding: "1em",
+                        height: "100%",
+                        width: "100%",
+                        boxSizing: "border-box",
                     }}
                     className={"flex flex-col"}
                 >

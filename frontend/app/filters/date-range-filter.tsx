@@ -1,4 +1,4 @@
-import FilterOption from "@/app/filter-option";
+import FilterOption from "@/app/filters/filter-option";
 import { Slider, Typography } from "@mui/material";
 import { MuiFontSans } from "@/app/mui-font";
 import dayjs, { Dayjs } from "dayjs";
@@ -68,7 +68,10 @@ export default function DateRangeFilter(
                     step={step}
                 />
                 {/* Show selected range in a readable format underneath the slider */}
-                <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+                <Typography
+                    variant="body2"
+                    sx={{ mt: -1, textAlign: "center", lineHeight: 1.2 }}
+                >
                     {dayjs(value[0]).format("MMM D, YYYY")} –{" "}
                     {dayjs(value[1]).format("MMM D, YYYY")}
                 </Typography>

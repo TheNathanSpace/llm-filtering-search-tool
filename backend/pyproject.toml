@@ -54,4 +54,4 @@ line-ending = "auto"
 noProgress = true
 
 [tool.markdownlint-cli2.config]
-line-length = { line_length = 120 }
+line-length = { line_length = 120, tables = false }

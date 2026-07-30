@@ -1,4 +1,4 @@
-import FilterOption from "@/app/filter-option";
+import FilterOption from "@/app/filters/filter-option";
 import { Slider, Typography } from "@mui/material";
 import { MuiFontSans } from "@/app/mui-font";
 import { useState } from "react";
@@ -43,7 +43,10 @@ export default function NumberRangeFilter(
                     step={properties.step ?? 100}
                 />
                 {/* Show selected range in a readable format underneath the slider */}
-                <Typography variant="body2" sx={{ mt: 1, textAlign: "center" }}>
+                <Typography
+                    variant="body2"
+                    sx={{ mt: -1, textAlign: "center", lineHeight: 1.2 }}
+                >
                     {formatNumber(value[0])} – {formatNumber(value[1])}
                 </Typography>
             </MuiFontSans>

@@ -85,3 +85,7 @@ The back-end API can be run with one of:
 This project was developed with the assistance of an LLM coding agent. When work was off-loaded to the LLM, all aspects
 of its implementation were read, verified, tested, and then modified by me to ensure they were accurate and up to my
 standards.
+
+## To Do
+
+- [ ] Add modalities to models, so that you can filter by those that accept both text *and* image.

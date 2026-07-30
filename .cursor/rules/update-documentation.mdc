@@ -1,0 +1,26 @@
+---
+description: Keep README and documentation in sync when making code changes
+alwaysApply: true
+---
+
+# Update Documentation With Changes
+
+When making changes to the codebase, always update relevant documentation in the same pass.
+
+## Required updates
+
+- **README.md** — Update setup steps, usage, configuration, architecture notes, and feature lists when behavior or project structure changes.
+- **Other docs** — Update any affected files (e.g. `docs/`, inline guides, comments in config templates, deployment notes) so they match the new behavior.
+
+## When to update
+
+- Adding, removing, or renaming features, scripts, or commands
+- Changing setup, build, deploy, or environment requirements
+- Modifying API routes, configuration options, or project structure
+- Fixing bugs that reflect incorrect or outdated documentation
+
+## Guidelines
+
+- Do not leave documentation describing old behavior after a change ships.
+- Keep updates proportional: a small fix may need a one-line doc tweak; a new feature needs README and any related guides updated.
+- If no documentation exists for the area you changed, add the minimum useful documentation rather than skipping it.

@@ -35,10 +35,22 @@ export default function RootLayout({
             lang="en"
             className={`${mansalva.variable} ${averageSans.variable} ${sixtyFour.variable} h-full antialiased`}
         >
-            <body className="h-screen w-screen flex flex-col">
-                <AppRouterCacheProvider>
-                    <GlobalThemeProvider>{children}</GlobalThemeProvider>
-                </AppRouterCacheProvider>
+            <body className="h-screen w-screen">
+                <div
+                    style={{
+                        marginTop: "1em",
+                        marginLeft: "1em",
+                        marginBottom: "1em",
+                        marginRight: "1em",
+                        maxHeight: "100%",
+                        maxWidth: "100%", // todo: this isn't working :(
+                    }}
+                    className={"flex flex-col"}
+                >
+                    <AppRouterCacheProvider>
+                        <GlobalThemeProvider>{children}</GlobalThemeProvider>
+                    </AppRouterCacheProvider>
+                </div>
             </body>
         </html>
     );

@@ -4,8 +4,10 @@ import logging
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.hf_enrichment import parameters_b_for_repo_ids
 from llm_rankings.models_dev import open_weights_by_openrouter_id
+from llm_rankings.or_endpoints import ORListEndpointsData
 from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
-from llm_rankings.retrieve_data import get_all_model_data
+from llm_rankings.provider_endpoints import ModelProviderEndpoint, from_or_public_endpoint
+from llm_rankings.retrieve_data import get_all_model_data, get_endpoints_for_models
 from llm_rankings.util import (
     bootstrap_env_from_argv,
     erase_data_dir,
@@ -28,7 +30,6 @@ def openrouter_to_combined(
 ) -> CombinedModel:
     created = or_model.get_created_date()
     cutoff = or_model.get_cutoff_date()
-    pricing = or_model.get_minimal_pricing()
     or_benchmarks = (
         or_model.benchmarks.artificial_analysis.model_dump(exclude_none=True, by_alias=False)
         if or_model.benchmarks and or_model.benchmarks.artificial_analysis
@@ -46,9 +47,10 @@ def openrouter_to_combined(
         context_length=or_model.context_length,
         input_modalities=or_model.architecture.input_modalities,
         output_modalities=or_model.architecture.output_modalities,
-        pricing_input=pricing.get("input"),
-        pricing_output=pricing.get("output"),
-        # speed_* left null — see CombinedModel.
+        # List-level OR pricing omitted — use ``model_provider_endpoints`` instead.
+        pricing_input=None,
+        pricing_output=None,
+        # Model-level speed_* still null until we choose an aggregation from providers.
         is_open_weights=open_weights.get(or_model.id),
         parameters_b=parameters_b.get(hf_id) if hf_id else None,
         **_prefixed_scores("benchmark_or_", or_benchmarks),
@@ -74,6 +76,23 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
     ]
 
 
+def combine_provider_endpoints(
+    endpoint_lists: list[ORListEndpointsData],
+    *,
+    kept_model_ids: set[str],
+) -> list[ModelProviderEndpoint]:
+    """Flatten OR endpoint payloads into DB rows for kept catalog model ids."""
+    rows: list[ModelProviderEndpoint] = []
+    for payload in endpoint_lists:
+        model_id = payload.id
+        if model_id not in kept_model_ids:
+            continue
+        for endpoint in payload.endpoints:
+            rows.append(from_or_public_endpoint(endpoint, model_id=model_id))
+    logger.info("Combined %d provider endpoint rows", len(rows))
+    return rows
+
+
 def write_combined_models(combined_models: list[CombinedModel]):
     combined_models_path = get_data_dir() / "combined_models.json"
     serialized = [m.model_dump() for m in combined_models]
@@ -81,12 +100,23 @@ def write_combined_models(combined_models: list[CombinedModel]):
     logger.info(f"Combined models written to {combined_models_path}")
 
 
-def get_and_clean_data() -> list[CombinedModel]:
+def write_provider_endpoints(rows: list[ModelProviderEndpoint]) -> None:
+    path = get_data_dir() / "model_provider_endpoints.json"
+    path.write_text(json.dumps([r.model_dump() for r in rows], indent=4))
+    logger.info("Provider endpoints written to %s (%d rows)", path.as_posix(), len(rows))
+
+
+def get_and_clean_data() -> tuple[list[CombinedModel], list[ModelProviderEndpoint]]:
     logger.debug("Retrieving and cleaning data")
     or_models = get_all_model_data()
     combined_models = combine_openrouter_models(or_models)
+    kept_ids = {m.id for m in combined_models}
+    kept_or_models = [m for m in or_models.data if m.id in kept_ids]
+    endpoint_lists = get_endpoints_for_models(kept_or_models)
+    provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
     write_combined_models(combined_models)
-    return combined_models
+    write_provider_endpoints(provider_rows)
+    return combined_models, provider_rows
 
 
 if __name__ == "__main__":

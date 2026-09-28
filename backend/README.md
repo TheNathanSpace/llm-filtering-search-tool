@@ -27,12 +27,15 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 
 - OpenRouter:
   - API reference: <https://openrouter.ai/docs/api/api-reference/models/get-models>
-  - Key endpoint: `GET /models`
+  - Key endpoints: `GET /models`, `GET /models/{author}/{slug}/endpoints`
   - Authentication: `Authorization: Bearer <api-key>` header
-  - Response shapes: `llm_rankings/or_models.py` (aligned with OpenRouter Models API `Model` /
-    `ModelsListResponse` schemas in `api-docs/openapi-openrouter.json`). Architecture
-    `input_modalities` / `output_modalities` use the `InputModality` / `OutputModality` enums.
-    Embedded `benchmarks.artificial_analysis` indices become `benchmark_or_*` on `CombinedModel`.
+  - Response shapes: `llm_rankings/or_models.py` (Models list) and
+    `llm_rankings/or_endpoints.py` (per-provider endpoints), aligned with
+    `api-docs/openapi-openrouter.json`. Architecture `input_modalities` /
+    `output_modalities` use the `InputModality` / `OutputModality` enums.
+    Embedded `benchmarks.artificial_analysis` indices become `benchmark_or_*` on
+    `CombinedModel`. Per-provider pricing and throughput/latency go to
+    `model_provider_endpoints` ([SRC-10](../docs/requirements.md#src-10)).
   - This project's FastAPI OpenAPI export (for the front-end client) is written to
     `DATA_DIR/openapi.json` by `bin/generate-openapi-docs.sh` (default `./data/openapi.json`).
 
@@ -40,21 +43,26 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 
 1. Fetch OpenRouter `GET /models` and write the raw payload under
    `DATA_DIR/intermediate/raw/raw_or_models.json`.
-2. Fetch [models.dev](https://models.dev) `api.json` (or reuse a ≤24h cache under
+2. Drop OpenRouter models whose provider id starts with ``~`` (router/variant listings).
+3. For each remaining model, fetch `GET /models/{author}/{slug}/endpoints` with a
+   bounded thread pool (default 8 workers) and 429/5xx retries with backoff. Write
+   raw payloads to `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
+4. Fetch [models.dev](https://models.dev) `api.json` (or reuse a ≤24h cache under
    `DATA_DIR/cache/models_dev/`) and map the `openrouter` provider’s `open_weights` flags by
    OpenRouter model id. Mirror the payload to `DATA_DIR/intermediate/raw/raw_models_dev.json`.
-3. For each distinct non-empty OpenRouter `hugging_face_id`, resolve parameter count from the
+5. For each distinct non-empty OpenRouter `hugging_face_id`, resolve parameter count from the
    Hugging Face Hub model API (`safetensors.total` → billions as `parameters_b`). Responses are
    cached under `DATA_DIR/cache/hf/`; network calls use a project User-Agent, ~1s pacing, and
    429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
-4. Drop OpenRouter models whose provider id starts with ``~`` (router/variant listings), then
-   map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
-   pricing, modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
-   plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows are
-   not copied (list of objects, not a single score).
-5. Throughput / latency fields (`speed_*`) are left null until an OpenRouter (or other) source is
-   wired later.
-6. Store models in SQLite (`pk` = OpenRouter model `id`).
+6. Map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
+   modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
+   plus `is_open_weights` / `parameters_b` when enrichment succeeds. List-level OR `pricing` is
+   **not** copied — model `pricing_*` / `speed_*` stay null until aggregated from providers.
+   Nested Design Arena rows are not copied (list of objects, not a single score).
+7. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`):
+   `$/1M` input/output price, optional discount, throughput/latency percentiles (p50–p99),
+   status/uptime/quantization/context. Primary key is ``{model_id}|{tag}``.
+8. Store both tables in SQLite (`models`, `model_provider_endpoints`).
 
 `DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer unauthenticated
 upstreams.

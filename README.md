@@ -15,7 +15,7 @@ The goal of this project is to:
 3. Generate some nice plots based on the user's specifications.
 
 Product requirements and status for those goals: [`docs/requirements.md`](docs/requirements.md).
-Engineering backlog (throughput source + filter next):
+Engineering backlog (aggregate provider price/speed onto model rows, then throughput filter):
 [`docs/todo.md`](docs/todo.md).
 
 And, the intent is, given these tools, it will be easier for you to decide which LLM is best for your specific
@@ -44,21 +44,22 @@ And then I could sort from highest to lowest intelligence, probably choosing the
 
 Today the table ships with Intelligence / Coding / Agentic columns (default sort: intelligence
 descending) and matching range filters; context-window and creation-date filters; dedicated
-pricing output/input ($/1M) range filters; throughput columns exist but are empty pending a data
-source. See [`docs/todo.md`](docs/todo.md) §1.
+pricing and throughput columns/filters exist but model-level values are empty until we aggregate
+from per-provider OpenRouter endpoints (already stored in SQLite). See [`docs/todo.md`](docs/todo.md) §1.
 
 ## Technical Overview
 
 **Current pipeline:**
 
 1. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
-2. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
+2. For each catalog model, fetch per-provider endpoints (pricing + throughput/latency).
+3. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
    Hugging Face Hub (when OpenRouter provides a `hugging_face_id`).
-3. Drop OpenRouter models whose provider id starts with `~`, then map each remaining model into a
-   `CombinedModel` (embedded AA indices become `benchmark_or_*`).
-4. Populate an SQLite database with the model data.
-5. Expose the data via a REST API back-end.
-6. Create a Next.js front-end to retrieve the data and display it in
+4. Drop OpenRouter models whose provider id starts with `~`, then map each remaining model into a
+   `CombinedModel` (embedded AA indices become `benchmark_or_*`; list-level pricing/speed left null).
+5. Populate SQLite with `models` and `model_provider_endpoints`.
+6. Expose the data via a REST API back-end.
+7. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
 More detail: [backend/README.md](backend/README.md) (including [logging](backend/README.md#logging)),
@@ -82,7 +83,7 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
    ```
 
 2. Set the variables documented in [`.env.template`](.env.template):
-   - `OR_API_KEY` — OpenRouter API key for models, pricing, and embedded benchmarks
+   - `OR_API_KEY` — OpenRouter API key for models, per-provider endpoints, and embedded benchmarks
    - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
    - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
    - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`

@@ -47,6 +47,7 @@ class ORPricingOverride(ORBaseModel):
     min_prompt_tokens: float | None = None
     utc_start: float | None = None
     utc_end: float | None = None
+    utc_days: list[str] | None = None
     prompt: float | None = None
     completion: float | None = None
     audio: float | None = None

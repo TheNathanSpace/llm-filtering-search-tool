@@ -25,11 +25,11 @@ class CombinedModel(CombinedModelBase):
     input_modalities: list[InputModality]
     output_modalities: list[OutputModality]
 
+    # List-level OR pricing left null; per-provider prices live in ``model_provider_endpoints``.
     pricing_input: float | None = None
     pricing_output: float | None = None
 
-    # Throughput / latency: formerly from Artificial Analysis. Left null until an OpenRouter
-    # (or other) source is wired — e.g. endpoint `throughput_last_30m` / latency percentiles.
+    # Model-level speed left null until we aggregate from ``model_provider_endpoints``.
     speed_tokens_per_second: float | None = None
     speed_time_to_first_token: float | None = None
     speed_time_to_first_answer_token: float | None = None  # Accounts for reasoning

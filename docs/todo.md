@@ -29,15 +29,15 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Item | Requirement | Current gap |
 | --- | --- | --- |
 | Intelligence filter + column + default sort | [QRY-01](requirements.md#qry-01) | **Done** (columns, default sort, panel range filters for intelligence / coding / agentic). |
-| Price filter | [QRY-02](requirements.md#qry-02) | **Done** (output + input $/1M range filters in the panel). |
-| Throughput source + filter | [QRY-03](requirements.md#qry-03) | `speed_*` always null after AA removal. Wire an OpenRouter (or other) throughput source, then add a dedicated filter. |
+| Price filter | [QRY-02](requirements.md#qry-02) | Panel/columns done; model-level prices null until aggregated from provider endpoints ([SRC-10](requirements.md#src-10)). |
+| Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Source fetched:** per-provider rows in `model_provider_endpoints`. Still need model-level aggregation into `speed_*` + dedicated filter. |
 | Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
 | Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column). |
 | Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column). |
 | Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel substring search). |
 
-Related UX: always-visible range controls for shipped numeric filters (**done**). Throughput panel ranges wait on the source above.
+Related UX: always-visible range controls for shipped numeric filters (**done**). Throughput (and re-enabled price) panel ranges wait on model-level aggregation from provider endpoints.
 
 ### 2. Plots
 
@@ -57,6 +57,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
+- OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
 - Agent private-worktree lifecycle: `.cursor/worktrees.json` setup; feature-branch rule isolates edits, merges to primary `main` only with go-ahead, then deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
 - Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted

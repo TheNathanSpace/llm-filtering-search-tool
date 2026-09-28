@@ -8,6 +8,7 @@ from pydantic_sqlite._core import TableBaseModel
 
 from llm_rankings.clean_data import get_and_clean_data
 from llm_rankings.combined_models import CombinedModel
+from llm_rankings.provider_endpoints import ModelProviderEndpoint
 from llm_rankings.util import bootstrap_env_from_argv, get_data_dir, setup_logging
 
 logger = logging.getLogger(__name__)
@@ -57,18 +58,27 @@ def wipe_database():
 
 
 def populate_with_models():
-    models: list[CombinedModel] = get_and_clean_data()
+    models, provider_endpoints = get_and_clean_data()
     db: DataBase = initialize_database()
     logger.debug(f"Writing {len(models)} models to database")
     for model in models:
         model.add_to_database(db)
     logger.debug(f"Wrote {len(models)} models to database")
+    logger.debug(f"Writing {len(provider_endpoints)} provider endpoints to database")
+    for row in provider_endpoints:
+        row.add_to_database(db)
+    logger.debug(f"Wrote {len(provider_endpoints)} provider endpoints to database")
 
 
 def get_all_models() -> list[CombinedModel]:
     db: DataBase = initialize_database()
     models: list[CombinedModel] = list(db("models"))
     return models
+
+
+def get_all_provider_endpoints() -> list[ModelProviderEndpoint]:
+    db: DataBase = initialize_database()
+    return list(db("model_provider_endpoints"))
 
 
 if __name__ == "__main__":

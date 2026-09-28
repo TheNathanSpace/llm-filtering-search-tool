@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-28 — OpenRouter-only + intelligence UX  
-**Latest change:** Switched to OpenRouter-only ingest (dropped AA match/`AA_API_KEY`/unused `/benchmarks` dump); shipped Intelligence/Coding/Agentic columns, default sort, and range filters.
+**Last updated:** 2026-09-28 — Merged OpenRouter-only to main  
+**Latest change:** Locally merged `feature/openrouter-only` into `main` (OR-only ingest, intelligence columns/filters, dropped unused `/benchmarks` dump).
 
 ## Pickup
 

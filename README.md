@@ -54,7 +54,9 @@ from per-provider OpenRouter endpoints (already stored in SQLite). See [`docs/to
 1. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
 2. For each catalog model, fetch per-provider endpoints (pricing + throughput/latency).
 3. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
-   Hugging Face Hub (when OpenRouter provides a `hugging_face_id`).
+   Hugging Face Hub (when OpenRouter provides a `hugging_face_id`). Optionally gap-fill remaining
+   nulls for open-weights, size, and knowledge cutoff via OpenRouter chat + Exa web search
+   (`OR_WEB_ENRICHMENT=1`).
 4. Drop OpenRouter models whose provider id starts with `~`, then map each remaining model into a
    `CombinedModel` (embedded AA indices become `benchmark_or_*`; list-level pricing/speed left null).
 5. Populate SQLite with `models` and `model_provider_endpoints`.
@@ -84,6 +86,8 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
 
 2. Set the variables documented in [`.env.template`](.env.template):
    - `OR_API_KEY` — OpenRouter API key for models, per-provider endpoints, and embedded benchmarks
+   - `OR_WEB_ENRICHMENT` — optional; set to `1` to gap-fill missing open-weights / size / knowledge cutoff via chat + Exa
+   - `OR_ENRICHMENT_MODEL` — required when web enrichment is on (OpenRouter chat model id)
    - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
    - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
    - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`

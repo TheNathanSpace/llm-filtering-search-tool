@@ -14,6 +14,7 @@ from llm_rankings.util import (
     get_data_dir,
     setup_logging,
 )
+from llm_rankings.web_enrichment import enrich_combined_models
 
 logger = logging.getLogger(__name__)
 
@@ -70,10 +71,13 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         (model.hugging_face_id or "").strip() for model in kept if (model.hugging_face_id or "").strip()
     }
     parameters_b = parameters_b_for_repo_ids(hf_ids)
-    return [
+    combined = [
         openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b)
         for model in kept
     ]
+    # Opt-in OpenRouter chat + Exa gap-fill for missing open-weights / size.
+    enrich_combined_models(combined)
+    return combined
 
 
 def combine_provider_endpoints(

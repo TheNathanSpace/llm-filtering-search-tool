@@ -9,6 +9,10 @@ export type ClientOptions = {
  */
 export type CombinedModel = {
     /**
+     * Id
+     */
+    id: string;
+    /**
      * Name
      */
     name?: string;
@@ -28,10 +32,6 @@ export type CombinedModel = {
      * Url Openrouter
      */
     url_openrouter?: string | null;
-    /**
-     * Url Artificialanalysis
-     */
-    url_artificialanalysis?: string;
     /**
      * Knowledge Cutoff
      */
@@ -69,74 +69,6 @@ export type CombinedModel = {
      */
     speed_time_to_first_answer_token?: number | null;
     /**
-     * Benchmark Aa Artificial Analysis Intelligence Index
-     */
-    benchmark_aa_artificial_analysis_intelligence_index?: number | null;
-    /**
-     * Benchmark Aa Artificial Analysis Coding Index
-     */
-    benchmark_aa_artificial_analysis_coding_index?: number | null;
-    /**
-     * Benchmark Aa Artificial Analysis Math Index
-     */
-    benchmark_aa_artificial_analysis_math_index?: number | null;
-    /**
-     * Benchmark Aa Mmlu Pro
-     */
-    benchmark_aa_mmlu_pro?: number | null;
-    /**
-     * Benchmark Aa Gpqa
-     */
-    benchmark_aa_gpqa?: number | null;
-    /**
-     * Benchmark Aa Hle
-     */
-    benchmark_aa_hle?: number | null;
-    /**
-     * Benchmark Aa Livecodebench
-     */
-    benchmark_aa_livecodebench?: number | null;
-    /**
-     * Benchmark Aa Scicode
-     */
-    benchmark_aa_scicode?: number | null;
-    /**
-     * Benchmark Aa Math 500
-     */
-    benchmark_aa_math_500?: number | null;
-    /**
-     * Benchmark Aa Aime
-     */
-    benchmark_aa_aime?: number | null;
-    /**
-     * Benchmark Aa Aime 25
-     */
-    benchmark_aa_aime_25?: number | null;
-    /**
-     * Benchmark Aa Ifbench
-     */
-    benchmark_aa_ifbench?: number | null;
-    /**
-     * Benchmark Aa Lcr
-     */
-    benchmark_aa_lcr?: number | null;
-    /**
-     * Benchmark Aa Terminalbench Hard
-     */
-    benchmark_aa_terminalbench_hard?: number | null;
-    /**
-     * Benchmark Aa Tau2
-     */
-    benchmark_aa_tau2?: number | null;
-    /**
-     * Benchmark Aa Tau Banking
-     */
-    benchmark_aa_tau_banking?: number | null;
-    /**
-     * Benchmark Aa Terminalbench V2 1
-     */
-    benchmark_aa_terminalbench_v2_1?: number | null;
-    /**
      * Benchmark Or Intelligence Index
      */
     benchmark_or_intelligence_index?: number | null;
@@ -155,28 +87,20 @@ export type CombinedModel = {
  *
  * OpenAPI `InputModality`.
  */
-export type InputModality = "text" | "image" | "file" | "audio" | "video";
+export type InputModality = 'text' | 'image' | 'file' | 'audio' | 'video';
 
 /**
  * OutputModality
  *
  * OpenAPI `OutputModality`.
  */
-export type OutputModality =
-    | "text"
-    | "image"
-    | "embeddings"
-    | "audio"
-    | "video"
-    | "rerank"
-    | "speech"
-    | "transcription";
+export type OutputModality = 'text' | 'image' | 'embeddings' | 'audio' | 'video' | 'rerank' | 'speech' | 'transcription';
 
 export type HealthCheckHealthGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: "/health";
+    url: '/health';
 };
 
 export type HealthCheckHealthGetResponses = {
@@ -190,7 +114,7 @@ export type RefreshDataRefreshPostData = {
     body?: never;
     path?: never;
     query?: never;
-    url: "/refresh";
+    url: '/refresh';
 };
 
 export type RefreshDataRefreshPostResponses = {
@@ -204,7 +128,7 @@ export type GetModelsModelsGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: "/models";
+    url: '/models';
 };
 
 export type GetModelsModelsGetResponses = {
@@ -216,5 +140,4 @@ export type GetModelsModelsGetResponses = {
     200: Array<CombinedModel>;
 };
 
-export type GetModelsModelsGetResponse =
-    GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];
+export type GetModelsModelsGetResponse = GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];

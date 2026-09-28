@@ -31,8 +31,18 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
                     <DataGrid
                         rows={filteredModels}
                         columns={columns}
-                        getRowId={(row) => row.name}
+                        getRowId={(row) => row.id}
                         autoHeight={false}
+                        initialState={{
+                            sorting: {
+                                sortModel: [
+                                    {
+                                        field: "benchmark_or_intelligence_index",
+                                        sort: "desc",
+                                    },
+                                ],
+                            },
+                        }}
                         slots={{
                             noRowsOverlay: noRowsOverlay,
                             noResultsOverlay: noRowsOverlay,

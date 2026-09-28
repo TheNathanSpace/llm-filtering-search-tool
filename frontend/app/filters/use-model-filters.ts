@@ -19,6 +19,9 @@ function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
     return {
         includeMissing: filters.includeMissing,
         creators: filters.creators,
+        intelligenceIndex: filters.intelligenceIndex,
+        codingIndex: filters.codingIndex,
+        agenticIndex: filters.agenticIndex,
         creationDate: filters.creationDate,
         knowledgeCutoff: filters.knowledgeCutoff,
         contextLength: filters.contextLength,

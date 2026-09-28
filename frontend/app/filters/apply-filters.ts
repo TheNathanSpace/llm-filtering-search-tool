@@ -59,6 +59,33 @@ export function filterModels(
         }
         if (
             !passesRange(
+                model.benchmark_or_intelligence_index,
+                filters.intelligenceIndex,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.benchmark_or_coding_index,
+                filters.codingIndex,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.benchmark_or_agentic_index,
+                filters.agenticIndex,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
                 model.created,
                 filters.creationDate,
                 filters.includeMissing,

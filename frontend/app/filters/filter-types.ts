@@ -5,6 +5,9 @@ export type NumberRange = [number, number];
 export type ModelFiltersState = {
     includeMissing: boolean;
     creators: string[];
+    intelligenceIndex: NumberRange | undefined;
+    codingIndex: NumberRange | undefined;
+    agenticIndex: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -16,6 +19,9 @@ export type ModelFiltersState = {
 export type UserFilterChoices = {
     includeMissing: boolean;
     creators: string[];
+    intelligenceIndex: NumberRange | undefined;
+    codingIndex: NumberRange | undefined;
+    agenticIndex: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -25,6 +31,9 @@ export type UserFilterChoices = {
 
 export type FilterBounds = {
     creators: string[];
+    intelligenceIndex: NumberRange | undefined;
+    codingIndex: NumberRange | undefined;
+    agenticIndex: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -34,12 +43,25 @@ export function createInitialUserChoices(): UserFilterChoices {
     return {
         includeMissing: true,
         creators: [],
+        intelligenceIndex: undefined,
+        codingIndex: undefined,
+        agenticIndex: undefined,
         creationDate: undefined,
         knowledgeCutoff: undefined,
         contextLength: undefined,
         inputModalities: [],
         outputModalities: [],
     };
+}
+
+function resolveRange(
+    choice: NumberRange | undefined,
+    bounds: NumberRange | undefined,
+): NumberRange | undefined {
+    if (!bounds) {
+        return undefined;
+    }
+    return choice ?? [bounds[0], bounds[1]];
 }
 
 export function resolveFilters(
@@ -49,24 +71,21 @@ export function resolveFilters(
     return {
         includeMissing: choices.includeMissing,
         creators: choices.creators,
-        creationDate: bounds.creationDate
-            ? (choices.creationDate ?? [
-                  bounds.creationDate[0],
-                  bounds.creationDate[1],
-              ])
-            : undefined,
-        knowledgeCutoff: bounds.knowledgeCutoff
-            ? (choices.knowledgeCutoff ?? [
-                  bounds.knowledgeCutoff[0],
-                  bounds.knowledgeCutoff[1],
-              ])
-            : undefined,
-        contextLength: bounds.contextLength
-            ? (choices.contextLength ?? [
-                  bounds.contextLength[0],
-                  bounds.contextLength[1],
-              ])
-            : undefined,
+        intelligenceIndex: resolveRange(
+            choices.intelligenceIndex,
+            bounds.intelligenceIndex,
+        ),
+        codingIndex: resolveRange(choices.codingIndex, bounds.codingIndex),
+        agenticIndex: resolveRange(choices.agenticIndex, bounds.agenticIndex),
+        creationDate: resolveRange(choices.creationDate, bounds.creationDate),
+        knowledgeCutoff: resolveRange(
+            choices.knowledgeCutoff,
+            bounds.knowledgeCutoff,
+        ),
+        contextLength: resolveRange(
+            choices.contextLength,
+            bounds.contextLength,
+        ),
         inputModalities: choices.inputModalities,
         outputModalities: choices.outputModalities,
     };

@@ -41,6 +41,48 @@ export default function ModelFilters(
                         label="Treat entries with missing values as included in filters"
                     />
                 </FormGroup>
+                {bounds.intelligenceIndex && (
+                    <NumberRangeFilter
+                        name="Intelligence"
+                        minValue={bounds.intelligenceIndex[0]}
+                        maxValue={bounds.intelligenceIndex[1]}
+                        step={0.1}
+                        onChange={(intelligenceIndex) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                intelligenceIndex,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.codingIndex && (
+                    <NumberRangeFilter
+                        name="Coding"
+                        minValue={bounds.codingIndex[0]}
+                        maxValue={bounds.codingIndex[1]}
+                        step={0.1}
+                        onChange={(codingIndex) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                codingIndex,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.agenticIndex && (
+                    <NumberRangeFilter
+                        name="Agentic"
+                        minValue={bounds.agenticIndex[0]}
+                        maxValue={bounds.agenticIndex[1]}
+                        step={0.1}
+                        onChange={(agenticIndex) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                agenticIndex,
+                            }));
+                        }}
+                    />
+                )}
                 <MultiSelectFilter
                     name="Creators"
                     label="Pick creators"

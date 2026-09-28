@@ -1,6 +1,7 @@
 import { GridColDef } from "@mui/x-data-grid";
 import {
     formatCommaSeparatedList,
+    formatNumber,
     formatPrice,
     formatTimestamp,
 } from "@/app/utility";
@@ -10,6 +11,30 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 export const columns: GridColDef[] = [
     { field: "name", headerName: "Name", width: 200 },
     { field: "creator", headerName: "Creator", width: 150 },
+    {
+        field: "benchmark_or_intelligence_index",
+        headerName: "Intelligence",
+        description: "Artificial Analysis Intelligence Index (via OpenRouter)",
+        type: "number",
+        width: 120,
+        valueFormatter: formatNumber,
+    },
+    {
+        field: "benchmark_or_coding_index",
+        headerName: "Coding",
+        description: "Artificial Analysis Coding Index (via OpenRouter)",
+        type: "number",
+        width: 100,
+        valueFormatter: formatNumber,
+    },
+    {
+        field: "benchmark_or_agentic_index",
+        headerName: "Agentic",
+        description: "Artificial Analysis Agentic Index (via OpenRouter)",
+        type: "number",
+        width: 100,
+        valueFormatter: formatNumber,
+    },
     { field: "description", headerName: "Description", width: 300 },
     {
         field: "created",
@@ -34,23 +59,6 @@ export const columns: GridColDef[] = [
                     rel="noopener noreferrer"
                 >
                     openrouter.ai <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
-                </Link>
-            );
-        },
-    },
-    {
-        field: "url_artificialanalysis",
-        headerName: "Artificial Analysis URL",
-        width: 200,
-        renderCell: (parameters) => {
-            const value = parameters.value;
-            if (!value) {
-                return value;
-            }
-            return (
-                <Link href={value} target="_blank" rel="noopener noreferrer">
-                    artificialanalysis.ai
-                    <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
                 </Link>
             );
         },

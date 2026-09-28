@@ -14,9 +14,9 @@ Resolve these before large data-model refactors. Record the choice here when mad
 
 | ID | Decision | Options / notes |
 | --- | --- | --- |
-| D-01 | Primary data source | **Today:** Artificial Analysis + OpenRouter matched into `CombinedModel`. **Lean:** OpenRouter-only (see root scratch notes historically). If OR-only, drop AA fetch/match/`AA_API_KEY` and AA-prefixed fields. |
-| D-02 | Benchmark set for “intelligence” UX | Need one focused score (or small set) each for: **general intelligence**, **agentic tasks**, **reasoning**, **coding**. Candidates already on models: `benchmark_or_intelligence_index`, `benchmark_or_coding_index`, `benchmark_or_agentic_index`, plus many `benchmark_aa_*`. Prefer OR indices if D-01 is OR-first. |
-| D-03 | OpenRouter `GET /benchmarks` | **Today:** fetched and written to `DATA_DIR/intermediate/raw/benchmarks.json`, **not** joined into SQLite/UI. Either wire it into the combine pipeline (and Pydantic models for that payload) or stop fetching it. Model-embedded `OpenRouterModel.benchmarks` is already parsed. |
+| D-01 | Primary data source | **Decided: OpenRouter-only.** Artificial Analysis fetch/match/`AA_API_KEY`/`benchmark_aa_*` removed. |
+| D-02 | Benchmark set for “intelligence” UX | **Decided:** use OpenRouter-embedded AA indices: `benchmark_or_intelligence_index`, `benchmark_or_coding_index`, `benchmark_or_agentic_index` (general / coding / agentic). No dedicated “reasoning” index on OR yet — treat intelligence as the general proxy unless a later source appears. |
+| D-03 | OpenRouter `GET /benchmarks` | **Decided: do not fetch.** Unused raw dump removed. Intelligence scores come from embedded `OpenRouterModel.benchmarks.artificial_analysis` only. |
 
 ---
 
@@ -28,22 +28,22 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 
 | Item | Requirement | Current gap |
 | --- | --- | --- |
-| Intelligence filter + column + default sort | [QRY-01](requirements.md#qry-01) | Scores exist on API (`benchmark_or_*` / `benchmark_aa_*`); **not** in Data Grid or filter panel. Blocked on **D-02** (which field(s)). |
+| Intelligence filter + column + default sort | [QRY-01](requirements.md#qry-01) | **Done** (columns, default sort, panel range filters for intelligence / coding / agentic). |
 | Price filter | [QRY-02](requirements.md#qry-02) | `pricing_input` / `pricing_output` columns exist; **no** dedicated min/max filter (grid column filters only). |
-| Throughput filter | [QRY-03](requirements.md#qry-03) | `speed_tokens_per_second` column exists; **no** dedicated filter. |
+| Throughput source + filter | [QRY-03](requirements.md#qry-03) | `speed_*` always null after AA removal. Wire an OpenRouter (or other) throughput source, then add a dedicated filter. |
 | Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
 
 Related UX: always-visible range controls for price (and other numeric filters) rather than relying on Data Grid column menus alone.
 
-### 2. Benchmarks data path (AA replacement / OR expansion)
+### 2. Benchmarks data path
 
-Depends on **D-01**–**D-03**. Consolidated former root `todo.md` items:
+D-01–D-03 decided. Remaining stretch only if we later want Design Arena or OR-native evals from
+`GET /benchmarks` (currently not fetched).
 
-1. If keeping/enriching OpenRouter benchmarks: model and ingest whatever **D-03** chooses (`GET /benchmarks` and/or expand use of embedded `benchmarks`).
-2. Map **D-02** choices onto `CombinedModel` fields exposed to the UI.
-3. If **D-01** is OpenRouter-only: remove AA retrieve/match/models, `benchmark_aa_*`, Artificial Analysis URLs/columns, and `AA_API_KEY` from config/docs.
-4. If keeping AA temporarily: treat AA scores as backup only; do not block intelligence UX on AA-only fields.
+1. ~~Map D-02 onto UI~~ — **done** (`benchmark_or_*` columns + filters).
+2. ~~OpenRouter-only AA removal~~ — **done**.
+3. ~~Drop unused `GET /benchmarks` raw dump~~ — **done**.
 
 ### 3. Plots
 
@@ -56,12 +56,14 @@ Depends on **D-01**–**D-03**. Consolidated former root `todo.md` items:
 | Item | Notes |
 | --- | --- |
 | Keep this backlog authoritative | Delete or redirect stray todo lists when found. |
-| Refresh `api-docs/` when implementing against upstream APIs | `./bin/update-external-api-docs.sh` |
+| Refresh `api-docs/` when implementing against upstream APIs | `./bin/update-external-api-docs.sh` (OpenRouter only) |
 
 ---
 
 ## Done (recently consolidated away)
 
+- Dropped unused OpenRouter `GET /benchmarks` raw dump (D-03)
+- OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
 - External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)
 - Docker compose aligned with app ports/healthcheck
 - Agent guidance moved to `.cursor/rules/` (root `AGENTS.md` is a pointer)

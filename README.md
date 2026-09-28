@@ -5,9 +5,8 @@ The goal is to consolidate multidimensional LLM metrics and benchmarks into a se
 ## Motivation
 
 What are the things I value in a completion large language model? Do I care about intelligence, price, or throughput?
-You can try to compare these things on the [OpenRouter Rankings page](https://openrouter.ai/rankings), or
-the [Artificial Analysis models page](https://artificialanalysis.ai/models), but neither of those tools really let you
-expand your search beyond the few models you can see on the page.
+You can try to compare these things on the [OpenRouter Rankings page](https://openrouter.ai/rankings),
+but that tool does not really let you expand your search beyond the few models you can see on the page.
 
 The goal of this project is to:
 
@@ -16,7 +15,7 @@ The goal of this project is to:
 3. Generate some nice plots based on the user's specifications.
 
 Product requirements and status for those goals: [`docs/requirements.md`](docs/requirements.md).
-Engineering backlog (including intelligence filters and possible AA → OpenRouter-only work):
+Engineering backlog (including intelligence filters and throughput source work):
 [`docs/todo.md`](docs/todo.md).
 
 And, the intent is, given these tools, it will be easier for you to decide which LLM is best for your specific
@@ -43,21 +42,20 @@ models by these more complex metrics. In my ideal world, I would be able to set 
 
 And then I could sort from highest to lowest intelligence, probably choosing the highest-ranked one!
 
-Today the table ships with context-window and creation-date filters; price and throughput appear as columns
-without dedicated filters; intelligence scores are on the API model but not yet in the UI. See
+Today the table ships with Intelligence / Coding / Agentic columns (default sort: intelligence
+descending) and matching range filters; context-window and creation-date filters; price as a column
+without a dedicated filter; throughput columns exist but are empty pending a data source. See
 [`docs/todo.md`](docs/todo.md) §1.
 
 ## Technical Overview
 
 **Current pipeline:**
 
-1. Download model data from the [Artificial Analysis API](https://artificialanalysis.ai/api-reference#models-endpoint).
-2. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
-3. Download every published benchmark row from [OpenRouter `GET /benchmarks`](https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks) (written to `DATA_DIR/intermediate/raw/benchmarks.json`; not yet joined into SQLite — [D-03](docs/todo.md#open-decisions)).
-4. Pair Artificial Analysis and OpenRouter models (may move to OpenRouter-only — [D-01](docs/todo.md#open-decisions)).
-5. Populate an SQLite database with the model data.
-6. Expose the data via a REST API back-end.
-7. Create a Next.js front-end to retrieve the data and display it in
+1. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
+2. Map each OpenRouter model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
+3. Populate an SQLite database with the model data.
+4. Expose the data via a REST API back-end.
+5. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
 More detail: [backend/README.md](backend/README.md) (including [logging](backend/README.md#logging)),
@@ -70,7 +68,7 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
 
 - Python 3.12+
 - Node.js and npm (recent LTS recommended)
-- Artificial Analysis and OpenRouter API keys (see [Configuration](#configuration))
+- OpenRouter API key (see [Configuration](#configuration))
 
 ## Configuration
 
@@ -81,8 +79,7 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
    ```
 
 2. Set the variables documented in [`.env.template`](.env.template):
-   - `AA_API_KEY` — Artificial Analysis API key for benchmark data
-   - `OR_API_KEY` — OpenRouter API key for model/pricing metadata
+   - `OR_API_KEY` — OpenRouter API key for models, pricing, and embedded benchmarks
    - `DATA_DIR` — path for SQLite DB, logs, and related files (default `./data`, relative to the `.env` location)
    - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
      (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
@@ -176,8 +173,8 @@ Then open the UI at `http://localhost:<FRONTEND_PORT>` (default
 ### Seed or refresh model data
 
 `DATA_DIR` is gitignored, so a fresh clone has no database until it is populated. On API startup, if
-`DATA_DIR/database.db` is missing, the back-end automatically fetches from Artificial Analysis and OpenRouter and
-writes SQLite (requires `.env` API keys).
+`DATA_DIR/database.db` is missing, the back-end automatically fetches from OpenRouter and
+writes SQLite (requires `.env` with `OR_API_KEY`).
 
 To force a refresh while the API is running:
 
@@ -191,8 +188,7 @@ Or, with the virtualenv activated and without starting the server:
 python -m llm_rankings.database
 ```
 
-Both of those wipe `DATA_DIR/database.db` (if present), fetch from both APIs (including OpenRouter
-`GET /benchmarks` → `DATA_DIR/intermediate/raw/benchmarks.json`), match models, and write SQLite.
+Both of those wipe `DATA_DIR/database.db` (if present), fetch from OpenRouter, and write SQLite.
 
 ### Regenerate the front-end API client
 
@@ -207,8 +203,8 @@ runs `@hey-api/openapi-ts` into `frontend/app/client/`.
 
 ### Refresh external API OpenAPI specs
 
-Vendored OpenRouter and Artificial Analysis OpenAPI files under [`api-docs/`](api-docs/) are for
-implementation reference only (not used at runtime). Refresh them with:
+Vendored OpenRouter OpenAPI under [`api-docs/`](api-docs/) is for implementation reference only
+(not used at runtime). Refresh it with:
 
 ```bash
 ./bin/update-external-api-docs.sh

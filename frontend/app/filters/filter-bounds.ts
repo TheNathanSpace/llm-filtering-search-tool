@@ -48,9 +48,21 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
     const [minContextLength, maxContextLength] = getMinMax(
         models.map((model) => model.context_length),
     );
+    const [minIntelligence, maxIntelligence] = getMinMax(
+        models.map((model) => model.benchmark_or_intelligence_index),
+    );
+    const [minCoding, maxCoding] = getMinMax(
+        models.map((model) => model.benchmark_or_coding_index),
+    );
+    const [minAgentic, maxAgentic] = getMinMax(
+        models.map((model) => model.benchmark_or_agentic_index),
+    );
 
     return {
         creators: getUniqueCreators(models),
+        intelligenceIndex: toRange(minIntelligence, maxIntelligence),
+        codingIndex: toRange(minCoding, maxCoding),
+        agenticIndex: toRange(minAgentic, maxAgentic),
         creationDate: toRange(minCreationDate, maxCreationDate),
         knowledgeCutoff: toRange(minKnowledgeCutoff, maxKnowledgeCutoff),
         contextLength: toRange(minContextLength, maxContextLength),

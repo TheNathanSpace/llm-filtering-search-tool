@@ -13,7 +13,7 @@ using `DATA_DIR` and `LOG_LEVEL` from the repo-root `.env`. Lines are skipped un
 exists (start the API first, or restart the front-end after the API). Browser/client logs are not
 written to the file.
 
-Filter backlog (price, throughput, intelligence, always-visible ranges): [`docs/todo.md`](../docs/todo.md).
+Filter backlog (price, throughput, always-visible ranges): [`docs/todo.md`](../docs/todo.md).
 
 ## Model filters
 

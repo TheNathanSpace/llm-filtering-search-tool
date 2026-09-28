@@ -6,7 +6,6 @@ updating fetch/parse logic in this project. They are **not** loaded at runtime.
 | File | Upstream | Format |
 | --- | --- | --- |
 | [`openapi-openrouter.json`](openapi-openrouter.json) | https://openrouter.ai/openapi.json | JSON |
-| [`openapi-artificialanalysis.yaml`](openapi-artificialanalysis.yaml) | https://artificialanalysis.ai/api/v2/openapi | YAML |
 
 ## Refresh
 

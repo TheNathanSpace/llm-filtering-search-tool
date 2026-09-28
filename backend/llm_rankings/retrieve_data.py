@@ -3,7 +3,6 @@ import logging
 
 import requests
 
-from llm_rankings.aa_models import ArtificialAnalysisAPIResponse
 from llm_rankings.or_models import OpenRouterAPIResponse
 from llm_rankings.util import (
     bootstrap_env_from_argv,
@@ -42,36 +41,6 @@ def validate_response(response: requests.Response):
         )
 
 
-def get_artificial_analysis_models(
-    aa_api_key: str, root: str = "https://artificialanalysis.ai/api/v2"
-) -> ArtificialAnalysisAPIResponse:
-    """
-    Retrieves LLM models from the Artificial Analysis API.
-
-    :param aa_api_key: The Artificial Analysis API key.
-    :param root: The root URL for the Artificial Analysis API.
-    :return: A dictionary containing the models data.
-    """
-    logger.debug("Retrieving models from Artificial Analysis")
-    endpoint = "/data/llms/models"
-    url = form_endpoint(root, endpoint)
-
-    headers = {"x-api-key": aa_api_key}
-    response = requests.get(url, headers=headers)
-    validate_response(response)
-    response_json = response.json()
-    try:
-        model = ArtificialAnalysisAPIResponse.model_validate(response.json())
-    except Exception:
-        logger.error(f"Failed to validate ArtificialAnalysis response: {response_json}")
-        raw = get_raw_data_dir() / "aa_response.json"
-        logger.debug(f"Writing raw response to {raw.as_posix()}")
-        raw.write_text(json.dumps(response_json, indent=4))
-        exit(-1)
-
-    return model
-
-
 def get_openrouter_models(
     or_api_key: str, root: str = "https://openrouter.ai/api/v1"
 ) -> OpenRouterAPIResponse:
@@ -101,63 +70,27 @@ def get_openrouter_models(
     return model
 
 
-def get_openrouter_benchmarks(or_api_key: str, root: str = "https://openrouter.ai/api/v1") -> dict:
-    """
-    Retrieves every published benchmark row from OpenRouter's unified benchmarks API.
-
-    Omits ``source`` and ``max_results`` so the response includes all sources and all
-    matching results (Artificial Analysis, Design Arena, and OpenRouter evals).
-
-    :param or_api_key: The OpenRouter API key.
-    :param root: The root URL for the OpenRouter API.
-    :return: The decoded JSON response body.
-    """
-    # https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks
-    logger.debug("Retrieving benchmarks from OpenRouter")
-    endpoint = "/benchmarks"
-    url = form_endpoint(root, endpoint)
-
-    headers = {"Authorization": f"Bearer {or_api_key}"}
-    response = requests.get(url, headers=headers)
-    validate_response(response)
-    return response.json()
-
-
-def write_models_data(or_models: OpenRouterAPIResponse, aa_models: ArtificialAnalysisAPIResponse):
+def write_models_data(or_models: OpenRouterAPIResponse):
     logger.debug("Writing raw model data to files")
     raw = get_raw_data_dir()
     (raw / "raw_or_models.json").write_text(json.dumps(or_models.model_dump(), indent=4))
-    (raw / "raw_aa_models.json").write_text(json.dumps(aa_models.model_dump(), indent=4))
 
 
-def write_benchmarks_data(benchmarks: dict):
-    logger.debug("Writing raw OpenRouter benchmarks to file")
-    raw = get_raw_data_dir()
-    (raw / "benchmarks.json").write_text(json.dumps(benchmarks, indent=4))
-
-
-def get_all_model_data() -> tuple[OpenRouterAPIResponse, ArtificialAnalysisAPIResponse]:
+def get_all_model_data() -> OpenRouterAPIResponse:
     """
-    Retrieves LLM models from both Artificial Analysis and OpenRouter APIs.
+    Retrieves LLM models from OpenRouter.
 
-    :return: A tuple containing dictionaries with models data from OpenRouter and Artificial Analysis.
+    :return: Parsed OpenRouter models list response.
     """
     validate_env_vars()
 
-    aa_api_key = get_env_var("AA_API_KEY")
     or_api_key = get_env_var("OR_API_KEY")
-
     or_models: OpenRouterAPIResponse = get_openrouter_models(or_api_key)
-    aa_models: ArtificialAnalysisAPIResponse = get_artificial_analysis_models(aa_api_key)
-    or_benchmarks = get_openrouter_benchmarks(or_api_key)
-
-    write_models_data(or_models, aa_models)
-    write_benchmarks_data(or_benchmarks)
-
-    return or_models, aa_models
+    write_models_data(or_models)
+    return or_models
 
 
 if __name__ == "__main__":
     bootstrap_env_from_argv()
     setup_logging()
-    or_models, aa_models = get_all_model_data()
+    get_all_model_data()

@@ -1,4 +1,4 @@
-# ---- Stage 1: Build Next.js front-end ----
+# ---- Front-end: production build ----
 FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app/frontend
@@ -11,7 +11,24 @@ COPY frontend/ ./
 RUN npm run build
 
 
-# ---- Stage 2: Install llm-rankings from pyproject.toml ----
+# ---- Front-end: Compose `dev` profile (hot reload) ----
+FROM node:20-alpine AS frontend-dev
+
+WORKDIR /app/frontend
+
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Source is bind-mounted at runtime; node_modules is kept via a named volume.
+ENV HOSTNAME=0.0.0.0
+ENV FRONTEND_PORT=3030
+
+EXPOSE 3030
+
+CMD ["sh", "-c", "exec npx next dev -H 0.0.0.0 -p \"${FRONTEND_PORT:-3030}\""]
+
+
+# ---- Back-end: install for production image ----
 FROM python:3.12-slim AS backend-builder
 
 WORKDIR /build
@@ -20,7 +37,28 @@ COPY backend/ ./backend/
 RUN pip install --no-cache-dir --prefix=/install ./backend
 
 
-# ---- Stage 3: Final runtime image ----
+# ---- Back-end: Compose `dev` profile (uvicorn --reload) ----
+FROM python:3.12-slim AS backend-dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY backend/ ./backend/
+RUN pip install --no-cache-dir -e ./backend
+
+ENV BACKEND_HOST=0.0.0.0
+ENV BACKEND_PORT=8000
+ENV WATCHFILES_FORCE_POLLING=true
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "exec uvicorn llm_rankings.api:app --reload --reload-dir /app/backend --host \"${BACKEND_HOST:-0.0.0.0}\" --port \"${BACKEND_PORT:-8000}\" --env-file /app/.env"]
+
+
+# ---- Production runtime: API + Next via supervisord ----
 FROM python:3.12-slim
 
 # Install supervisord and Node.js runtime

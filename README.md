@@ -72,9 +72,10 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
 
 ## Prerequisites
 
-- Python 3.12+
-- Node.js and npm (recent LTS recommended)
+- Docker Engine with Compose v2
 - OpenRouter API key (see [Configuration](#configuration))
+
+Optional (lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and Node.js/npm.
 
 ## Configuration
 
@@ -94,96 +95,73 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
      (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
    - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on
      startup; `latest.log` symlink is excluded)
-   - `BACKEND_HOST` — FastAPI listen address (default `127.0.0.1`; use `0.0.0.0` to expose the API externally)
+   - `BACKEND_HOST` — FastAPI listen address for host tooling (default `127.0.0.1`); Compose overrides this inside containers
    - `BACKEND_PORT` — FastAPI listen port (default `8000`)
    - `FRONTEND_PORT` — Next.js listen port (default `3030`)
+   - `COMPOSE_PROFILES` — Compose stack to start: `prod` (default) or `dev` (hot reload)
 
-`.env` is gitignored. The back-end loads it via `python-dotenv` (discovered from the working
-directory, or an explicit path via `--env-file` / `-e` or `LLM_RANKINGS_ENV_FILE`) and binds
-uvicorn to `BACKEND_HOST`:`BACKEND_PORT`.
-The front-end listens on `FRONTEND_PORT`. The browser calls `/api/*` on the front-end; `frontend/proxy.ts`
-rewrites those requests at runtime to `http://<BACKEND_HOST>:<BACKEND_PORT>` (mapping `0.0.0.0` →
-`127.0.0.1` so Next.js can reach a bind-all server on loopback). Host and port are read from the process
-environment when each request is proxied, so they can change at container/app start without rebuilding.
-In Docker, the image installs the back-end from `backend/pyproject.toml` (non-editable; no `[dev]` extras).
-Supervisord starts both processes using the same variables: uvicorn runs `llm_rankings.api:app` bound to
-`BACKEND_HOST`:`BACKEND_PORT` (image defaults `0.0.0.0` / `8000`), and Next.js listens on `FRONTEND_PORT`
-(default `3030`). Override with `-e FRONTEND_PORT=...` / `-e BACKEND_HOST=...` / `-e BACKEND_PORT=...`.
-The image `EXPOSE 3030` is build-time metadata for that default only — it does not change when you override
-`FRONTEND_PORT`. Publish with `-p host:container` where the container port matches the runtime listen port
-(e.g. `-p 3030:3030`, or `-e FRONTEND_PORT=4000 -p 4000:4000`).
+`.env` is gitignored. Compose loads it via `env_file` and mounts it at `/app/.env`. The back-end also
+reads it via `python-dotenv` (or `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`). The browser calls
+`/api/*` on the front-end; `frontend/proxy.ts` rewrites those requests at runtime to
+`http://<BACKEND_HOST>:<BACKEND_PORT>` (mapping `0.0.0.0` → `127.0.0.1` for same-container bind-all).
+Host and port are read when each request is proxied, so Compose `environment:` overrides apply without
+rebuilding.
 
-Compose (`docker compose up --build`) mounts `./data` and `./.env`, forces `BACKEND_HOST=0.0.0.0` so the API
-listens inside the container, publishes `${FRONTEND_PORT:-3030}`, and health-checks
+## Run (Docker Compose)
+
+Profiles are mutually exclusive — set exactly one of `prod` or `dev` via `COMPOSE_PROFILES` in `.env`
+(or prefix the command). Do not combine `COMPOSE_PROFILES=prod` with `--profile dev` (both stacks would
+start and fight over ports).
+
+### Production-like (default)
+
+Single image: FastAPI + Next.js standalone under supervisord. Mounts `./data` and `./.env`, forces
+`BACKEND_HOST=0.0.0.0`, publishes `${FRONTEND_PORT:-3030}`, and health-checks
 `http://127.0.0.1:${BACKEND_PORT:-8000}/health`.
+
+```bash
+docker compose up --build
+```
+
+Open the UI at `http://localhost:<FRONTEND_PORT>` (default
+[http://localhost:3030](http://localhost:3030)). With the default profile the API is only reached
+through the front-end `/api` proxy (not published on the host).
+
+### Development profile
+
+Separate `backend` and `frontend` services with bind mounts and hot reload (`uvicorn --reload`,
+`next dev`). The front-end proxies to the Compose service name `backend`.
+
+```bash
+COMPOSE_PROFILES=dev docker compose up --build
+```
+
+Or set `COMPOSE_PROFILES=dev` in `.env` and run `docker compose up --build`.
+
+UI: [http://localhost:3030](http://localhost:3030). API docs:
+[http://localhost:8000/docs](http://localhost:8000/docs) (backend port is published in `dev`).
 
 ## Development
 
 Parallel agent edits: use Cursor **`/worktree`** (or Agents Window New Worktree).
-New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + backend/frontend setup.
+New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + optional host tooling setup.
 Merge into primary `main` only with explicit go-ahead, then delete the worktree and branch —
 [`.cursor/rules/feature-branches.mdc`](.cursor/rules/feature-branches.mdc).
 
+### Host tooling (optional)
 
-### Install
-
-Set up the Python virtualenv and back-end package (creates `.venv` and installs `llm-rankings` editable with
-dev extras, including `pre-commit`):
+Needed for pre-commit hooks, regenerating the TypeScript API client, and agent worktrees — not for
+running the app:
 
 ```bash
 ./bin/setup-backend.sh
 source .venv/bin/activate
-```
-
-Install front-end dependencies:
-
-```bash
 ./bin/setup-frontend.sh
-```
-
-Install Git hooks and verify the tree passes lint (required for local development):
-
-```bash
 ./bin/run-precommit.sh
 ```
 
-That runs `pre-commit install` and `pre-commit run --all-files`. Hooks must stay installed so commits are checked
-automatically. Equivalent manual steps: `pip install pre-commit && pre-commit install && pre-commit run --all-files`.
-
-### Run
-
-Preferred (API on `BACKEND_HOST`:`BACKEND_PORT`, default `127.0.0.1:8000`; Next.js on
-`FRONTEND_PORT`, default `3030`):
-
-```bash
-./bin/start-full-stack-live.sh
-```
-
-Or start each side separately:
-
-```bash
-./bin/start-backend-live.sh
-./bin/start-frontend-live.sh
-```
-
-Pass a custom env file to the back-end with `--env-file` (or `-e`):
-
-```bash
-./bin/start-backend-live.sh --env-file /path/to/.env
-./bin/start-full-stack-live.sh --env-file /path/to/.env
-```
-
-With the virtualenv activated, you can also start the API manually (reads host/port from `.env`):
-
-- `python backend/llm_rankings/api.py`
-- `python backend/llm_rankings/api.py --env-file /path/to/.env`
-- `python -m llm_rankings.database --env-file /path/to/.env`
-- `uvicorn llm_rankings.api:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"`
-  (set `LLM_RANKINGS_ENV_FILE` when not using the default repo-root `.env`)
-
-Then open the UI at `http://localhost:<FRONTEND_PORT>` (default
-[http://localhost:3030](http://localhost:3030)). Interactive API docs are at
-`http://localhost:<BACKEND_PORT>/docs` (default [http://localhost:8000/docs](http://localhost:8000/docs)).
+`./bin/run-precommit.sh` runs `pre-commit install` and `pre-commit run --all-files`. Hooks must stay
+installed so commits are checked automatically.
 
 ### Seed or refresh model data
 
@@ -198,13 +176,17 @@ cached permanently per repo id (new ids still fetch on miss).
 To request a refresh while the API is running (skipped if still within the 24h window):
 
 ```bash
+# prod: API is in-container only — exec into the stack, or use the UI once models load
+docker compose exec llm-filtering curl -sS -X POST "http://127.0.0.1:${BACKEND_PORT:-8000}/refresh"
+
+# dev: backend port is published on the host
 curl -X POST "http://localhost:${BACKEND_PORT:-8000}/refresh"
 ```
 
 Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
 `GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).
 
-Or, with the virtualenv activated and without starting the server:
+Or, with the host virtualenv activated and without Compose:
 
 ```bash
 python -m llm_rankings.database
@@ -215,7 +197,8 @@ it; a skip leaves the DB untouched and returns/logs that data is already fresh.
 
 ### Regenerate the front-end API client
 
-After changing the FastAPI surface, regenerate OpenAPI and the TypeScript client:
+After changing the FastAPI surface, regenerate OpenAPI and the TypeScript client (requires host
+tooling setup above):
 
 ```bash
 ./bin/install-frontend-api-client.sh

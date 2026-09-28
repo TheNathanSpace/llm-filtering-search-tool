@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-28 — Page metadata footer  
-**Latest change:** Bottom-right Data table shows lifetime Exa enrichment spend and last refresh (local time, UTC on hover) via `GET /meta` ([UI-10](requirements.md#ui-10), [PLT-01](requirements.md#plt-01)).
+**Last updated:** 2026-09-28 — Docker Compose as default run path  
+**Latest change:** Dropped host `start-*-live.sh` scripts; README/default is Docker Compose with mutually exclusive `prod` (supervisord image) and `dev` (hot-reload backend + frontend) profiles ([PLT-02](requirements.md#plt-02), [PLT-06](requirements.md#plt-06)).
 
 ## Pickup
 
@@ -11,7 +11,7 @@
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; `GET /meta` for enrichment cost + last refresh |
 | Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-02](requirements.md#qry-02), [QRY-04](requirements.md#qry-04)–[QRY-13](requirements.md#qry-13) + [UI-04](requirements.md#ui-04)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-10](requirements.md#ui-10); price/throughput model columns empty pending aggregation ([todo §1](todo.md#1-core-filtersort-dimensions-readme-motivation)) |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
-| Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) |
+| Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) — Compose `prod`/`dev` profiles; host live-start scripts removed |
 | External + project OpenAPI tooling | [PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08) |
 | Requirements + backlog | [`requirements.md`](requirements.md), [`todo.md`](todo.md) |
 

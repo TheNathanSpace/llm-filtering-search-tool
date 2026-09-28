@@ -1,2 +1,11 @@
+.venv
+.git
+data
+tmp_tests
+**/__pycache__
+**/*.egg-info
+**/.pytest_cache
+**/.ruff_cache
 frontend/node_modules
 frontend/.next
+**/.DS_Store

@@ -76,11 +76,11 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="plt-01"></a>PLT-01 | REST API for health, model list, metadata, and data refresh (`GET /health`, `GET /models`, `GET /meta`, `POST /refresh`) | must | done — `/refresh` returns `{refreshed, skipped, last_refresh_at, message}` under the 24h hard cap ([SRC-11](#src-11)); `/meta` returns `{enrichment_cost_usd, last_refresh_at}` |
-| <a id="plt-02"></a>PLT-02 | Local full-stack and Docker Compose run paths documented in README | must | done |
+| <a id="plt-02"></a>PLT-02 | Docker Compose run paths documented in README (`prod` default, `dev` hot-reload profile) | must | done |
 | <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT` / `OR_ENRICHMENT_MODEL`, `DATA_DIR`, logging, host/ports) | must | done |
 | <a id="plt-04"></a>PLT-04 | **Logging** to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |
 | <a id="plt-05"></a>PLT-05 | Front-end **proxies** `/api/*` to the back-end using runtime `BACKEND_HOST` / `BACKEND_PORT` | must | done |
-| <a id="plt-06"></a>PLT-06 | **Docker** image runs API + Next via supervisord; Compose publishes the UI port and health-checks the API | must | done |
+| <a id="plt-06"></a>PLT-06 | **Docker** Compose: `prod` image runs API + Next via supervisord; `dev` profile runs separate reloadable backend/frontend services; UI port published; API health-checked | must | done |
 | <a id="plt-07"></a>PLT-07 | Regenerate this project's FastAPI OpenAPI → TypeScript client (`bin/install-frontend-api-client.sh`) | must | done |
 | <a id="plt-08"></a>PLT-08 | Vendor upstream OpenAPI specs under `api-docs/` and refresh via script | stretch | done |
 

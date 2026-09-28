@@ -68,6 +68,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 - Open weights + size: models.dev + Hugging Face enrichment, columns, filter panel (QRY-11/12, SRC-09, UI-09)
 - OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
 - External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)
+- Docker Compose is the app run path (`prod` default + `dev` hot-reload profile); removed host `start-*-live.sh` scripts
 - Docker compose aligned with app ports/healthcheck
 - Agent guidance lives in `.cursor/rules/` (no root `AGENTS.md`)
 - Context length + creation date filters

@@ -51,23 +51,25 @@ possible. Only add a new control component if the interaction pattern is new.
 
 No changes to `model-table.tsx` are needed for a new filter.
 
-## Installation
+## Running
 
-From the repo root:
+Use Docker Compose from the repo root (see the root [README](../README.md)):
 
 ```bash
-./bin/setup-frontend.sh
-./bin/start-frontend-live.sh
-```
+# production-like (default)
+docker compose up --build
 
-`./bin/start-frontend-live.sh` reads `FRONTEND_PORT` from the repo-root [`.env`](../.env.template)
-(default `3030`). From `frontend/`, `npm run dev -- -p <port>` also works if you pass the port yourself.
+# hot-reload frontend + backend
+COMPOSE_PROFILES=dev docker compose up --build
+```
 
 Open `http://localhost:<FRONTEND_PORT>` (default [http://localhost:3030](http://localhost:3030)).
 The browser calls same-origin `/api/*`; [`proxy.ts`](proxy.ts) rewrites those requests at runtime to
-`http://<BACKEND_HOST>:<BACKEND_PORT>` from the process environment / repo-root `.env` (defaults
-`127.0.0.1` / `8000`; a bind address of `0.0.0.0` is mapped to `127.0.0.1`). Changing host/port does not
-require rebuilding the front-end. For a full local stack, see the root [README](../README.md).
+`http://<BACKEND_HOST>:<BACKEND_PORT>`. Compose `dev` sets `BACKEND_HOST=backend` (service name);
+`0.0.0.0` is mapped to `127.0.0.1` for same-container bind-all. Host/port are read per request, so
+Compose overrides do not require rebuilding.
+
+Optional host `npm` install (lint / API client regen only): `../bin/setup-frontend.sh`.
 
 ### API Client
 

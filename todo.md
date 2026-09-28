@@ -1,8 +1,4 @@
-- Agentic tasks
-- General intelligence
-- Reasoning
+# Todos moved
 
-1. Add OpenRouter benchmarks to OR Pydantic model
-2. Choose benchmarks to focus on: one for each of agentic tasks, general intelligence, reasoning, and coding.
-3. Evaluate remaining useful AA attributes: speed, release date, creator, name, backup pricing... Actually, all of these are unnecessary? Better to just stick with OpenRouter?
-4. Tear out all AA stuff?
+The project backlog lives in **[`docs/todo.md`](docs/todo.md)**.  
+Requirements: [`docs/requirements.md`](docs/requirements.md). Pickup status: [`docs/status.md`](docs/status.md).

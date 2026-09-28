@@ -1,0 +1,41 @@
+---
+description: Git commit message format used in this repository.
+alwaysApply: true
+---
+
+# Commit messages
+
+Match existing git history. Prefer this over Conventional Commits (`feat:` / `fix:`) or untagged subjects.
+
+## Format
+
+```text
+[Category] Short summary
+```
+
+- One-line subject; **no commit body** unless detail is truly necessary.
+- Sentence case after the tag; concise phrase (roughly 30–60 characters typical).
+- Describe the change clearly; avoid filler like `tmp commit` or untagged subjects.
+
+## Categories
+
+| Tag | Use when |
+| --- | --- |
+| `[Feature]` | New capability or user-visible milestone |
+| `[Fix]` | Bugfix |
+| `[Refactor]` | Internal restructure without a new product feature |
+| `[Cleanup]` | Deps, accuracy tidy-ups, small display/docs/process hygiene |
+| `[Documentation]` | Doc-only changes (optional; `[Cleanup]` is also used for docs) |
+
+## Examples
+
+```text
+[Feature] Retrieve model data from the back-end, display in table
+[Refactor] Restructure filters layout and code organization
+[Cleanup] Bring docs up to higher accuracy
+[Fix] Fix Python/JS date conversion issues
+```
+
+## Also required
+
+Every commit must update `docs/status.md` (see `.cursor/rules/status.mdc`).

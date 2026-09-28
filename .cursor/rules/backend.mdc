@@ -1,0 +1,16 @@
+---
+description: Python back-end environment and how to run it.
+alwaysApply: true
+---
+
+# Back-end
+
+Linux Python project. A virtualenv already exists at `.venv`.
+
+Before any Python command (scripts, tests, `uvicorn`, `python -m llm_rankings.*`):
+
+```bash
+source .venv/bin/activate
+```
+
+Package live in `backend/llm_rankings/`. Prefer existing modules (`util`, models, database helpers) over one-off script logic.

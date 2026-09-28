@@ -19,6 +19,14 @@ request-error logs to `latest.log` (same `LOG_LEVEL` filter). Log lines include 
 
 ## API Details
 
+Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; see
+[`../api-docs/README.md`](../api-docs/README.md)):
+
+- OpenRouter: [`../api-docs/openapi-openrouter.json`](../api-docs/openapi-openrouter.json)
+  (from https://openrouter.ai/openapi.json)
+- Artificial Analysis: [`../api-docs/openapi-artificialanalysis.yaml`](../api-docs/openapi-artificialanalysis.yaml)
+  (from https://artificialanalysis.ai/api/v2/openapi)
+
 - Artificial Analysis:
   - API reference: <https://artificialanalysis.ai/api-reference#models-endpoint>
   - Key endpoint: `GET /data/llms/models`
@@ -28,9 +36,11 @@ request-error logs to `latest.log` (same `LOG_LEVEL` filter). Log lines include 
   - Key endpoints: `GET /models`, `GET /benchmarks`
     ([list benchmarks](https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks))
   - Authentication: `Authorization: Bearer <api-key>` header
-  - Response shapes: `llm_rankings/or_models.py` (aligned with root `openapi.json` `Model` /
-    `ModelsListResponse` schemas). Architecture `input_modalities` / `output_modalities` use the
-    `InputModality` / `OutputModality` enums.
+  - Response shapes: `llm_rankings/or_models.py` (aligned with OpenRouter Models API `Model` /
+    `ModelsListResponse` schemas in `api-docs/openapi-openrouter.json`). Architecture
+    `input_modalities` / `output_modalities` use the `InputModality` / `OutputModality` enums.
+  - This project's FastAPI OpenAPI export (for the front-end client) is written to
+    `DATA_DIR/openapi.json` by `bin/generate-openapi-docs.sh` (default `./data/openapi.json`).
   - `GET /benchmarks` is called with no `source` or `max_results` filter so every published row
     from all sources is returned. The raw JSON is written to
     `DATA_DIR/intermediate/raw/benchmarks.json` (rate-limited to 30 requests/minute per key and

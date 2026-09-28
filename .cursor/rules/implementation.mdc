@@ -1,0 +1,13 @@
+---
+description: Project coding standards and change philosophy.
+alwaysApply: true
+---
+
+# Implementation
+
+- Make small, targeted changes. Do not build for hypothetical future needs.
+- If something is unclear, ask before assuming.
+- Use Linux commands only (this repo is developed on Linux).
+- Put temporary tests in `tmp_tests/`. Create that directory when needed and remove it when finished.
+- Prefer clear object-oriented design and shared reusable modules. No spaghetti; do not overcomplicate.
+- Prefer a complete correct design now over incremental migration or backwards-compatibility shims.

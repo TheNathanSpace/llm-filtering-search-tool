@@ -1,7 +1,35 @@
-data
-*.egg-info
-**/__pycache__
-tmp/**
-*.tmp
+# Secrets and local environment
 .env
-.venv
+.venv/
+
+# Runtime data (SQLite, logs, OpenAPI export, intermediate fetch artifacts)
+data/
+
+# Python
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Temporary scratch (agent tests, misc)
+tmp/
+tmp_tests/
+*.tmp
+
+# IntelliJ / JetBrains
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Frontend build/deps are also covered by frontend/.gitignore; keep root-safe patterns
+frontend/node_modules/
+frontend/.next/
+frontend/out/

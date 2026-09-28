@@ -10,7 +10,7 @@ info:
 
     Use of the API requires attribution across all tiers. When you display or share API data, credit [Artificial Analysis](https://artificialanalysis.ai/) as the source. A visible byline or footer link is sufficient.
 
-    Use of the API is also subject to our [Terms of Use](https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf). For redistribution rights or bespoke contract terms, [contact the team](https://artificialanalysis.ai/data-api#contact).
+    Use of the API is also subject to our [Terms of Use](https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf) and [Data Platform Terms](https://artificialanalysiscdn.com/legal/ProDataPlatformTerms.pdf). For redistribution rights or bespoke contract terms, [contact the team](https://artificialanalysis.ai/data-api#contact).
 
     ## Authentication
 
@@ -73,7 +73,7 @@ info:
     - **Minor version bumps** indicate methodology changes within the same major version. These may include changes to contributing evaluations, task subsets, graders, scoring/normalization, weightings, anchors, or evaluation refreshes. Scores may or may not change.
     - **Patch version bumps** indicate lower-significance methodology changes of the same kinds — for example upgrading an evaluation's grader or dataset version. Scores may change. They are not reflected in `intelligence_index_version`, which reports major.minor only.
 
-    **Included in v4.1.1** (9 evaluations): GDPval-AA v2, τ³-Banking, Terminal-Bench v2.1, SciCode, AA-LCR, AA-Omniscience, HLE, GPQA Diamond, CritPt. Older versions are documented on the methodology page.
+    **Included in v4.3.2** (10 evaluations): AA-Briefcase v1.1, GDPval-AA v2.1, AutomationBench-AA (partial score), Terminal-Bench 4.0, SciCode, AA-LCR v1.1, AA-Omniscience, HLE, GDP.pdf, CritPt. Older versions are documented on the methodology page.
 
     `artificial_analysis_coding_index` and `artificial_analysis_agentic_index` are derived from subsets of these evaluations and are not separately versioned.
 servers:
@@ -97,7 +97,7 @@ tags:
   - name: Media - Speech
     description: Speech arena rankings, speech-to-speech data, and speech-to-text model data
   - name: Media - Music
-    description: Music generation arena rankings for instrumental and vocal models
+    description: AA-Music-Instrumental v1.1 and AA-Music-Vocal v1.1 arena rankings for music generation models
   - name: Language Model Measurements
     description: |
       Raw measurement-level data for LLM performance benchmarking.
@@ -111,6 +111,15 @@ tags:
       Unlike the other endpoints in this API, this is **not** a data retrieval endpoint. It is a
       code evaluation service. You submit generated code for specific CritPt problems and receive
       grading results from the CritPt evaluation server.
+
+      **Access requires approval.** Grading is limited to approved labs and researchers — accounts
+      without access receive a `403`. Access remains free. To request access, email
+      [critpt@artificialanalysis.ai](mailto:critpt@artificialanalysis.ai) from your institutional
+      address, including the email of the account that holds your API key and details of your
+      research or development use.
+
+      Use of this endpoint is subject to our [Terms of Use](https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf) and
+      [Data Platform Terms](https://artificialanalysiscdn.com/legal/ProDataPlatformTerms.pdf).
 
       Rate limited to **10 requests per day** per user. Rate limit headers (`X-RateLimit-Limit`,
       `X-RateLimit-Remaining`, `X-RateLimit-Reset`, `Retry-After`) are included in every response.
@@ -2534,7 +2543,7 @@ paths:
   /api/v2/media/music/instrumental/models/free:
     get:
       operationId: getMusicInstrumentalArenaFree
-      summary: Get instrumental music arena rankings (Free tier)
+      summary: Get AA-Music-Instrumental v1.1 rankings (Free tier)
       description: |-
         Free-tier sibling of `/api/v2/media/music/instrumental/models`. Returns the
         Free-shape arena response — model identity plus Elo and CI only. Accepts any
@@ -2606,9 +2615,9 @@ paths:
   /api/v2/media/music/instrumental/models:
     get:
       operationId: getMusicInstrumentalArena
-      summary: Get instrumental music arena rankings
+      summary: Get AA-Music-Instrumental v1.1 rankings
       description: |-
-        Returns arena Elo rankings for instrumental music generation models. Free tier returns model identity plus Elo and CI only; Pro adds samples and optional genre breakdowns.
+        Returns arena Elo rankings for AA-Music-Instrumental v1.1, the instrumental music generation benchmark. Free tier returns model identity plus Elo and CI only; Pro adds samples and optional genre breakdowns.
 
         **Pro+ only.** Free integrations should use [`/api/v2/media/music/instrumental/models/free`](#getMusicInstrumentalArenaFree) instead.
       tags:
@@ -2686,7 +2695,7 @@ paths:
   /api/v2/media/music/with-vocals/models/free:
     get:
       operationId: getMusicWithVocalsArenaFree
-      summary: Get with-vocals music arena rankings (Free tier)
+      summary: Get AA-Music-Vocal v1.1 rankings (Free tier)
       description: |-
         Free-tier sibling of `/api/v2/media/music/with-vocals/models`. Returns the
         Free-shape arena response — model identity plus Elo and CI only. Accepts any
@@ -2758,9 +2767,9 @@ paths:
   /api/v2/media/music/with-vocals/models:
     get:
       operationId: getMusicWithVocalsArena
-      summary: Get with-vocals music arena rankings
+      summary: Get AA-Music-Vocal v1.1 rankings
       description: |-
-        Returns arena Elo rankings for music generation models with vocals. Free tier returns model identity plus Elo and CI only; Pro adds samples and optional genre breakdowns.
+        Returns arena Elo rankings for AA-Music-Vocal v1.1, the music generation with vocals benchmark. Free tier returns model identity plus Elo and CI only; Pro adds samples and optional genre breakdowns.
 
         **Pro+ only.** Free integrations should use [`/api/v2/media/music/with-vocals/models/free`](#getMusicWithVocalsArenaFree) instead.
       tags:
@@ -2845,6 +2854,16 @@ paths:
         This endpoint differs from the rest of the API. It is a **code evaluation service**,
         not a data retrieval endpoint. It accepts one or more code submissions and returns
         grading results from the CritPt evaluation server.
+
+        **Access requires approval.** To protect benchmark integrity and ensure server
+        capacity, grading is limited to approved labs and researchers — accounts without
+        access receive a `403`. Access remains free. To request access, email
+        [critpt@artificialanalysis.ai](mailto:critpt@artificialanalysis.ai) from your
+        institutional address, including the email of the account that holds your API key
+        and details of your research or development use.
+
+        Use of this endpoint is subject to our [Terms of Use](https://artificialanalysis.ai/docs/legal/Terms-of-Use.pdf) and
+        [Data Platform Terms](https://artificialanalysiscdn.com/legal/ProDataPlatformTerms.pdf).
 
         Rate limited to **10 requests per day** per user. Only successful gradings (`200`)
         count toward the limit — grader error responses (`400`/`422`/`503`/`5xx`) and grader
@@ -3000,6 +3019,14 @@ paths:
                 error: Invalid body
         "401":
           $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The account has not been granted CritPt grading access. Access is approved case by case for labs and researchers — request it via critpt@artificialanalysis.ai. Not counted toward the rate limit.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: CritPt grading requires approved access. To protect benchmark integrity and ensure server capacity, the grading endpoint is limited to approved labs and researchers; access remains free. To request access, email critpt@artificialanalysis.ai from your institutional address, including the email of the account that holds your API key and details of your research or development use.
         "422":
           description: The grading server rejected the submission payload (e.g. required keys missing). Not counted toward the rate limit.
           content:
@@ -3622,7 +3649,17 @@ components:
             - number
             - "null"
         terminalbench_v2_1:
-          description: Terminal-Bench v2.1 score. Pro tier only. Omitted on Free tier.
+          description: Terminal-Bench 2.1 score. Pro tier only. Omitted on Free tier.
+          type:
+            - number
+            - "null"
+        terminalbench_v4_0:
+          description: Terminal-Bench 4.0 score. Pro tier only. Omitted on Free tier.
+          type:
+            - number
+            - "null"
+        terminalbench_science:
+          description: Terminal-Bench-Science 0.1 score. Pro tier only. Omitted on Free tier.
           type:
             - number
             - "null"
@@ -3693,6 +3730,11 @@ components:
             - "null"
         artificial_analysis_multilingual_index:
           description: Multilingual Index score. Pro tier only. Omitted on Free tier.
+          type:
+            - number
+            - "null"
+        mlcr_overall:
+          description: MLCR-AA (Medical Long Context Reasoning) overall pass rate. Pro tier only. Omitted on Free tier.
           type:
             - number
             - "null"
@@ -3897,7 +3939,11 @@ components:
           $ref: "#/components/schemas/EvalTokenCounts"
         terminalbench_v2_1:
           $ref: "#/components/schemas/EvalTokenCounts"
-      description: Per-evaluation token counts for each benchmark in the Intelligence Index.
+        terminalbench_v4_0:
+          $ref: "#/components/schemas/EvalTokenCounts"
+        terminalbench_science:
+          $ref: "#/components/schemas/EvalTokenCounts"
+      description: Per-evaluation token counts for published benchmarks.
     IntelligenceIndexCost:
       type: object
       properties:

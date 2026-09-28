@@ -1,0 +1,16 @@
+---
+description: Next.js and MUI conventions for the front-end.
+globs: frontend/**/*
+alwaysApply: false
+---
+
+# Front-end
+
+This Next.js major version has breaking changes versus older training data. Before writing or changing front-end code, read the relevant guide under `frontend/node_modules/next/dist/docs/`. Heed deprecation notices.
+
+For MUI, use current docs (not memorized APIs):
+
+- https://mui.com/material-ui/llms.txt
+- https://mui.com/x/llms.txt
+
+Filter UI lives under `frontend/app/filters/`. Follow `frontend/README.md` when adding filters.

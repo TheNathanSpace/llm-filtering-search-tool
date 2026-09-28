@@ -6,15 +6,23 @@ services:
     image: llm-filtering:latest
     container_name: llm-filtering
     restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Image must listen on all interfaces; host .env often uses 127.0.0.1 for local dev.
+      BACKEND_HOST: "0.0.0.0"
     volumes:
-      # Persist database and other data
       - ./data:/app/data
       - ./.env:/app/.env
     ports:
-      - 9851:9851
+      - "${FRONTEND_PORT:-3030}:${FRONTEND_PORT:-3030}"
     healthcheck:
-      test: [ "CMD-SHELL", "curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health" ]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:$${BACKEND_PORT:-8000}/health",
+        ]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      start_period: 120s

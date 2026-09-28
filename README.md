@@ -15,6 +15,10 @@ The goal of this project is to:
 2. Allow a user to filter and sort models by all possible properties.
 3. Generate some nice plots based on the user's specifications.
 
+Product requirements and status for those goals: [`docs/requirements.md`](docs/requirements.md).
+Engineering backlog (including intelligence filters and possible AA → OpenRouter-only work):
+[`docs/todo.md`](docs/todo.md).
+
 And, the intent is, given these tools, it will be easier for you to decide which LLM is best for your specific
 situation.
 
@@ -39,19 +43,28 @@ models by these more complex metrics. In my ideal world, I would be able to set 
 
 And then I could sort from highest to lowest intelligence, probably choosing the highest-ranked one!
 
+Today the table ships with context-window and creation-date filters; price and throughput appear as columns
+without dedicated filters; intelligence scores are on the API model but not yet in the UI. See
+[`docs/todo.md`](docs/todo.md) §1.
+
 ## Technical Overview
+
+**Current pipeline:**
 
 1. Download model data from the [Artificial Analysis API](https://artificialanalysis.ai/api-reference#models-endpoint).
 2. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
-3. Download every published benchmark row from [OpenRouter `GET /benchmarks`](https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks) (written to `DATA_DIR/intermediate/raw/benchmarks.json`).
-4. Pair up Artificial Analysis benchmarks and OpenRouter models
+3. Download every published benchmark row from [OpenRouter `GET /benchmarks`](https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks) (written to `DATA_DIR/intermediate/raw/benchmarks.json`; not yet joined into SQLite — [D-03](docs/todo.md#open-decisions)).
+4. Pair Artificial Analysis and OpenRouter models (may move to OpenRouter-only — [D-01](docs/todo.md#open-decisions)).
 5. Populate an SQLite database with the model data.
 6. Expose the data via a REST API back-end.
 7. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
 More detail: [backend/README.md](backend/README.md) (including [logging](backend/README.md#logging)),
-[frontend/README.md](frontend/README.md) (including [logging](frontend/README.md#logging)).
+[frontend/README.md](frontend/README.md) (including [logging](frontend/README.md#logging)),
+[`docs/status.md`](docs/status.md) (pickup).
+Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-docs/)
+(refresh with `./bin/update-external-api-docs.sh`).
 
 ## Prerequisites
 
@@ -93,6 +106,10 @@ Supervisord starts both processes using the same variables: uvicorn runs `llm_ra
 The image `EXPOSE 3030` is build-time metadata for that default only — it does not change when you override
 `FRONTEND_PORT`. Publish with `-p host:container` where the container port matches the runtime listen port
 (e.g. `-p 3030:3030`, or `-e FRONTEND_PORT=4000 -p 4000:4000`).
+
+Compose (`docker compose up --build`) mounts `./data` and `./.env`, forces `BACKEND_HOST=0.0.0.0` so the API
+listens inside the container, publishes `${FRONTEND_PORT:-3030}`, and health-checks
+`http://127.0.0.1:${BACKEND_PORT:-8000}/health`.
 
 ## Development
 
@@ -184,6 +201,20 @@ After changing the FastAPI surface, regenerate OpenAPI and the TypeScript client
 ```bash
 ./bin/install-frontend-api-client.sh
 ```
+
+That writes FastAPI's OpenAPI schema to `DATA_DIR/openapi.json` (default `./data/openapi.json`), then
+runs `@hey-api/openapi-ts` into `frontend/app/client/`.
+
+### Refresh external API OpenAPI specs
+
+Vendored OpenRouter and Artificial Analysis OpenAPI files under [`api-docs/`](api-docs/) are for
+implementation reference only (not used at runtime). Refresh them with:
+
+```bash
+./bin/update-external-api-docs.sh
+```
+
+See [api-docs/README.md](api-docs/README.md).
 
 ## Generative AI Disclosure
 

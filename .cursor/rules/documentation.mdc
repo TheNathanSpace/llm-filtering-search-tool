@@ -10,19 +10,20 @@ Read the project docs **before** changing code, configuration, UI, or process. U
 ## Before changing anything
 
 1. Read `docs/status.md`. It is the pickup document: what is implemented, what is stubbed, and where to continue.
-2. Read `docs/requirements.md`. It is the product source of truth. Implement against requirement IDs (`DB-01`, `QRY-04`, and so on).
-3. Read `README.md` for project setup, architecture, and the current project map.
-4. Read any other files under `docs/` that cover the area you are changing.
+2. Read `docs/requirements.md`. It is the product source of truth. Implement against requirement IDs (`QRY-01`, `SRC-03`, and so on).
+3. Read `docs/todo.md` for the ordered backlog and open decisions (do not keep parallel todo lists elsewhere).
+4. Read `README.md` for project setup, architecture, and workflow.
+5. Read any other files under `docs/` that cover the area you are changing.
 
 Do not start implementation from memory of an earlier session. Re-read the docs that apply to the task.
 
 ## After making changes
 
 1. Edit `docs/status.md` in **every** commit. Refresh **Last updated** and **Latest change**. Update the rest of that file when progress, stubs, or the next starting point changed. The always-on rule `.cursor/rules/status.mdc` requires this.
-2. Update `docs/requirements.md` when product behavior, navigation, priorities, or process changed. Keep IDs, must/stretch status, and the information architecture accurate.
-3. Update `README.md` when setup, architecture, the project map, or user-facing workflow changed.
-4. Add or update files under `docs/` when a change needs more detail than those two files should hold.
-5. Do not leave documentation describing the previous behavior.
+2. Update `docs/requirements.md` when product behavior, priorities, or requirement status changed. Keep IDs and must/stretch/done accurate.
+3. Update `docs/todo.md` when completing, reprioritizing, or deciding backlog items (including open decisions).
+4. Update `README.md` when setup, architecture, or user-facing workflow changed.
+5. Add or update files under `docs/` when a change needs more detail than those files should hold.
+6. Do not leave documentation describing the previous behavior.
 
-Do not churn `docs/requirements.md` or `README.md` when the change does not affect documented behavior, architecture, setup, or process. Always churn `docs/status.md`.
-
+Do not churn `docs/requirements.md` or `README.md` when the change does not affect documented behavior, architecture, setup, or process. Always churn `docs/status.md`. When the change advances planned work, also churn `docs/todo.md`.

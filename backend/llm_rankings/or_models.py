@@ -20,7 +20,8 @@ class ORBaseModel(BaseModel):
 
 
 # https://openrouter.ai/docs/api/api-reference/models/get-models
-# Field required/optional (and nullability) follow openapi.json Model + nested schemas.
+# Field required/optional (and nullability) follow OpenRouter Models API schemas
+# (Model / ModelsListResponse and nested types) in api-docs/openapi-openrouter.json.
 
 
 class InputModality(StrEnum):

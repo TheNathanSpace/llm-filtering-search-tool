@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict
 
 # https://artificialanalysis.ai/api-reference/#models-endpoint
+# Schema reference: api-docs/openapi-artificialanalysis.yaml
 
 
 class AABaseModel(BaseModel):

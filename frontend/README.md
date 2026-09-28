@@ -13,7 +13,7 @@ using `DATA_DIR` and `LOG_LEVEL` from the repo-root `.env`. Lines are skipped un
 exists (start the API first, or restart the front-end after the API). Browser/client logs are not
 written to the file.
 
-Always-visible filter fields (e.g. Min Price / Max Price) would improve usability over multi-click column filters alone.
+Filter backlog (price, throughput, intelligence, always-visible ranges): [`docs/todo.md`](../docs/todo.md).
 
 ## Model filters
 
@@ -71,8 +71,9 @@ require rebuilding the front-end. For a full local stack, see the root [README](
 
 ### API Client
 
-1. The back-end OpenAPI docs are generated via FastAPI's built-in tools.
-2. The front-end API client is generated via @hey-api/openapi-ts.
+1. The back-end OpenAPI schema is exported to `DATA_DIR/openapi.json` (default `../data/openapi.json`) via
+   FastAPI (`bin/generate-openapi-docs.sh`).
+2. The front-end API client is generated via `@hey-api/openapi-ts` from that file.
 3. The front-end API client is imported into the front-end app, and the endpoints and models/types are able to be used.
 
 This process can be completed by running the `../bin/install-frontend-api-client.sh` script.

@@ -1,0 +1,32 @@
+---
+description: Run Docker commands outside the Cursor sandbox.
+alwaysApply: true
+---
+
+# Docker Outside the Sandbox
+
+Run **all Docker-related Shell commands with the sandbox disabled**.
+
+## Why
+
+Cursor’s default Shell sandbox hides `/var/run/docker.sock`. The Docker CLI then fails with “Cannot connect to the Docker daemon” even when the daemon is running.
+
+## How
+
+For any command that uses the Docker CLI or talks to the daemon (`docker`, `docker compose`, `docker-compose`, buildx, etc.), call the Shell tool with:
+
+```text
+required_permissions: ["all"]
+```
+
+Do this on the **first** attempt — do not first run sandboxed, see the socket error, then retry.
+
+## Examples
+
+- `docker build`, `docker run`, `docker images`, `docker ps`
+- `docker compose up` / `docker compose build`
+- Anything that needs `/var/run/docker.sock` or `/run/docker.sock`
+
+## Not covered
+
+Non-Docker commands can keep the default sandbox. Only disable it for Docker (or when another task truly needs host access).

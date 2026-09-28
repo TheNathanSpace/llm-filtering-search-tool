@@ -1,0 +1,21 @@
+---
+description: Edit docs/status.md in every commit.
+alwaysApply: true
+---
+
+# Status on every commit
+
+Every git commit in this repository **must** include an edit to `docs/status.md` in the same commit.
+
+Do not commit code, configuration, documentation, or rules without changing that file.
+
+## What to write
+
+1. Refresh **Last updated** (date and a short phrase).
+2. Replace **Latest change** so it describes this commit.
+3. If the commit lands a milestone, replaces a stub, or changes the next starting point, also update the status tables, UI map, and "Next session" section.
+
+A commit that only updates `docs/status.md` still refreshes **Latest change**.
+
+Never skip this because the change "doesn't affect product behavior." Pickup status must move with the git history.
+

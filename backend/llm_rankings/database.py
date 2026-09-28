@@ -82,7 +82,10 @@ def get_all_provider_endpoints() -> list[ModelProviderEndpoint]:
 
 
 if __name__ == "__main__":
+    from llm_rankings.refresh import refresh_if_stale
+
     bootstrap_env_from_argv()
     setup_logging()
-    wipe_database()
-    populate_with_models()
+    result = refresh_if_stale(reason="cli")
+    if result.skipped:
+        logger.info(result.detail)

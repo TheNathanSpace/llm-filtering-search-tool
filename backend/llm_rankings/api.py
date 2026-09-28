@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -7,12 +8,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from llm_rankings.combined_models import CombinedModel
-from llm_rankings.database import (
-    get_all_models,
-    get_database_path,
-    populate_with_models,
-    wipe_database,
-)
+from llm_rankings.database import get_all_models
+from llm_rankings.refresh import refresh_if_stale
 from llm_rankings.util import bootstrap_env_from_argv, get_env_var, setup_logging, validate_env_vars
 
 bootstrap_env_from_argv()
@@ -23,14 +20,36 @@ validate_env_vars()
 frontend_port = get_env_var("FRONTEND_PORT")
 backend_port = get_env_var("BACKEND_PORT")
 
+# How often the in-process checker wakes to call refresh_if_stale (hard 24h gate).
+_REFRESH_CHECK_INTERVAL_SECONDS = 60 * 60
+
+
+async def _periodic_refresh_loop() -> None:
+    while True:
+        await asyncio.sleep(_REFRESH_CHECK_INTERVAL_SECONDS)
+        try:
+            await asyncio.to_thread(refresh_if_stale, reason="scheduler")
+        except Exception:
+            logger.exception("Scheduled refresh check failed")
+
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    if not get_database_path().exists():
-        logger.info("Database not found; fetching model data from APIs...")
-        populate_with_models()
-        logger.info("Database seeded successfully.")
-    yield
+    try:
+        await asyncio.to_thread(refresh_if_stale, reason="startup")
+    except Exception:
+        logger.exception("Startup refresh failed")
+        raise
+
+    checker = asyncio.create_task(_periodic_refresh_loop(), name="refresh-checker")
+    try:
+        yield
+    finally:
+        checker.cancel()
+        try:
+            await checker
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="LLM Rankings API", lifespan=lifespan)
@@ -57,12 +76,8 @@ def health_check():
 @app.post("/refresh")
 def refresh_data():
     try:
-        logger.info("Refreshing data from APIs...")
-        wipe_database()
-        populate_with_models()
-
-        logger.info("Data refreshed successfully.")
-        return {"message": "Data refreshed successfully"}
+        result = refresh_if_stale(reason="api")
+        return result.as_api_dict()
     except Exception as e:
         logger.exception("Failed to refresh data")
         raise HTTPException(status_code=500, detail=str(e)) from e

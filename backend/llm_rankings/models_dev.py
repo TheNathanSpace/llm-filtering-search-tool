@@ -4,20 +4,17 @@ from __future__ import annotations
 
 import json
 import logging
-import time
 from pathlib import Path
 
 import requests
 from pydantic import BaseModel, ConfigDict
 
-from llm_rankings.util import get_cache_dir, get_raw_data_dir
+from llm_rankings.util import cache_file_is_fresh, get_cache_dir, get_raw_data_dir
 
 logger = logging.getLogger(__name__)
 
 MODELS_DEV_API_URL = "https://models.dev/api.json"
 USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/llm-filtering-search-tool)"
-# Reuse the full catalog across refreshes so we do not re-hit models.dev every wipe.
-CACHE_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
 class ModelsDevModel(BaseModel):
@@ -29,13 +26,6 @@ class ModelsDevModel(BaseModel):
 
 def _cache_path() -> Path:
     return get_cache_dir() / "models_dev" / "api.json"
-
-
-def _cache_is_fresh(path: Path) -> bool:
-    if not path.is_file():
-        return False
-    age = time.time() - path.stat().st_mtime
-    return age < CACHE_MAX_AGE_SECONDS
 
 
 def _load_json(path: Path) -> dict:
@@ -54,7 +44,7 @@ def _fetch_api_json() -> dict:
     return response.json()
 
 
-def get_models_dev_payload(*, force_refresh: bool = False) -> dict:
+def get_models_dev_payload() -> dict:
     """
     Return the models.dev ``api.json`` payload.
 
@@ -65,7 +55,7 @@ def get_models_dev_payload(*, force_refresh: bool = False) -> dict:
     cache_path = _cache_path()
     cache_path.parent.mkdir(parents=True, exist_ok=True)
 
-    if force_refresh or not _cache_is_fresh(cache_path):
+    if not cache_file_is_fresh(cache_path):
         payload = _fetch_api_json()
         cache_path.write_text(json.dumps(payload))
         logger.debug("Wrote models.dev cache to %s", cache_path.as_posix())

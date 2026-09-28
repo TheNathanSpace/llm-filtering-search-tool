@@ -183,11 +183,15 @@ Then open the UI at `http://localhost:<FRONTEND_PORT>` (default
 
 ### Seed or refresh model data
 
-`DATA_DIR` is gitignored, so a fresh clone has no database until it is populated. On API startup, if
-`DATA_DIR/database.db` is missing, the back-end automatically fetches from OpenRouter and
-writes SQLite (requires `.env` with `OR_API_KEY`).
+`DATA_DIR` is gitignored, so a fresh clone has no database until it is populated. On API startup
+(and about every hour while the API is up), the back-end runs a hard-capped refresh: if
+`DATA_DIR/database.db` is missing or the last successful refresh in `DATA_DIR/cache/last_refresh.json`
+is ≥24 hours old, it wipe-rebuilds SQLite via the normal OpenRouter → enrich → write pipeline
+(requires `.env` with `OR_API_KEY`). Within 24 hours, refresh is a no-op (no force bypass).
+OpenRouter and models.dev responses are reused from `DATA_DIR/cache/` when still fresh; HF is
+cached permanently per repo id (new ids still fetch on miss).
 
-To force a refresh while the API is running:
+To request a refresh while the API is running (skipped if still within the 24h window):
 
 ```bash
 curl -X POST "http://localhost:${BACKEND_PORT:-8000}/refresh"
@@ -199,7 +203,8 @@ Or, with the virtualenv activated and without starting the server:
 python -m llm_rankings.database
 ```
 
-Both of those wipe `DATA_DIR/database.db` (if present), fetch from OpenRouter, and write SQLite.
+Both use the same gate. A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites
+it; a skip leaves the DB untouched and returns/logs that data is already fresh.
 
 ### Regenerate the front-end API client
 

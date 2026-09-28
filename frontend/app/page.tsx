@@ -7,7 +7,7 @@ import { client } from "@/app/client/client.gen";
 import Titles from "@/app/titles";
 
 client.setConfig({
-    baseUrl: process.env.NEXT_PUBLIC_BACKEND_URL,
+    baseUrl: "/api",
 });
 
 export default function Home() {
@@ -28,13 +28,13 @@ export default function Home() {
         >
             <div
                 style={{ width: "100%", height: "25%", overflow: "scroll" }}
-                className={"green-outline flex-center-everything"}
+                className={"flex-center-everything"}
             >
                 <Titles />
             </div>
             <div
                 style={{ width: "80%", height: "75%", overflow: "scroll" }}
-                className={"red-outline p-5"}
+                className={"p-5"}
             >
                 <ModelTable models={models} />
             </div>

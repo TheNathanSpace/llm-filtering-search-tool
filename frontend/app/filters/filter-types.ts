@@ -1,3 +1,5 @@
+import { InputModality, OutputModality } from "@/app/client";
+
 export type NumberRange = [number, number];
 
 export type ModelFiltersState = {
@@ -6,6 +8,8 @@ export type ModelFiltersState = {
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
+    inputModalities: InputModality[];
+    outputModalities: OutputModality[];
 };
 
 /** User-edited filter fields; unset range fields fall back to bounds when resolved. */
@@ -15,6 +19,8 @@ export type UserFilterChoices = {
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
+    inputModalities: InputModality[];
+    outputModalities: OutputModality[];
 };
 
 export type FilterBounds = {
@@ -31,6 +37,8 @@ export function createInitialUserChoices(): UserFilterChoices {
         creationDate: undefined,
         knowledgeCutoff: undefined,
         contextLength: undefined,
+        inputModalities: [],
+        outputModalities: [],
     };
 }
 
@@ -59,5 +67,7 @@ export function resolveFilters(
                   bounds.contextLength[1],
               ])
             : undefined,
+        inputModalities: choices.inputModalities,
+        outputModalities: choices.outputModalities,
     };
 }

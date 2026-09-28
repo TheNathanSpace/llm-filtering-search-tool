@@ -1,5 +1,10 @@
+import CheckboxRowFilter from "@/app/filters/checkbox-row-filter";
 import DateRangeFilter from "@/app/filters/date-range-filter";
 import { FilterBounds, ModelFiltersState } from "@/app/filters/filter-types";
+import {
+    INPUT_MODALITY_OPTIONS,
+    OUTPUT_MODALITY_OPTIONS,
+} from "@/app/filters/modality-options";
 import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
 import { FormControlLabel, FormGroup, Grid, Switch } from "@mui/material";
@@ -18,7 +23,7 @@ export default function ModelFilters(
     const { bounds, filters, setFilters } = properties;
 
     return (
-        <Grid container spacing={2}>
+        <Grid container spacing={10}>
             <Grid size={6}>
                 <FormGroup sx={{ width: "max-content" }}>
                     <FormControlLabel
@@ -91,7 +96,30 @@ export default function ModelFilters(
                     />
                 )}
             </Grid>
-            <Grid size={6}>(The second column)</Grid>
+            <Grid size={6}>
+                <CheckboxRowFilter
+                    name="Input modalities"
+                    options={INPUT_MODALITY_OPTIONS}
+                    value={filters.inputModalities}
+                    onChange={(inputModalities) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            inputModalities,
+                        }));
+                    }}
+                />
+                <CheckboxRowFilter
+                    name="Output modalities"
+                    options={OUTPUT_MODALITY_OPTIONS}
+                    value={filters.outputModalities}
+                    onChange={(outputModalities) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            outputModalities,
+                        }));
+                    }}
+                />
+            </Grid>
         </Grid>
     );
 }

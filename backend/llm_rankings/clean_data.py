@@ -9,6 +9,7 @@ from llm_rankings.combined_models import CombinedModel
 from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
 from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import (
+    bootstrap_env_from_argv,
     erase_data_dir,
     get_data_dir,
     get_intermediate_data_dir,
@@ -19,19 +20,49 @@ from llm_rankings.util import (
     string_is_only_in_one,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def write_providers(
     or_aa_providers: dict[str, str],
     remaining_or_providers: list[str],
     remaining_aa_providers: list[str],
 ):
-    logging.debug("Writing providers data to files")
+    logger.debug("Writing providers data to files")
     providers = {
         "matched": sort_dict(or_aa_providers),
         "unmatched_openrouter_providers": sorted(remaining_or_providers),
         "unmatched_artificialanalysis_providers": sorted(remaining_aa_providers),
     }
     (get_intermediate_data_dir() / "providers.json").write_text(json.dumps(providers, indent=4))
+
+
+def write_models(
+    matched_models: list[tuple[OpenRouterModel, AAModel]],
+    or_models: OpenRouterAPIResponse,
+    aa_models: ArtificialAnalysisAPIResponse,
+):
+    logger.debug("Writing models match summary to file")
+    matched_or_ids = {or_model.id for or_model, _ in matched_models}
+    matched_aa_ids = {aa_model.id for _, aa_model in matched_models}
+    models = {
+        "unmatched_models": {
+            "openrouter": sorted(
+                m.get_clean_name() for m in or_models.data if m.id not in matched_or_ids
+            ),
+            "artificialanalysis": sorted(
+                m.get_clean_name() for m in aa_models.data if m.id not in matched_aa_ids
+            ),
+        },
+        "matched_models": [
+            {
+                "openrouter": or_model.get_clean_name(),
+                "artificialanalysis": aa_model.get_clean_name(),
+            }
+            for or_model, aa_model in matched_models
+        ],
+    }
+    (get_intermediate_data_dir() / "models.json").write_text(json.dumps(models, indent=4))
 
 
 def filter_models_to_shared_providers(
@@ -63,7 +94,7 @@ def filter_models_to_shared_providers(
 def remove_used_providers(
     matched: dict[str, str], or_providers: list[str], aa_providers: list[str]
 ) -> tuple[list[str], list[str]]:
-    logging.debug("Removing used providers")
+    logger.debug("Removing used providers")
     new_or_providers = set(or_providers)
     new_aa_providers = set(aa_providers)
     new_or_providers -= set(matched.keys())
@@ -75,7 +106,8 @@ def match_providers(
     or_models: OpenRouterAPIResponse, aa_models: ArtificialAnalysisAPIResponse
 ) -> tuple[dict[str, str], list[str], list[str]]:
     """Returns OpenRouter -> Artificial Analysis provider mapping."""
-    logging.debug("Matching providers")
+    logger.debug("Matching providers")
+    # OpenRouter to Artificial Analysis hardcoded mappings
     manual_mappings = {
         "ai21": "AI21 Labs",
         "allenai": "Allen Institute for AI",
@@ -86,6 +118,7 @@ def match_providers(
         "moonshotai": "Kimi",
         "kwaipilot": "KwaiKAT",
         "qwen": "Alibaba",
+        "x-ai": "SpaceXAI",
     }
 
     or_providers = or_models.get_providers()
@@ -212,7 +245,7 @@ def write_matched_models(
     remaining_or_models: list[OpenRouterModel],
     remaining_aa_models: list[AAModel],
 ):
-    logging.debug(f"Writing matched models for provider {provider_name} to file")
+    logger.debug(f"Writing matched models for provider {provider_name} to file")
     provider_dict = {
         "openrouter_to_artificialanalysis_model_names": [
             f"{m1.get_clean_name()} -> {m2.get_clean_name()}" for m1, m2 in matched_models
@@ -248,6 +281,10 @@ def match_models_for_provider(
     return matched_models
 
 
+def _prefixed_scores(prefix: str, values: dict[str, object]) -> dict[str, float]:
+    return {f"{prefix}{key}": round(float(value), 4) for key, value in values.items()}
+
+
 def combine_or_aa_models(
     matched_models: list[tuple[OpenRouterModel, AAModel]],
 ) -> list[CombinedModel]:
@@ -272,14 +309,20 @@ def combine_or_aa_models(
         for key, value in pricing.items():
             prefix_pricing[f"pricing_{key}"] = value
 
-        prefix_evaluations: dict[str, float] = {}
         evaluations = (
             aa_model.evaluations.model_dump(exclude_none=True, by_alias=False)
             if aa_model.evaluations
             else {}
         )
-        for key, value in evaluations.items():
-            prefix_evaluations[f"benchmark_{key}"] = round(float(value), 4)
+        or_benchmarks = (
+            or_model.benchmarks.artificial_analysis.model_dump(exclude_none=True, by_alias=False)
+            if or_model.benchmarks and or_model.benchmarks.artificial_analysis
+            else {}
+        )
+        prefix_evaluations = {
+            **_prefixed_scores("benchmark_aa_", evaluations),
+            **_prefixed_scores("benchmark_or_", or_benchmarks),
+        }
 
         combined_model = CombinedModel(
             name=aa_model.name,
@@ -294,6 +337,8 @@ def combine_or_aa_models(
                 else None
             ),
             context_length=or_model.context_length,
+            input_modalities=or_model.architecture.input_modalities,
+            output_modalities=or_model.architecture.output_modalities,
             **prefix_pricing,
             speed_tokens_per_second=aa_model.median_output_tokens_per_second,
             speed_time_to_first_token=(
@@ -316,11 +361,11 @@ def write_combined_models(combined_models: list[CombinedModel]):
     combined_models_path = get_data_dir() / "combined_models.json"
     serialized = [m.model_dump() for m in combined_models]
     combined_models_path.write_text(json.dumps(serialized, indent=4))
-    logging.info(f"Combined models written to {combined_models_path}")
+    logger.info(f"Combined models written to {combined_models_path}")
 
 
 def get_and_clean_data() -> list[CombinedModel]:
-    logging.debug("Retrieving and cleaning data")
+    logger.debug("Retrieving and cleaning data")
 
     or_models: OpenRouterAPIResponse
     aa_models: ArtificialAnalysisAPIResponse
@@ -333,6 +378,8 @@ def get_and_clean_data() -> list[CombinedModel]:
         matched_models = match_models_for_provider(or_provider, aa_provider, or_models, aa_models)
         all_matched_models.extend(matched_models)
 
+    write_models(all_matched_models, or_models, aa_models)
+
     combined_models: list[CombinedModel] = combine_or_aa_models(all_matched_models)
     write_combined_models(combined_models)
 
@@ -340,6 +387,7 @@ def get_and_clean_data() -> list[CombinedModel]:
 
 
 if __name__ == "__main__":
-    setup_logging("DEBUG")
+    bootstrap_env_from_argv()
+    setup_logging()
     erase_data_dir()
     combined_models = get_and_clean_data()

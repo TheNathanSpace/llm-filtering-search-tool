@@ -1,0 +1,20 @@
+services:
+  llm-filtering:
+    build:
+      context: .
+    pull_policy: build
+    image: llm-filtering:latest
+    container_name: llm-filtering
+    restart: unless-stopped
+    volumes:
+      # Persist database and other data
+      - ./data:/app/data
+      - ./.env:/app/.env
+    ports:
+      - 9851:9851
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -f http://localhost:4321${URL_BASE_PATH:-}/api/health" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

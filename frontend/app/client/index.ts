@@ -14,6 +14,8 @@ export type {
     GetModelsModelsGetResponses,
     HealthCheckHealthGetData,
     HealthCheckHealthGetResponses,
+    InputModality,
+    OutputModality,
     RefreshDataRefreshPostData,
     RefreshDataRefreshPostResponses,
 } from "./types.gen";

@@ -171,7 +171,7 @@ export function createSseClient<TData = unknown>({
                         const { done, value } = await reader.read();
                         if (done) break;
                         buffer += value;
-                        buffer = buffer.replaceAll(/\r\n?/g, "\n"); // normalize line endings
+                        buffer = buffer.replace(/\r\n?/g, "\n"); // normalize line endings
 
                         const chunks = buffer.split("\n\n");
                         buffer = chunks.pop() ?? "";
@@ -204,7 +204,7 @@ export function createSseClient<TData = unknown>({
                             let data: unknown;
                             let parsedJson = false;
 
-                            if (dataLines.length > 0) {
+                            if (dataLines.length) {
                                 const rawData = dataLines.join("\n");
                                 try {
                                     data = JSON.parse(rawData);
@@ -231,7 +231,7 @@ export function createSseClient<TData = unknown>({
                                 retry: retryDelay,
                             });
 
-                            if (dataLines.length > 0) {
+                            if (dataLines.length) {
                                 yield data as any;
                             }
                         }
@@ -256,7 +256,7 @@ export function createSseClient<TData = unknown>({
                 // exponential backoff: double retry each attempt, cap at 30s
                 const backoff = Math.min(
                     retryDelay * 2 ** (attempt - 1),
-                    sseMaxRetryDelay ?? 30_000,
+                    sseMaxRetryDelay ?? 30000,
                 );
                 await sleep(backoff);
             }

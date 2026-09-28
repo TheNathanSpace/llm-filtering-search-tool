@@ -87,33 +87,33 @@ function buildKeyMap(fields: FieldsConfig, map?: KeyMap): KeyMap {
     return map;
 }
 
-interface Parameters_ {
+interface Params {
     body: unknown;
     headers: Record<string, unknown>;
     path: Record<string, unknown>;
     query: Record<string, unknown>;
 }
 
-type ParametersSlotMap = Record<Slot, unknown>;
+type ParamsSlotMap = Record<Slot, unknown>;
 
-function stripEmptySlots(parameters: ParametersSlotMap): void {
-    for (const [slot, value] of Object.entries(parameters)) {
+function stripEmptySlots(params: ParamsSlotMap): void {
+    for (const [slot, value] of Object.entries(params)) {
         if (
             value &&
             typeof value === "object" &&
             !Array.isArray(value) &&
-            Object.keys(value).length === 0
+            !Object.keys(value).length
         ) {
-            delete parameters[slot as Slot];
+            delete params[slot as Slot];
         }
     }
 }
 
 export function buildClientParams(
-    arguments_: ReadonlyArray<unknown>,
+    args: ReadonlyArray<unknown>,
     fields: FieldsConfig,
-): Parameters_ {
-    const parameters: ParametersSlotMap = {
+): Params {
+    const params: ParamsSlotMap = {
         body: Object.create(null),
         headers: Object.create(null),
         path: Object.create(null),
@@ -124,7 +124,7 @@ export function buildClientParams(
 
     let config: FieldsConfig[number] | undefined;
 
-    for (const [index, argument] of arguments_.entries()) {
+    for (const [index, arg] of args.entries()) {
         if (fields[index]) {
             config = fields[index];
         }
@@ -138,24 +138,22 @@ export function buildClientParams(
                 const field = map.get(config.key)!;
                 const name = field.map || config.key;
                 if (field.in) {
-                    (parameters[field.in] as Record<string, unknown>)[name] =
-                        argument;
+                    (params[field.in] as Record<string, unknown>)[name] = arg;
                 }
             } else {
-                parameters.body = argument;
+                params.body = arg;
             }
         } else {
-            for (const [key, value] of Object.entries(argument ?? {})) {
+            for (const [key, value] of Object.entries(arg ?? {})) {
                 const field = map.get(key);
 
                 if (field) {
                     if (field.in) {
                         const name = field.map || key;
-                        (parameters[field.in] as Record<string, unknown>)[
-                            name
-                        ] = value;
+                        (params[field.in] as Record<string, unknown>)[name] =
+                            value;
                     } else {
-                        parameters[field.map] = value;
+                        params[field.map] = value;
                     }
                 } else {
                     const extra = extraPrefixes.find(([prefix]) =>
@@ -164,7 +162,7 @@ export function buildClientParams(
 
                     if (extra) {
                         const [prefix, slot] = extra;
-                        (parameters[slot] as Record<string, unknown>)[
+                        (params[slot] as Record<string, unknown>)[
                             key.slice(prefix.length)
                         ] = value;
                     } else if ("allowExtra" in config && config.allowExtra) {
@@ -173,7 +171,7 @@ export function buildClientParams(
                         )) {
                             if (allowed) {
                                 (
-                                    parameters[slot as Slot] as Record<
+                                    params[slot as Slot] as Record<
                                         string,
                                         unknown
                                     >
@@ -187,7 +185,7 @@ export function buildClientParams(
         }
     }
 
-    stripEmptySlots(parameters);
+    stripEmptySlots(params);
 
-    return parameters as Parameters_;
+    return params as Params;
 }

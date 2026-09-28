@@ -13,7 +13,7 @@ set -e
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 # Start the backend server in the background using the dedicated script.
-"$SCRIPT_DIR/start-backend-live.sh" &
+"$SCRIPT_DIR/start-backend-live.sh" "$@" &
 BACKEND_PID=$!
 
 # Start the frontend dev server in the background using its dedicated script.

@@ -7,6 +7,12 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ModelFilters from "@/app/filters/model-filters";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 
+const noRowsOverlay = () => (
+    <div className={"flex-center-everything"}>
+        <p>No matching rows.</p>
+    </div>
+);
+
 export default function ModelTable({ models }: { models: CombinedModel[] }) {
     const { bounds, filters, setFilters, filteredModels } =
         useModelFilters(models);
@@ -27,6 +33,10 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
                         columns={columns}
                         getRowId={(row) => row.name}
                         autoHeight={false}
+                        slots={{
+                            noRowsOverlay: noRowsOverlay,
+                            noResultsOverlay: noRowsOverlay,
+                        }}
                     />
                 </MuiFontSans>
             </LocalizationProvider>

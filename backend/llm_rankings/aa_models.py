@@ -37,6 +37,8 @@ class AAEvaluations(AABaseModel):
     lcr: float | None = None
     terminalbench_hard: float | None = None
     tau2: float | None = None
+    tau_banking: float | None = None
+    terminalbench_v2_1: float | None = None
 
 
 class AAPricing(AABaseModel):

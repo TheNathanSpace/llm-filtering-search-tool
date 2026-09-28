@@ -41,6 +41,14 @@ export type CombinedModel = {
      */
     context_length?: number | null;
     /**
+     * Input Modalities
+     */
+    input_modalities: Array<InputModality>;
+    /**
+     * Output Modalities
+     */
+    output_modalities: Array<OutputModality>;
+    /**
      * Pricing Input
      */
     pricing_input?: number | null;
@@ -61,66 +69,108 @@ export type CombinedModel = {
      */
     speed_time_to_first_answer_token?: number | null;
     /**
-     * Benchmark Artificial Analysis Intelligence Index
+     * Benchmark Aa Artificial Analysis Intelligence Index
      */
-    benchmark_artificial_analysis_intelligence_index?: number | null;
+    benchmark_aa_artificial_analysis_intelligence_index?: number | null;
     /**
-     * Benchmark Artificial Analysis Coding Index
+     * Benchmark Aa Artificial Analysis Coding Index
      */
-    benchmark_artificial_analysis_coding_index?: number | null;
+    benchmark_aa_artificial_analysis_coding_index?: number | null;
     /**
-     * Benchmark Artificial Analysis Math Index
+     * Benchmark Aa Artificial Analysis Math Index
      */
-    benchmark_artificial_analysis_math_index?: number | null;
+    benchmark_aa_artificial_analysis_math_index?: number | null;
     /**
-     * Benchmark Mmlu Pro
+     * Benchmark Aa Mmlu Pro
      */
-    benchmark_mmlu_pro?: number | null;
+    benchmark_aa_mmlu_pro?: number | null;
     /**
-     * Benchmark Gpqa
+     * Benchmark Aa Gpqa
      */
-    benchmark_gpqa?: number | null;
+    benchmark_aa_gpqa?: number | null;
     /**
-     * Benchmark Hle
+     * Benchmark Aa Hle
      */
-    benchmark_hle?: number | null;
+    benchmark_aa_hle?: number | null;
     /**
-     * Benchmark Livecodebench
+     * Benchmark Aa Livecodebench
      */
-    benchmark_livecodebench?: number | null;
+    benchmark_aa_livecodebench?: number | null;
     /**
-     * Benchmark Scicode
+     * Benchmark Aa Scicode
      */
-    benchmark_scicode?: number | null;
+    benchmark_aa_scicode?: number | null;
     /**
-     * Benchmark Math 500
+     * Benchmark Aa Math 500
      */
-    benchmark_math_500?: number | null;
+    benchmark_aa_math_500?: number | null;
     /**
-     * Benchmark Aime
+     * Benchmark Aa Aime
      */
-    benchmark_aime?: number | null;
+    benchmark_aa_aime?: number | null;
     /**
-     * Benchmark Aime 25
+     * Benchmark Aa Aime 25
      */
-    benchmark_aime_25?: number | null;
+    benchmark_aa_aime_25?: number | null;
     /**
-     * Benchmark Ifbench
+     * Benchmark Aa Ifbench
      */
-    benchmark_ifbench?: number | null;
+    benchmark_aa_ifbench?: number | null;
     /**
-     * Benchmark Lcr
+     * Benchmark Aa Lcr
      */
-    benchmark_lcr?: number | null;
+    benchmark_aa_lcr?: number | null;
     /**
-     * Benchmark Terminalbench Hard
+     * Benchmark Aa Terminalbench Hard
      */
-    benchmark_terminalbench_hard?: number | null;
+    benchmark_aa_terminalbench_hard?: number | null;
     /**
-     * Benchmark Tau2
+     * Benchmark Aa Tau2
      */
-    benchmark_tau2?: number | null;
+    benchmark_aa_tau2?: number | null;
+    /**
+     * Benchmark Aa Tau Banking
+     */
+    benchmark_aa_tau_banking?: number | null;
+    /**
+     * Benchmark Aa Terminalbench V2 1
+     */
+    benchmark_aa_terminalbench_v2_1?: number | null;
+    /**
+     * Benchmark Or Intelligence Index
+     */
+    benchmark_or_intelligence_index?: number | null;
+    /**
+     * Benchmark Or Coding Index
+     */
+    benchmark_or_coding_index?: number | null;
+    /**
+     * Benchmark Or Agentic Index
+     */
+    benchmark_or_agentic_index?: number | null;
 };
+
+/**
+ * InputModality
+ *
+ * OpenAPI `InputModality`.
+ */
+export type InputModality = "text" | "image" | "file" | "audio" | "video";
+
+/**
+ * OutputModality
+ *
+ * OpenAPI `OutputModality`.
+ */
+export type OutputModality =
+    | "text"
+    | "image"
+    | "embeddings"
+    | "audio"
+    | "video"
+    | "rerank"
+    | "speech"
+    | "transcription";
 
 export type HealthCheckHealthGetData = {
     body?: never;

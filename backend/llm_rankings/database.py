@@ -8,7 +8,9 @@ from pydantic_sqlite._core import TableBaseModel
 
 from llm_rankings.clean_data import get_and_clean_data
 from llm_rankings.combined_models import CombinedModel
-from llm_rankings.util import get_data_dir, setup_logging
+from llm_rankings.util import bootstrap_env_from_argv, get_data_dir, setup_logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_database_path() -> Path:
@@ -16,7 +18,7 @@ def get_database_path() -> Path:
 
 
 def initialize_database() -> DataBase:
-    logging.debug(f"Initializing database at {get_database_path().as_posix()}")
+    logger.debug(f"Initializing database at {get_database_path().as_posix()}")
     already_exists = get_database_path().exists()
     db = DataBase(filename_or_conn=get_database_path())
 
@@ -26,7 +28,7 @@ def initialize_database() -> DataBase:
             n[0]
             for n in db._db.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
         ]
-        logging.debug(f"Database tables: {table_names}")
+        logger.debug(f"Database tables: {table_names}")
         base_models = db._db.execute(
             'SELECT "table", modulename, pks FROM __basemodels__;'
         ).fetchall()
@@ -50,17 +52,17 @@ def initialize_database() -> DataBase:
 
 
 def wipe_database():
-    logging.debug(f"Wiping database at {get_database_path().as_posix()}")
+    logger.debug(f"Wiping database at {get_database_path().as_posix()}")
     Path.unlink(get_database_path(), missing_ok=True)
 
 
 def populate_with_models():
     models: list[CombinedModel] = get_and_clean_data()
     db: DataBase = initialize_database()
-    logging.debug(f"Writing {len(models)} models to database")
+    logger.debug(f"Writing {len(models)} models to database")
     for model in models:
         model.add_to_database(db)
-    logging.debug(f"Wrote {len(models)} models to database")
+    logger.debug(f"Wrote {len(models)} models to database")
 
 
 def get_all_models() -> list[CombinedModel]:
@@ -70,6 +72,7 @@ def get_all_models() -> list[CombinedModel]:
 
 
 if __name__ == "__main__":
-    setup_logging("DEBUG")
+    bootstrap_env_from_argv()
+    setup_logging()
     wipe_database()
     populate_with_models()

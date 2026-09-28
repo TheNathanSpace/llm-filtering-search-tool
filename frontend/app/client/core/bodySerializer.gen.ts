@@ -38,7 +38,7 @@ const serializeFormDataPair = (
     }
 };
 
-const serializeUrlSearchParametersPair = (
+const serializeUrlSearchParamsPair = (
     data: URLSearchParams,
     key: string,
     value: unknown,
@@ -54,18 +54,18 @@ export const formDataBodySerializer = {
     bodySerializer: (body: unknown): FormData => {
         const data = new FormData();
 
-        for (const [key, value] of Object.entries(
-            body as Record<string, unknown>,
-        )) {
-            if (value === undefined || value === null) {
-                continue;
-            }
-            if (Array.isArray(value)) {
-                for (const v of value) serializeFormDataPair(data, key, v);
-            } else {
-                serializeFormDataPair(data, key, value);
-            }
-        }
+        Object.entries(body as Record<string, unknown>).forEach(
+            ([key, value]) => {
+                if (value === undefined || value === null) {
+                    return;
+                }
+                if (Array.isArray(value)) {
+                    value.forEach((v) => serializeFormDataPair(data, key, v));
+                } else {
+                    serializeFormDataPair(data, key, value);
+                }
+            },
+        );
 
         return data;
     },
@@ -82,19 +82,20 @@ export const urlSearchParamsBodySerializer = {
     bodySerializer: (body: unknown): string => {
         const data = new URLSearchParams();
 
-        for (const [key, value] of Object.entries(
-            body as Record<string, unknown>,
-        )) {
-            if (value === undefined || value === null) {
-                continue;
-            }
-            if (Array.isArray(value)) {
-                for (const v of value)
-                    serializeUrlSearchParametersPair(data, key, v);
-            } else {
-                serializeUrlSearchParametersPair(data, key, value);
-            }
-        }
+        Object.entries(body as Record<string, unknown>).forEach(
+            ([key, value]) => {
+                if (value === undefined || value === null) {
+                    return;
+                }
+                if (Array.isArray(value)) {
+                    value.forEach((v) =>
+                        serializeUrlSearchParamsPair(data, key, v),
+                    );
+                } else {
+                    serializeUrlSearchParamsPair(data, key, value);
+                }
+            },
+        );
 
         return data.toString();
     },

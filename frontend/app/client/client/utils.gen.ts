@@ -4,9 +4,9 @@ import { getAuthToken } from "../core/auth.gen";
 import type { QuerySerializerOptions } from "../core/bodySerializer.gen";
 import { jsonBodySerializer } from "../core/bodySerializer.gen";
 import {
-    serializeArrayParam as serializeArrayParameter,
-    serializeObjectParam as serializeObjectParameter,
-    serializePrimitiveParam as serializePrimitiveParameter,
+    serializeArrayParam,
+    serializeObjectParam,
+    serializePrimitiveParam,
 } from "../core/pathSerializer.gen";
 import { getUrl } from "../core/utils.gen";
 import type {
@@ -18,22 +18,22 @@ import type {
 
 export const createQuerySerializer = <T = unknown>({
     parameters = {},
-    ...arguments_
-}: QuerySerializerOptions = {}): ((queryParameters: T) => string) => {
-    const querySerializer = (queryParameters: T): string => {
+    ...args
+}: QuerySerializerOptions = {}): ((queryParams: T) => string) => {
+    const querySerializer = (queryParams: T): string => {
         const search: string[] = [];
-        if (queryParameters && typeof queryParameters === "object") {
-            for (const name in queryParameters) {
-                const value = queryParameters[name];
+        if (queryParams && typeof queryParams === "object") {
+            for (const name in queryParams) {
+                const value = queryParams[name];
 
                 if (value === undefined || value === null) {
                     continue;
                 }
 
-                const options = parameters[name] || arguments_;
+                const options = parameters[name] || args;
 
                 if (Array.isArray(value)) {
-                    const serializedArray = serializeArrayParameter({
+                    const serializedArray = serializeArrayParam({
                         allowReserved: options.allowReserved,
                         explode: true,
                         name,
@@ -43,7 +43,7 @@ export const createQuerySerializer = <T = unknown>({
                     });
                     if (serializedArray) search.push(serializedArray);
                 } else if (typeof value === "object") {
-                    const serializedObject = serializeObjectParameter({
+                    const serializedObject = serializeObjectParam({
                         allowReserved: options.allowReserved,
                         explode: true,
                         name,
@@ -53,7 +53,7 @@ export const createQuerySerializer = <T = unknown>({
                     });
                     if (serializedObject) search.push(serializedObject);
                 } else {
-                    const serializedPrimitive = serializePrimitiveParameter({
+                    const serializedPrimitive = serializePrimitiveParam({
                         allowReserved: options.allowReserved,
                         name,
                         value: value as string,
@@ -149,22 +149,19 @@ export async function setAuthParams(
         const name = auth.name ?? "Authorization";
 
         switch (auth.in) {
-            case "query": {
+            case "query":
                 if (!options.query) {
                     options.query = {};
                 }
                 options.query[name] = token;
                 break;
-            }
-            case "cookie": {
+            case "cookie":
                 options.headers.append("Cookie", `${name}=${token}`);
                 break;
-            }
             case "header":
-            default: {
+            default:
                 options.headers.set(name, token);
                 break;
-            }
         }
     }
 }
@@ -184,10 +181,7 @@ export const buildUrl: Client["buildUrl"] = (options) =>
 export const mergeConfigs = (a: Config, b: Config): Config => {
     const config = { ...a, ...b };
     if (config.baseUrl?.endsWith("/")) {
-        config.baseUrl = config.baseUrl.slice(
-            0,
-            Math.max(0, config.baseUrl.length - 1),
-        );
+        config.baseUrl = config.baseUrl.substring(0, config.baseUrl.length - 1);
     }
     config.headers = mergeHeaders(a.headers, b.headers);
     return config;
@@ -195,9 +189,9 @@ export const mergeConfigs = (a: Config, b: Config): Config => {
 
 const headersEntries = (headers: Headers): Array<[string, string]> => {
     const entries: Array<[string, string]> = [];
-    for (const [key, value] of headers.entries()) {
+    headers.forEach((value, key) => {
         entries.push([key, value]);
-    }
+    });
     return entries;
 };
 
@@ -237,23 +231,23 @@ export const mergeHeaders = (
     return mergedHeaders;
 };
 
-type ErrorInterceptor<Error_, Res, Request_, Options> = (
-    error: Error_,
+type ErrInterceptor<Err, Res, Req, Options> = (
+    error: Err,
     /** response may be undefined due to a network error where no response object is produced */
     response: Res | undefined,
     /** request may be undefined, because error may be from building the request object itself */
-    request: Request_ | undefined,
+    request: Req | undefined,
     options: Options,
-) => Error_ | Promise<Error_>;
+) => Err | Promise<Err>;
 
-type RequestInterceptor<Request_, Options> = (
-    request: Request_,
+type ReqInterceptor<Req, Options> = (
+    request: Req,
     options: Options,
-) => Request_ | Promise<Request_>;
+) => Req | Promise<Req>;
 
-type ResInterceptor<Res, Request_, Options> = (
+type ResInterceptor<Res, Req, Options> = (
     response: Res,
-    request: Request_,
+    request: Req,
     options: Options,
 ) => Res | Promise<Res>;
 
@@ -285,37 +279,37 @@ class Interceptors<Interceptor> {
 
     update(
         id: number | Interceptor,
-        function_: Interceptor,
+        fn: Interceptor,
     ): number | Interceptor | false {
         const index = this.getInterceptorIndex(id);
         if (this.fns[index]) {
-            this.fns[index] = function_;
+            this.fns[index] = fn;
             return id;
         }
         return false;
     }
 
-    use(function_: Interceptor): number {
-        this.fns.push(function_);
+    use(fn: Interceptor): number {
+        this.fns.push(fn);
         return this.fns.length - 1;
     }
 }
 
-export interface Middleware<Request_, Res, Error_, Options> {
-    error: Interceptors<ErrorInterceptor<Error_, Res, Request_, Options>>;
-    request: Interceptors<RequestInterceptor<Request_, Options>>;
-    response: Interceptors<ResInterceptor<Res, Request_, Options>>;
+export interface Middleware<Req, Res, Err, Options> {
+    error: Interceptors<ErrInterceptor<Err, Res, Req, Options>>;
+    request: Interceptors<ReqInterceptor<Req, Options>>;
+    response: Interceptors<ResInterceptor<Res, Req, Options>>;
 }
 
-export const createInterceptors = <
-    Request_,
+export const createInterceptors = <Req, Res, Err, Options>(): Middleware<
+    Req,
     Res,
-    Error_,
-    Options,
->(): Middleware<Request_, Res, Error_, Options> => ({
-    error: new Interceptors<ErrorInterceptor<Error_, Res, Request_, Options>>(),
-    request: new Interceptors<RequestInterceptor<Request_, Options>>(),
-    response: new Interceptors<ResInterceptor<Res, Request_, Options>>(),
+    Err,
+    Options
+> => ({
+    error: new Interceptors<ErrInterceptor<Err, Res, Req, Options>>(),
+    request: new Interceptors<ReqInterceptor<Req, Options>>(),
+    response: new Interceptors<ResInterceptor<Res, Req, Options>>(),
 });
 
 const defaultQuerySerializer = createQuerySerializer({

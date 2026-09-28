@@ -29,6 +29,20 @@ function passesCreators(
     return selected.includes(creator);
 }
 
+function passesModalities<T extends string>(
+    actual: readonly T[] | undefined,
+    required: readonly T[],
+    includeMissing: boolean,
+): boolean {
+    if (required.length === 0) {
+        return true;
+    }
+    if (!actual) {
+        return includeMissing;
+    }
+    return required.every((item) => actual.includes(item));
+}
+
 export function filterModels(
     models: CombinedModel[],
     filters: ModelFiltersState,
@@ -65,6 +79,24 @@ export function filterModels(
             !passesRange(
                 model.context_length,
                 filters.contextLength,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesModalities(
+                model.input_modalities,
+                filters.inputModalities,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesModalities(
+                model.output_modalities,
+                filters.outputModalities,
                 filters.includeMissing,
             )
         ) {

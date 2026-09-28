@@ -22,6 +22,8 @@ function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
         creationDate: filters.creationDate,
         knowledgeCutoff: filters.knowledgeCutoff,
         contextLength: filters.contextLength,
+        inputModalities: filters.inputModalities,
+        outputModalities: filters.outputModalities,
     };
 }
 

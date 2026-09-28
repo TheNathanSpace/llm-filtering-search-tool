@@ -43,13 +43,15 @@ And then I could sort from highest to lowest intelligence, probably choosing the
 
 1. Download model data from the [Artificial Analysis API](https://artificialanalysis.ai/api-reference#models-endpoint).
 2. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
-3. Pair up Artificial Analysis benchmarks and OpenRouter models
-4. Populate an SQLite database with the model data.
-5. Expose the data via a REST API back-end.
-6. Create a Next.js front-end to retrieve the data and display it in
+3. Download every published benchmark row from [OpenRouter `GET /benchmarks`](https://openrouter.ai/docs/api/api-reference/benchmarks/list-benchmarks) (written to `DATA_DIR/intermediate/raw/benchmarks.json`).
+4. Pair up Artificial Analysis benchmarks and OpenRouter models
+5. Populate an SQLite database with the model data.
+6. Expose the data via a REST API back-end.
+7. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
-More detail: [backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md).
+More detail: [backend/README.md](backend/README.md) (including [logging](backend/README.md#logging)),
+[frontend/README.md](frontend/README.md) (including [logging](frontend/README.md#logging)).
 
 ## Prerequisites
 
@@ -68,11 +70,29 @@ More detail: [backend/README.md](backend/README.md), [frontend/README.md](fronte
 2. Set the variables documented in [`.env.template`](.env.template):
    - `AA_API_KEY` — Artificial Analysis API key for benchmark data
    - `OR_API_KEY` — OpenRouter API key for model/pricing metadata
-   - `DATA_DIR` — path for SQLite DB and related files (default `./data`, relative to the `.env` location)
-   - `NEXT_PUBLIC_BACKEND_URL` — FastAPI base URL for the Next.js front-end (default `http://localhost:8000`)
+   - `DATA_DIR` — path for SQLite DB, logs, and related files (default `./data`, relative to the `.env` location)
+   - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
+     (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
+   - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on
+     startup; `latest.log` symlink is excluded)
+   - `BACKEND_HOST` — FastAPI listen address (default `127.0.0.1`; use `0.0.0.0` to expose the API externally)
+   - `BACKEND_PORT` — FastAPI listen port (default `8000`)
+   - `FRONTEND_PORT` — Next.js listen port (default `3030`)
 
-`.env` is gitignored. The back-end loads it via `python-dotenv`; the front-end loads the same file from the
-repo root via `frontend/next.config.ts`.
+`.env` is gitignored. The back-end loads it via `python-dotenv` (discovered from the working
+directory, or an explicit path via `--env-file` / `-e` or `LLM_RANKINGS_ENV_FILE`) and binds
+uvicorn to `BACKEND_HOST`:`BACKEND_PORT`.
+The front-end listens on `FRONTEND_PORT`. The browser calls `/api/*` on the front-end; `frontend/proxy.ts`
+rewrites those requests at runtime to `http://<BACKEND_HOST>:<BACKEND_PORT>` (mapping `0.0.0.0` →
+`127.0.0.1` so Next.js can reach a bind-all server on loopback). Host and port are read from the process
+environment when each request is proxied, so they can change at container/app start without rebuilding.
+In Docker, the image installs the back-end from `backend/pyproject.toml` (non-editable; no `[dev]` extras).
+Supervisord starts both processes using the same variables: uvicorn runs `llm_rankings.api:app` bound to
+`BACKEND_HOST`:`BACKEND_PORT` (image defaults `0.0.0.0` / `8000`), and Next.js listens on `FRONTEND_PORT`
+(default `3030`). Override with `-e FRONTEND_PORT=...` / `-e BACKEND_HOST=...` / `-e BACKEND_PORT=...`.
+The image `EXPOSE 3030` is build-time metadata for that default only — it does not change when you override
+`FRONTEND_PORT`. Publish with `-p host:container` where the container port matches the runtime listen port
+(e.g. `-p 3030:3030`, or `-e FRONTEND_PORT=4000 -p 4000:4000`).
 
 ## Development
 
@@ -103,7 +123,8 @@ automatically. Equivalent manual steps: `pip install pre-commit && pre-commit in
 
 ### Run
 
-Preferred (API on port 8000, Next.js on port 3030):
+Preferred (API on `BACKEND_HOST`:`BACKEND_PORT`, default `127.0.0.1:8000`; Next.js on
+`FRONTEND_PORT`, default `3030`):
 
 ```bash
 ./bin/start-full-stack-live.sh
@@ -116,21 +137,35 @@ Or start each side separately:
 ./bin/start-frontend-live.sh
 ```
 
-With the virtualenv activated, you can also start the API manually:
+Pass a custom env file to the back-end with `--env-file` (or `-e`):
+
+```bash
+./bin/start-backend-live.sh --env-file /path/to/.env
+./bin/start-full-stack-live.sh --env-file /path/to/.env
+```
+
+With the virtualenv activated, you can also start the API manually (reads host/port from `.env`):
 
 - `python backend/llm_rankings/api.py`
-- `uvicorn llm_rankings.api:app --reload`
+- `python backend/llm_rankings/api.py --env-file /path/to/.env`
+- `python -m llm_rankings.database --env-file /path/to/.env`
+- `uvicorn llm_rankings.api:app --reload --host "$BACKEND_HOST" --port "$BACKEND_PORT"`
+  (set `LLM_RANKINGS_ENV_FILE` when not using the default repo-root `.env`)
 
-Then open the UI at [http://localhost:3030](http://localhost:3030). Interactive API docs are at
-[http://localhost:8000/docs](http://localhost:8000/docs).
+Then open the UI at `http://localhost:<FRONTEND_PORT>` (default
+[http://localhost:3030](http://localhost:3030)). Interactive API docs are at
+`http://localhost:<BACKEND_PORT>/docs` (default [http://localhost:8000/docs](http://localhost:8000/docs)).
 
 ### Seed or refresh model data
 
-`DATA_DIR` is gitignored, so a fresh clone has no database until you populate it. With the API running and `.env`
-configured:
+`DATA_DIR` is gitignored, so a fresh clone has no database until it is populated. On API startup, if
+`DATA_DIR/database.db` is missing, the back-end automatically fetches from Artificial Analysis and OpenRouter and
+writes SQLite (requires `.env` API keys).
+
+To force a refresh while the API is running:
 
 ```bash
-curl -X POST http://localhost:8000/refresh
+curl -X POST "http://localhost:${BACKEND_PORT:-8000}/refresh"
 ```
 
 Or, with the virtualenv activated and without starting the server:
@@ -139,7 +174,8 @@ Or, with the virtualenv activated and without starting the server:
 python -m llm_rankings.database
 ```
 
-That wipes `DATA_DIR/database.db` (if present), fetches from both APIs, matches models, and writes SQLite.
+Both of those wipe `DATA_DIR/database.db` (if present), fetch from both APIs (including OpenRouter
+`GET /benchmarks` → `DATA_DIR/intermediate/raw/benchmarks.json`), match models, and write SQLite.
 
 ### Regenerate the front-end API client
 
@@ -154,7 +190,3 @@ After changing the FastAPI surface, regenerate OpenAPI and the TypeScript client
 This project was developed with the assistance of an LLM coding agent. When work was off-loaded to the LLM, all aspects
 of its implementation were read, verified, tested, and then modified by me to ensure they were accurate and up to my
 standards.
-
-## To Do
-
-- [ ] Add modalities to models, so that you can filter by those that accept both text *and* image.

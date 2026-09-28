@@ -160,7 +160,7 @@ export interface ClientOptions {
     throwOnError?: boolean;
 }
 
-type MethodFunction = <
+type MethodFn = <
     TData = unknown,
     TError = unknown,
     ThrowOnError extends boolean = false,
@@ -172,7 +172,7 @@ type MethodFunction = <
     >,
 ) => RequestResult<TData, TError, ThrowOnError, TResponseStyle>;
 
-type SseFunction = <
+type SseFn = <
     TData = unknown,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _TError = unknown,
@@ -185,7 +185,7 @@ type SseFunction = <
     >,
 ) => Promise<ServerSentEventsResult<TData>>;
 
-type RequestFunction = <
+type RequestFn = <
     TData = unknown,
     TError = unknown,
     ThrowOnError extends boolean = false,
@@ -201,7 +201,7 @@ type RequestFunction = <
         >,
 ) => RequestResult<TData, TError, ThrowOnError, TResponseStyle>;
 
-type BuildUrlFunction = <
+type BuildUrlFn = <
     TData extends {
         body?: unknown;
         path?: Record<string, unknown>;
@@ -213,11 +213,11 @@ type BuildUrlFunction = <
 ) => string;
 
 export type Client = CoreClient<
-    RequestFunction,
+    RequestFn,
     Config,
-    MethodFunction,
-    BuildUrlFunction,
-    SseFunction
+    MethodFn,
+    BuildUrlFn,
+    SseFn
 > & {
     interceptors: Middleware<
         Request,

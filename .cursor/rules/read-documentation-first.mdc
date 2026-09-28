@@ -12,15 +12,15 @@ Before planning, editing, or answering questions about this project, read the re
 Start with the sources most likely to apply to the task:
 
 1. **README.md** — setup, scripts, configuration, architecture, and feature overview
-2. **docs/** — guides, deployment notes, and area-specific documentation (when present)
-3. **AGENTS.md** — agent or contributor instructions (when present)
-4. **Config templates and comments** — e.g. `wrangler.toml`, `.env.example`, and similar files that document expected configuration
+2. **Area READMEs** — `backend/README.md` for the Python API/database; `frontend/README.md` for the Next.js UI
+3. **AGENTS.md** — agent or contributor instructions
+4. **Config templates and comments** — especially `.env.template` and comments in setup/run scripts under `bin/`
 5. **Relevant Cursor skills** — when the task matches an available skill in `~/.cursor/skills-cursor/`, read that skill before acting
 
 ## When to read
 
-- **New task or new area of the codebase** — read README and any docs for that area before making changes
-- **Setup, build, deploy, or config work** — read README and config templates first
+- **New task or new area of the codebase** — read the root README and the backend or frontend README for that area before making changes
+- **Setup, build, deploy, or config work** — read the root README and `.env.template` first
 - **Unclear requirements** — check docs before guessing at conventions or architecture
 
 ## Guidelines

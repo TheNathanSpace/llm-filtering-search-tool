@@ -20,6 +20,15 @@ export function formatNumber(value: number | undefined) {
     return number_.toLocaleString();
 }
 
+export function formatCommaSeparatedList(
+    value: readonly string[] | undefined | null,
+): string {
+    if (!value || value.length === 0) {
+        return "";
+    }
+    return value.join(", ");
+}
+
 export function toTitleCase(label: string) {
     // https://stackoverflow.com/a/6475125/7492795
     let index, index_, string_;

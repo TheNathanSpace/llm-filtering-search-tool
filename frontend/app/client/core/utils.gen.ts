@@ -3,9 +3,9 @@
 import type { BodySerializer, QuerySerializer } from "./bodySerializer.gen";
 import {
     type ArraySeparatorStyle,
-    serializeArrayParam as serializeArrayParameter,
-    serializeObjectParam as serializeObjectParameter,
-    serializePrimitiveParam as serializePrimitiveParameter,
+    serializeArrayParam,
+    serializeObjectParam,
+    serializePrimitiveParam,
 } from "./pathSerializer.gen";
 
 export interface PathSerializer {
@@ -29,14 +29,14 @@ export const defaultPathSerializer = ({
 
             if (name.endsWith("*")) {
                 explode = true;
-                name = name.slice(0, Math.max(0, name.length - 1));
+                name = name.substring(0, name.length - 1);
             }
 
             if (name.startsWith(".")) {
-                name = name.slice(1);
+                name = name.substring(1);
                 style = "label";
             } else if (name.startsWith(";")) {
-                name = name.slice(1);
+                name = name.substring(1);
                 style = "matrix";
             }
 
@@ -49,7 +49,7 @@ export const defaultPathSerializer = ({
             if (Array.isArray(value)) {
                 url = url.replace(
                     match,
-                    serializeArrayParameter({ explode, name, style, value }),
+                    serializeArrayParam({ explode, name, style, value }),
                 );
                 continue;
             }
@@ -57,7 +57,7 @@ export const defaultPathSerializer = ({
             if (typeof value === "object") {
                 url = url.replace(
                     match,
-                    serializeObjectParameter({
+                    serializeObjectParam({
                         explode,
                         name,
                         style,
@@ -71,7 +71,7 @@ export const defaultPathSerializer = ({
             if (style === "matrix") {
                 url = url.replace(
                     match,
-                    `;${serializePrimitiveParameter({
+                    `;${serializePrimitiveParam({
                         name,
                         value: value as string,
                     })}`,
@@ -108,7 +108,7 @@ export const getUrl = ({
     }
     let search = query ? querySerializer(query) : "";
     if (search.startsWith("?")) {
-        search = search.slice(1);
+        search = search.substring(1);
     }
     if (search) {
         url += `?${search}`;
@@ -134,7 +134,7 @@ export function getValidRequestBody(options: {
         }
 
         // not all clients implement a serializedBody property (i.e., client-axios)
-        return options.body === "" ? null : options.body;
+        return options.body !== "" ? options.body : null;
     }
 
     // plain/text body

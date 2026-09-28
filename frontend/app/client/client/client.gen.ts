@@ -16,10 +16,10 @@ import {
     getParseAs,
     mergeConfigs,
     mergeHeaders,
-    setAuthParams as setAuthParameters,
+    setAuthParams,
 } from "./utils.gen";
 
-type RequestInit_ = Omit<RequestInit, "body" | "headers"> & {
+type ReqInit = Omit<RequestInit, "body" | "headers"> & {
     body?: any;
     headers: ReturnType<typeof mergeHeaders>;
 };
@@ -49,7 +49,7 @@ export const createClient = (config: Config = {}): Client => {
     >(
         options: RequestOptions<TData, TResponseStyle, ThrowOnError, Url>,
     ) => {
-        const options_ = {
+        const opts = {
             ..._config,
             ...options,
             fetch: options.fetch ?? _config.fetch ?? globalThis.fetch,
@@ -57,30 +57,30 @@ export const createClient = (config: Config = {}): Client => {
             serializedBody: undefined as string | undefined,
         };
 
-        if (options_.security) {
-            await setAuthParameters(options_);
+        if (opts.security) {
+            await setAuthParams(opts);
         }
 
-        if (options_.requestValidator) {
-            await options_.requestValidator(options_);
+        if (opts.requestValidator) {
+            await opts.requestValidator(opts);
         }
 
-        if (options_.body !== undefined && options_.bodySerializer) {
-            options_.serializedBody = options_.bodySerializer(options_.body) as
+        if (opts.body !== undefined && opts.bodySerializer) {
+            opts.serializedBody = opts.bodySerializer(opts.body) as
                 | string
                 | undefined;
         }
 
         // remove Content-Type header if body is empty to avoid sending invalid requests
-        if (options_.body === undefined || options_.serializedBody === "") {
-            options_.headers.delete("Content-Type");
+        if (opts.body === undefined || opts.serializedBody === "") {
+            opts.headers.delete("Content-Type");
         }
 
-        const resolvedOptions = options_ as typeof options_ &
+        const resolvedOpts = opts as typeof opts &
             ResolvedRequestOptions<TResponseStyle, ThrowOnError, Url>;
-        const url = buildUrl(resolvedOptions);
+        const url = buildUrl(resolvedOpts);
 
-        return { opts: resolvedOptions, url };
+        return { opts: resolvedOpts, url };
     };
 
     const request: Client["request"] = async (options) => {
@@ -92,7 +92,7 @@ export const createClient = (config: Config = {}): Client => {
 
         try {
             const { opts, url } = await beforeRequest(options);
-            const requestInit: RequestInit_ = {
+            const requestInit: ReqInit = {
                 redirect: "follow",
                 ...opts,
                 body: getValidRequestBody(opts),
@@ -100,9 +100,9 @@ export const createClient = (config: Config = {}): Client => {
 
             request = new Request(url, requestInit);
 
-            for (const function_ of interceptors.request.fns) {
-                if (function_) {
-                    request = await function_(request, opts);
+            for (const fn of interceptors.request.fns) {
+                if (fn) {
+                    request = await fn(request, opts);
                 }
             }
 
@@ -112,9 +112,9 @@ export const createClient = (config: Config = {}): Client => {
 
             response = await _fetch(request);
 
-            for (const function_ of interceptors.response.fns) {
-                if (function_) {
-                    response = await function_(response, request, opts);
+            for (const fn of interceptors.response.fns) {
+                if (fn) {
+                    response = await fn(response, request, opts);
                 }
             }
 
@@ -137,23 +137,19 @@ export const createClient = (config: Config = {}): Client => {
                     switch (parseAs) {
                         case "arrayBuffer":
                         case "blob":
-                        case "text": {
+                        case "text":
                             emptyData = await response[parseAs]();
                             break;
-                        }
-                        case "formData": {
+                        case "formData":
                             emptyData = new FormData();
                             break;
-                        }
-                        case "stream": {
+                        case "stream":
                             emptyData = response.body;
                             break;
-                        }
                         case "json":
-                        default: {
+                        default:
                             emptyData = {};
                             break;
-                        }
                     }
                     return opts.responseStyle === "data"
                         ? emptyData
@@ -168,10 +164,9 @@ export const createClient = (config: Config = {}): Client => {
                     case "arrayBuffer":
                     case "blob":
                     case "formData":
-                    case "text": {
+                    case "text":
                         data = await response[parseAs]();
                         break;
-                    }
                     case "json": {
                         // Some servers return 200 with no Content-Length and empty body.
                         // response.json() would throw; read as text and parse if non-empty.
@@ -179,14 +174,13 @@ export const createClient = (config: Config = {}): Client => {
                         data = text ? JSON.parse(text) : {};
                         break;
                     }
-                    case "stream": {
+                    case "stream":
                         return opts.responseStyle === "data"
                             ? response.body
                             : {
                                   data: response.body,
                                   ...result,
                               };
-                    }
                 }
 
                 if (parseAs === "json") {
@@ -220,9 +214,9 @@ export const createClient = (config: Config = {}): Client => {
         } catch (error) {
             let finalError = error;
 
-            for (const function_ of interceptors.error.fns) {
-                if (function_) {
-                    finalError = await function_(
+            for (const fn of interceptors.error.fns) {
+                if (fn) {
+                    finalError = await fn(
                         finalError,
                         response,
                         request,
@@ -248,11 +242,11 @@ export const createClient = (config: Config = {}): Client => {
         }
     };
 
-    const makeMethodFunction =
+    const makeMethodFn =
         (method: Uppercase<HttpMethod>) => (options: RequestOptions) =>
             request({ ...options, method });
 
-    const makeSseFunction =
+    const makeSseFn =
         (method: Uppercase<HttpMethod>) => async (options: RequestOptions) => {
             const { opts, url } = await beforeRequest(options);
             return createSseClient({
@@ -261,9 +255,9 @@ export const createClient = (config: Config = {}): Client => {
                 method,
                 onRequest: async (url, init) => {
                     let request = new Request(url, init);
-                    for (const function_ of interceptors.request.fns) {
-                        if (function_) {
-                            request = await function_(request, opts);
+                    for (const fn of interceptors.request.fns) {
+                        if (fn) {
+                            request = await fn(request, opts);
                         }
                     }
                     return request;
@@ -281,29 +275,29 @@ export const createClient = (config: Config = {}): Client => {
 
     return {
         buildUrl: _buildUrl,
-        connect: makeMethodFunction("CONNECT"),
-        delete: makeMethodFunction("DELETE"),
-        get: makeMethodFunction("GET"),
+        connect: makeMethodFn("CONNECT"),
+        delete: makeMethodFn("DELETE"),
+        get: makeMethodFn("GET"),
         getConfig,
-        head: makeMethodFunction("HEAD"),
+        head: makeMethodFn("HEAD"),
         interceptors,
-        options: makeMethodFunction("OPTIONS"),
-        patch: makeMethodFunction("PATCH"),
-        post: makeMethodFunction("POST"),
-        put: makeMethodFunction("PUT"),
+        options: makeMethodFn("OPTIONS"),
+        patch: makeMethodFn("PATCH"),
+        post: makeMethodFn("POST"),
+        put: makeMethodFn("PUT"),
         request,
         setConfig,
         sse: {
-            connect: makeSseFunction("CONNECT"),
-            delete: makeSseFunction("DELETE"),
-            get: makeSseFunction("GET"),
-            head: makeSseFunction("HEAD"),
-            options: makeSseFunction("OPTIONS"),
-            patch: makeSseFunction("PATCH"),
-            post: makeSseFunction("POST"),
-            put: makeSseFunction("PUT"),
-            trace: makeSseFunction("TRACE"),
+            connect: makeSseFn("CONNECT"),
+            delete: makeSseFn("DELETE"),
+            get: makeSseFn("GET"),
+            head: makeSseFn("HEAD"),
+            options: makeSseFn("OPTIONS"),
+            patch: makeSseFn("PATCH"),
+            post: makeSseFn("POST"),
+            put: makeSseFn("PUT"),
+            trace: makeSseFn("TRACE"),
         },
-        trace: makeMethodFunction("TRACE"),
+        trace: makeMethodFn("TRACE"),
     } as Client;
 };

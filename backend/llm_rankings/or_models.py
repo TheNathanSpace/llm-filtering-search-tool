@@ -1,11 +1,14 @@
 import datetime
 import logging
 import string
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
 from llm_rankings import util
+
+logger = logging.getLogger(__name__)
 
 
 class ORBaseModel(BaseModel):
@@ -17,13 +20,52 @@ class ORBaseModel(BaseModel):
 
 
 # https://openrouter.ai/docs/api/api-reference/models/get-models
+# Field required/optional (and nullability) follow openapi.json Model + nested schemas.
+
+
+class InputModality(StrEnum):
+    """OpenAPI `InputModality`."""
+
+    TEXT = "text"
+    IMAGE = "image"
+    FILE = "file"
+    AUDIO = "audio"
+    VIDEO = "video"
+
+
+class OutputModality(StrEnum):
+    """OpenAPI `OutputModality`."""
+
+    TEXT = "text"
+    IMAGE = "image"
+    EMBEDDINGS = "embeddings"
+    AUDIO = "audio"
+    VIDEO = "video"
+    RERANK = "rerank"
+    SPEECH = "speech"
+    TRANSCRIPTION = "transcription"
+
+
+class ORPricingOverride(ORBaseModel):
+    """Conditional override of base pricing (token threshold and/or UTC window)."""
+
+    min_prompt_tokens: float | None = None
+    utc_start: float | None = None
+    utc_end: float | None = None
+    prompt: float | None = None
+    completion: float | None = None
+    audio: float | None = None
+    input_cache_read: float | None = None
+    input_cache_write: float | None = None
+    input_cache_write_1h: float | None = None
+    input_audio_cache: float | None = None
 
 
 class ORPricing(ORBaseModel):
     """Prices are in $/token, NOT $/1M tokens."""
 
-    prompt: float | None = None
-    completion: float | None = None
+    prompt: float
+    completion: float
     image: float | None = None
     audio: float | None = None
     request: float | None = None
@@ -31,11 +73,13 @@ class ORPricing(ORBaseModel):
     internal_reasoning: float | None = None
     input_cache_read: float | None = None
     input_cache_write: float | None = None
+    input_cache_write_1h: float | None = None
     audio_output: float | None = None
     image_output: float | None = None
     image_token: float | None = None
     input_audio_cache: float | None = None
     discount: float | None = None
+    overrides: list[ORPricingOverride] | None = None
 
     @staticmethod
     def get_per_million_tokens(value: float | None) -> float | None:
@@ -51,68 +95,100 @@ class ORPricing(ORBaseModel):
 
 
 class ORArchitecture(ORBaseModel):
-    modality: str | None = None
-    input_modalities: list[str] | None = None
-    output_modalities: list[str] | None = None
+    modality: str | None
+    input_modalities: list[InputModality]
+    output_modalities: list[OutputModality]
     tokenizer: str | None = None
     instruct_type: str | None = None
 
     def is_text(self) -> bool:
-        if "text" not in self.input_modalities or "text" not in self.output_modalities:
-            return False
-        return True
+        return (
+            InputModality.TEXT in self.input_modalities
+            and OutputModality.TEXT in self.output_modalities
+        )
 
 
 class ORTopProvider(ORBaseModel):
+    is_moderated: bool
     context_length: int | None = None
     max_completion_tokens: int | None = None
-    is_moderated: bool | None = None
 
 
 class ORLinks(ORBaseModel):
-    details: str | None = None
+    details: str
+
+
+class ORModelAliasTarget(ORBaseModel):
+    slug: str
+    name: str
 
 
 class ORPerRequestLimits(ORBaseModel):
-    completion_tokens: float | None = None
-    prompt_tokens: float | None = None
+    completion_tokens: float
+    prompt_tokens: float
+
+
+class ORReasoning(ORBaseModel):
+    mandatory: bool
+    default_enabled: bool | None = None
+    supported_efforts: list[str] | None = None
+    default_effort: str | None = None
+    supports_max_tokens: bool | None = None
+
+
+class ORArtificialAnalysisBenchmarks(ORBaseModel):
+    intelligence_index: float | None
+    coding_index: float | None
+    agentic_index: float | None
+
+
+class ORDesignArenaBenchmark(ORBaseModel):
+    arena: str
+    category: str
+    elo: float
+    rank: int
+    win_rate: float
+
+
+class ORBenchmarks(ORBaseModel):
+    design_arena: list[ORDesignArenaBenchmark]
+    artificial_analysis: ORArtificialAnalysisBenchmarks | None = None
 
 
 class OpenRouterModel(ORBaseModel):
     id: str
-    name: str | None = None
-    created: int | None = None  # Raw data has unix timestamp (int)
+    canonical_slug: str
+    name: str
+    created: int  # Unix timestamp
+    pricing: ORPricing
+    context_length: int | None
+    architecture: ORArchitecture
+    top_provider: ORTopProvider
+    per_request_limits: ORPerRequestLimits | None
+    supported_parameters: list[str]
+    default_parameters: dict[str, Any] | None
+    supported_voices: list[str] | None
+    links: ORLinks
     description: str | None = None
-    context_length: int | None = None
-    architecture: ORArchitecture | None = None
-    pricing: ORPricing | None = None
-    top_provider: ORTopProvider | None = None
-    per_request_limits: ORPerRequestLimits | None = None
-    supported_parameters: list[str] | None = None
-    default_parameters: dict[str, Any] | None = None
-    supported_voices: list[Any] | None = None
     knowledge_cutoff: str | None = None
     expiration_date: str | None = None
-    links: ORLinks | None = None
     hugging_face_id: str | None = None
-    canonical_slug: str | None = None
+    alias_target: ORModelAliasTarget | None = None
+    benchmarks: ORBenchmarks | None = None
+    reasoning: ORReasoning | None = None
 
     class Config:
         populate_by_name = True
 
     def get_url(self) -> str | None:
-        if self.links and self.links.details and self.canonical_slug:
+        if self.links.details and self.canonical_slug:
             return "https://openrouter.ai/" + self.canonical_slug.lstrip("/")
         return None
 
     def get_minimal_pricing(self) -> dict[str, float]:
-        if self.pricing is None:
-            return {}
         return self.pricing.get_minimal()
 
     def get_minimal_created(self) -> str | None:
-        if self.created is None:
-            return None
         return util.unix_epoch_to_utc(self.created)
 
     def get_provider(self) -> str:
@@ -149,11 +225,17 @@ class OpenRouterModel(ORBaseModel):
         return self.id.__hash__()
 
 
+class ORModelsListLinks(ORBaseModel):
+    next: str | None
+
+
 class OpenRouterAPIResponse(ORBaseModel):
     data: list[OpenRouterModel]
+    total_count: int
+    links: ORModelsListLinks
 
     def get_minimal_models(self) -> list[dict]:
-        logging.debug("Cleaning OpenRouter models")
+        logger.debug("Cleaning OpenRouter models")
         all_minimal: list[dict] = []
         for model in self.data:
             minimal = model.get_minimal()
@@ -162,7 +244,13 @@ class OpenRouterAPIResponse(ORBaseModel):
         return all_minimal
 
     def get_providers(self) -> list[str]:
-        return list({model.get_provider() for model in self.data})
+        return list(
+            {
+                model.get_provider()
+                for model in self.data
+                if not model.get_provider().startswith("~")
+            }
+        )
 
     def get_models_for_provider(self, provider: str) -> list[OpenRouterModel]:
         return [model for model in self.data if model.get_provider() == provider]

@@ -19,24 +19,24 @@ export type HttpMethod =
     | "trace";
 
 export type Client<
-    RequestFunction = never,
+    RequestFn = never,
     Config = unknown,
-    MethodFunction = never,
-    BuildUrlFunction = never,
-    SseFunction = never,
+    MethodFn = never,
+    BuildUrlFn = never,
+    SseFn = never,
 > = {
     /**
      * Returns the final request URL.
      */
-    buildUrl: BuildUrlFunction;
+    buildUrl: BuildUrlFn;
     getConfig: () => Config;
-    request: RequestFunction;
+    request: RequestFn;
     setConfig: (config: Config) => Config;
 } & {
-    [K in HttpMethod]: MethodFunction;
-} & ([SseFunction] extends [never]
+    [K in HttpMethod]: MethodFn;
+} & ([SseFn] extends [never]
         ? { sse?: never }
-        : { sse: { [K in HttpMethod]: SseFunction } });
+        : { sse: { [K in HttpMethod]: SseFn } });
 
 export interface Config {
     /**

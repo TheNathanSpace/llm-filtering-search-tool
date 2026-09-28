@@ -5,6 +5,14 @@
 - <https://mui.com/material-ui/all-components/>
 - <https://mui.com/x/react-data-grid/>
 
+## Logging
+
+On server start, [`instrumentation.ts`](instrumentation.ts) tees Node.js `console.*` output (and
+`onRequestError` events) to `DATA_DIR/logs/latest.log` — the symlink maintained by the back-end —
+using `DATA_DIR` and `LOG_LEVEL` from the repo-root `.env`. Lines are skipped until that symlink
+exists (start the API first, or restart the front-end after the API). Browser/client logs are not
+written to the file.
+
 Always-visible filter fields (e.g. Min Price / Max Price) would improve usability over multi-click column filters alone.
 
 ## Model filters
@@ -15,18 +23,22 @@ Filter UI and logic live under `app/filters/`:
 | ------------------------------------------------------------------------------- | ---------------------------------------------- |
 | `model-filters.tsx`                                                             | Filter panel layout                            |
 | `filter-option.tsx`                                                             | Shared label + control row                     |
-| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` | Reusable controls                              |
+| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` | Reusable range and select controls             |
+| `checkbox-row-filter.tsx`                                                       | Row of checkboxes with a label under each      |
+| `modality-options.ts`                                                           | Input and output modality checkbox options     |
 | `filter-types.ts`                                                               | Filter state and bounds types                  |
 | `filter-bounds.ts`                                                              | Derive min/max and unique creators from models |
 | `apply-filters.ts`                                                              | Pure `filterModels()`                          |
 | `use-model-filters.ts`                                                          | State + filtered rows for the table            |
 
-`model-table.tsx` only composes the filter panel and Data Grid.
+`model-table.tsx` only composes the filter panel and Data Grid. Column definitions live in
+`app/columns.tsx`. Input and output modalities display as comma-separated lists (e.g. `text, image`).
+The modality filters keep models that include **every** checked type (unchecked means no constraint).
 
 ### Adding a new filter
 
-Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, or `NumberRangeFilter`) when possible. Only add a new
-control component if the interaction pattern is new.
+Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, or `CheckboxRowFilter`) when
+possible. Only add a new control component if the interaction pattern is new.
 
 1. **`filter-types.ts`** — Add the field to `ModelFiltersState` and `UserFilterChoices` (and to `FilterBounds` if it
    needs min/max or option lists derived from the data). Update `createInitialUserChoices` and `resolveFilters` with a
@@ -48,11 +60,14 @@ From the repo root:
 ./bin/start-frontend-live.sh
 ```
 
-`npm run dev` (from `frontend/`) also works; the app listens on port **3030**.
+`./bin/start-frontend-live.sh` reads `FRONTEND_PORT` from the repo-root [`.env`](../.env.template)
+(default `3030`). From `frontend/`, `npm run dev -- -p <port>` also works if you pass the port yourself.
 
-Open [http://localhost:3030](http://localhost:3030). The UI talks to the back-end URL from
-`NEXT_PUBLIC_BACKEND_URL` in the repo-root [`.env`](../.env.template) (default `http://localhost:8000`). For a full
-local stack, see the root [README](../README.md).
+Open `http://localhost:<FRONTEND_PORT>` (default [http://localhost:3030](http://localhost:3030)).
+The browser calls same-origin `/api/*`; [`proxy.ts`](proxy.ts) rewrites those requests at runtime to
+`http://<BACKEND_HOST>:<BACKEND_PORT>` from the process environment / repo-root `.env` (defaults
+`127.0.0.1` / `8000`; a bind address of `0.0.0.0` is mapped to `127.0.0.1`). Changing host/port does not
+require rebuilding the front-end. For a full local stack, see the root [README](../README.md).
 
 ### API Client
 

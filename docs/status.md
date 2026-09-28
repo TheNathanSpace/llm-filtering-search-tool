@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-28 — Price filters + drop `~`  
-**Latest change:** Dedicated pricing output/input ($/1M) panel filters (QRY-02); skip OpenRouter `~` provider listings at combine; remove unused OR/util helpers.
+**Last updated:** 2026-09-28 — Docs hygiene accuracy  
+**Latest change:** Cleared stale backlog/status wording (finished intelligence/price/always-visible-range items; UI-01 note; collapsed done benchmarks section).
 
 ## Pickup
 

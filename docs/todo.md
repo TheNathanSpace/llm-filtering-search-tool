@@ -36,38 +36,31 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column). |
 | Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column). |
 
-Related UX: always-visible range controls for numeric filters rather than relying on Data Grid column menus alone.
+Related UX: always-visible range controls for shipped numeric filters (**done**). Throughput panel ranges wait on the source above.
 
-### 2. Benchmarks data path
-
-D-01–D-03 decided. Remaining stretch only if we later want Design Arena or OR-native evals from
-`GET /benchmarks` (currently not fetched).
-
-1. ~~Map D-02 onto UI~~ — **done** (`benchmark_or_*` columns + filters).
-2. ~~OpenRouter-only AA removal~~ — **done**.
-3. ~~Drop unused `GET /benchmarks` raw dump~~ — **done**.
-
-### 3. Plots
+### 2. Plots
 
 | Item | Requirement | Notes |
 | --- | --- | --- |
 | User-driven plots | [UI-02](requirements.md#ui-02) | README goal #3; **not started**. Stretch until filter/sort dimensions work. |
 
-### 4. Docs / process hygiene
+### 3. Docs / process hygiene
 
 | Item | Notes |
 | --- | --- |
-| Keep this backlog authoritative | Delete or redirect stray todo lists when found. |
-| Refresh `api-docs/` when implementing against upstream APIs | `./bin/update-external-api-docs.sh` (OpenRouter only) |
+| Root `todo.md` redirect | **Done** — pointer to this file. |
+| Keep this backlog authoritative | Ongoing — delete or redirect stray lists when found (none found this pass). |
+| Refresh `api-docs/` when implementing against upstream APIs | Ongoing — `./bin/update-external-api-docs.sh` (OpenRouter only). |
 
 ---
 
 ## Done (recently consolidated away)
 
+- Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
+- Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
 - Drop OpenRouter `~` provider listings at combine time; remove unused OR/util helpers
 - Price output/input range filters (QRY-02)
 - Open weights + size: models.dev + Hugging Face enrichment, columns, filter panel (QRY-11/12, SRC-09, UI-09)
-- Dropped unused OpenRouter `GET /benchmarks` raw dump (D-03)
 - OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
 - External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)
 - Docker compose aligned with app ports/healthcheck

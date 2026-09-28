@@ -15,7 +15,7 @@ The goal of this project is to:
 3. Generate some nice plots based on the user's specifications.
 
 Product requirements and status for those goals: [`docs/requirements.md`](docs/requirements.md).
-Engineering backlog (including intelligence filters and throughput source work):
+Engineering backlog (throughput source + filter next):
 [`docs/todo.md`](docs/todo.md).
 
 And, the intent is, given these tools, it will be easier for you to decide which LLM is best for your specific

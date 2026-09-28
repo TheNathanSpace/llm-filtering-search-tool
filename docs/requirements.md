@@ -54,7 +54,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done (core QRY filters still incomplete) |
+| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done — table + filters ship; throughput still open ([QRY-03](requirements.md#qry-03)) |
 | <a id="ui-02"></a>UI-02 | Generate plots from user-selected metrics/models | stretch | not started |
 | <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox controls (not only grid column menus) | must | partial — panel covers QRY-01–QRY-02, QRY-04–QRY-12; throughput ranges still missing |
 | <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, creator, description, created, knowledge cutoff, context length, input/output modalities, open weights, size | must | done |

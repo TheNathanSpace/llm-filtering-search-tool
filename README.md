@@ -201,6 +201,9 @@ To request a refresh while the API is running (skipped if still within the 24h w
 curl -X POST "http://localhost:${BACKEND_PORT:-8000}/refresh"
 ```
 
+Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
+`GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).
+
 Or, with the virtualenv activated and without starting the server:
 
 ```bash

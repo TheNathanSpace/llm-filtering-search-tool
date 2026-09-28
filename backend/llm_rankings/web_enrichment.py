@@ -302,6 +302,23 @@ def _update_cost_summary(
         path.write_text(json.dumps(payload, indent=2))
 
 
+def read_lifetime_cost_usd() -> float:
+    """Return durable lifetime Exa/OpenRouter enrichment spend, or 0 if missing."""
+    path = _summary_path()
+    if not path.is_file():
+        return 0.0
+    with _ledger_lock:
+        try:
+            payload = json.loads(path.read_text())
+        except json.JSONDecodeError:
+            logger.warning("Corrupt web enrichment cost_summary.json; reporting $0")
+            return 0.0
+    try:
+        return float(payload.get("lifetime_usd") or 0.0)
+    except (TypeError, ValueError):
+        return 0.0
+
+
 def _load_cached(model_id: str) -> dict[str, Any] | None:
     path = _cache_path(model_id)
     if not path.is_file():

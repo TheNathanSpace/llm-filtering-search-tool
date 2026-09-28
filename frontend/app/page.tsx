@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { CombinedModel, getModelsModelsGet } from "@/app/client";
 import { client } from "@/app/client/client.gen";
 import Titles from "@/app/titles";
+import MetadataNote from "@/app/metadata-note";
 
 client.setConfig({
     baseUrl: "/api",
@@ -38,6 +39,7 @@ export default function Home() {
             >
                 <ModelTable models={models} />
             </div>
+            <MetadataNote />
         </div>
     );
 }

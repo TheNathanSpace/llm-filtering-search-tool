@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetModelsModelsGetData, GetModelsModelsGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, RefreshDataRefreshPostData, RefreshDataRefreshPostResponses } from './types.gen';
+import type { GetMetaMetaGetData, GetMetaMetaGetResponses, GetModelsModelsGetData, GetModelsModelsGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses, RefreshDataRefreshPostData, RefreshDataRefreshPostResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -22,6 +22,11 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  * Health Check
  */
 export const healthCheckHealthGet = <ThrowOnError extends boolean = false>(options?: Options<HealthCheckHealthGetData, ThrowOnError>): RequestResult<HealthCheckHealthGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<HealthCheckHealthGetResponses, unknown, ThrowOnError>({ url: '/health', ...options });
+
+/**
+ * Get Meta
+ */
+export const getMetaMetaGet = <ThrowOnError extends boolean = false>(options?: Options<GetMetaMetaGetData, ThrowOnError>): RequestResult<GetMetaMetaGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetMetaMetaGetResponses, unknown, ThrowOnError>({ url: '/meta', ...options });
 
 /**
  * Refresh Data

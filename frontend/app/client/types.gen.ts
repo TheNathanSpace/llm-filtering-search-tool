@@ -5,6 +5,24 @@ export type ClientOptions = {
 };
 
 /**
+ * AppMeta
+ */
+export type AppMeta = {
+    /**
+     * Enrichment Cost Usd
+     *
+     * Lifetime USD spent on opt-in OpenRouter/Exa web enrichment
+     */
+    enrichment_cost_usd: number;
+    /**
+     * Last Refresh At
+     *
+     * ISO-8601 UTC timestamp of the last successful model data refresh
+     */
+    last_refresh_at: string | null;
+};
+
+/**
  * CombinedModel
  */
 export type CombinedModel = {
@@ -117,6 +135,22 @@ export type HealthCheckHealthGetResponses = {
      */
     200: unknown;
 };
+
+export type GetMetaMetaGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/meta';
+};
+
+export type GetMetaMetaGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: AppMeta;
+};
+
+export type GetMetaMetaGetResponse = GetMetaMetaGetResponses[keyof GetMetaMetaGetResponses];
 
 export type RefreshDataRefreshPostData = {
     body?: never;

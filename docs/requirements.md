@@ -40,16 +40,17 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="src-01"></a>SRC-01 | Ingest model metadata from configured upstream APIs into SQLite | must | done (OpenRouter only; skip provider ids starting with `~`) |
-| <a id="src-02"></a>SRC-02 | Expose refresh path to wipe and rebuild local data | must | done (`POST /refresh`, `python -m llm_rankings.database`) |
+| <a id="src-02"></a>SRC-02 | Expose refresh path to wipe and rebuild local data when stale (hard 24h cap; no force bypass) | must | done (`POST /refresh`, `python -m llm_rankings.database` → `refresh_if_stale`) |
 | <a id="src-03"></a>SRC-03 | Prefer a single coherent benchmark story for intelligence UX | must | done — OpenRouter-embedded AA indices (`benchmark_or_*`) |
 | <a id="src-04"></a>SRC-04 | ~~Match OpenRouter and Artificial Analysis providers/models~~ | — | dropped — OpenRouter-only ([todo D-01](todo.md#open-decisions)) |
-| <a id="src-05"></a>SRC-05 | **Auto-seed** SQLite on API startup when `DATA_DIR/database.db` is missing | must | done |
+| <a id="src-05"></a>SRC-05 | **Auto-refresh** SQLite on API startup when the DB is missing or last successful refresh is ≥24h old | must | done |
 | <a id="src-06"></a>SRC-06 | Persist a **combined model** record (identity, modalities, OpenRouter URL, OR AA indices as `benchmark_or_*`; list-level `pricing_*` / `speed_*` reserved/null pending provider aggregation; open-weights + size when enrichment succeeds); exclude OpenRouter `~` provider listings | must | done |
 | <a id="src-07"></a>SRC-07 | ~~Fetch OpenRouter `GET /benchmarks` and store the raw response~~ | — | dropped — unused dump removed ([todo D-03](todo.md#open-decisions)) |
 | <a id="src-08"></a>SRC-08 | Write raw upstream model payloads under `DATA_DIR/intermediate/raw/` for debugging | stretch | done |
 | <a id="src-09"></a>SRC-09 | Enrich models with **open weights** (models.dev) and **parameter size** (Hugging Face Hub via `hugging_face_id`), with durable disk cache and polite rate limits | must | done |
 | <a id="src-10"></a>SRC-10 | Fetch OpenRouter `GET /models/{author}/{slug}/endpoints` per catalog model (polite concurrency + 429 backoff); persist per-provider **pricing + throughput/latency** rows (`model_provider_endpoints`) | must | done |
-| <a id="src-11"></a>SRC-11 | Opt-in **web gap-fill** for missing `is_open_weights` / `parameters_b` / `knowledge_cutoff` via OpenRouter chat + Exa (`OR_WEB_ENRICHMENT`, `OR_ENRICHMENT_MODEL`); never overwrite OR/models.dev/HF; durable cache + local cost ledger under `DATA_DIR/cache/web_enrichment/` | stretch | done |
+| <a id="src-11"></a>SRC-11 | Hit upstream model APIs **at most once per 24h**: OpenRouter models + endpoints + models.dev ≤24h disk caches; HF durable per-repo cache; in-process hourly checker calls the same hard-capped refresh gate; rebuild SQLite via normal populate (cache hits when fresh) | must | done |
+| <a id="src-12"></a>SRC-12 | Opt-in **web gap-fill** for missing `is_open_weights` / `parameters_b` / `knowledge_cutoff` via OpenRouter chat + Exa (`OR_WEB_ENRICHMENT`, `OR_ENRICHMENT_MODEL`); never overwrite OR/models.dev/HF; durable cache + local cost ledger under `DATA_DIR/cache/web_enrichment/` | stretch | done |
 
 ---
 
@@ -66,6 +67,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="ui-07"></a>UI-07 | Load models from the API via a **generated TypeScript client** (same-origin `/api`) | must | done |
 | <a id="ui-08"></a>UI-08 | Landing header with product title, short goal copy, and GitHub link | stretch | done |
 | <a id="ui-09"></a>UI-09 | Show **open weights** and **size** columns; dedicated open-weights switch and size range filter in the filter panel | must | done |
+| <a id="ui-10"></a>UI-10 | Bottom-right note: lifetime **enrichment research cost** and **last data refresh** (browser local date/time; UTC tooltip on hover) | stretch | done |
 
 ---
 
@@ -73,7 +75,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and data refresh (`GET /health`, `GET /models`, `POST /refresh`) | must | done |
+| <a id="plt-01"></a>PLT-01 | REST API for health, model list, metadata, and data refresh (`GET /health`, `GET /models`, `GET /meta`, `POST /refresh`) | must | done — `/refresh` returns `{refreshed, skipped, last_refresh_at, message}` under the 24h hard cap ([SRC-11](#src-11)); `/meta` returns `{enrichment_cost_usd, last_refresh_at}` |
 | <a id="plt-02"></a>PLT-02 | Local full-stack and Docker Compose run paths documented in README | must | done |
 | <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT` / `OR_ENRICHMENT_MODEL`, `DATA_DIR`, logging, host/ports) | must | done |
 | <a id="plt-04"></a>PLT-04 | **Logging** to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |

@@ -6,11 +6,13 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models
-from llm_rankings.refresh import refresh_if_stale
+from llm_rankings.refresh import last_refresh_at_iso, refresh_if_stale
 from llm_rankings.util import bootstrap_env_from_argv, get_env_var, setup_logging, validate_env_vars
+from llm_rankings.web_enrichment import read_lifetime_cost_usd
 
 bootstrap_env_from_argv()
 setup_logging()
@@ -68,9 +70,30 @@ app.add_middleware(
 )
 
 
+class AppMeta(BaseModel):
+    enrichment_cost_usd: float = Field(
+        description="Lifetime USD spent on opt-in OpenRouter/Exa web enrichment"
+    )
+    last_refresh_at: str | None = Field(
+        description="ISO-8601 UTC timestamp of the last successful model data refresh"
+    )
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+@app.get("/meta", response_model=AppMeta)
+def get_meta():
+    try:
+        return AppMeta(
+            enrichment_cost_usd=read_lifetime_cost_usd(),
+            last_refresh_at=last_refresh_at_iso(),
+        )
+    except Exception as e:
+        logger.exception("Failed to read app metadata")
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @app.post("/refresh")

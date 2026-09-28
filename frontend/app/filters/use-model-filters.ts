@@ -19,6 +19,7 @@ function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
     return {
         includeMissing: filters.includeMissing,
         openWeightsOnly: filters.openWeightsOnly,
+        nameQuery: filters.nameQuery,
         creators: filters.creators,
         intelligenceIndex: filters.intelligenceIndex,
         codingIndex: filters.codingIndex,

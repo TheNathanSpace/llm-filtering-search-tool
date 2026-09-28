@@ -7,6 +7,7 @@ import {
 } from "@/app/filters/modality-options";
 import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
+import TextFilter from "@/app/filters/text-filter";
 import { formatPrice } from "@/app/utility";
 import { FormControlLabel, FormGroup, Grid, Switch } from "@mui/material";
 import dayjs from "dayjs";
@@ -56,6 +57,17 @@ export default function ModelFilters(
                         label="Open weights only"
                     />
                 </FormGroup>
+                <TextFilter
+                    name="Name"
+                    label="Search names or families"
+                    value={filters.nameQuery}
+                    onChange={(nameQuery) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            nameQuery,
+                        }));
+                    }}
+                />
                 {bounds.intelligenceIndex && (
                     <NumberRangeFilter
                         name="Intelligence"

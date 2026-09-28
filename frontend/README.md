@@ -23,7 +23,7 @@ Filter UI and logic live under `app/filters/`:
 | ------------------------------------------------------------------------------- | ---------------------------------------------- |
 | `model-filters.tsx`                                                             | Filter panel layout                            |
 | `filter-option.tsx`                                                             | Shared label + control row                     |
-| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` | Reusable range and select controls             |
+| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` / `text-filter.tsx` | Reusable range, select, and text controls |
 | `checkbox-row-filter.tsx`                                                       | Row of checkboxes with a label under each      |
 | `modality-options.ts`                                                           | Input and output modality checkbox options     |
 | `filter-types.ts`                                                               | Filter state and bounds types                  |
@@ -37,12 +37,12 @@ The modality filters keep models that include **every** checked type (unchecked 
 
 ### Adding a new filter
 
-Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, or `CheckboxRowFilter`) when
+Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`, or `CheckboxRowFilter`) when
 possible. Only add a new control component if the interaction pattern is new.
 
 1. **`filter-types.ts`** — Add the field to `ModelFiltersState` and `UserFilterChoices` (and to `FilterBounds` if it
    needs min/max or option lists derived from the data). Update `createInitialUserChoices` and `resolveFilters` with a
-   sensible default (e.g. `[]` for multi-select, `undefined` for bounds-backed ranges).
+   sensible default (e.g. `[]` for multi-select, `""` for text, `undefined` for bounds-backed ranges).
 2. **`filter-bounds.ts`** — If the filter needs bounds or options from the model list, compute them in
    `getFilterBounds`.
 3. **`apply-filters.ts`** — Teach `filterModels` how to apply the new field. Respect `includeMissing` for nullable model

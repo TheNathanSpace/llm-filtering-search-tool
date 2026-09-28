@@ -5,6 +5,7 @@ export type NumberRange = [number, number];
 export type ModelFiltersState = {
     includeMissing: boolean;
     openWeightsOnly: boolean;
+    nameQuery: string;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
@@ -23,6 +24,7 @@ export type ModelFiltersState = {
 export type UserFilterChoices = {
     includeMissing: boolean;
     openWeightsOnly: boolean;
+    nameQuery: string;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
@@ -54,6 +56,7 @@ export function createInitialUserChoices(): UserFilterChoices {
     return {
         includeMissing: true,
         openWeightsOnly: false,
+        nameQuery: "",
         creators: [],
         intelligenceIndex: undefined,
         codingIndex: undefined,
@@ -86,6 +89,7 @@ export function resolveFilters(
     return {
         includeMissing: choices.includeMissing,
         openWeightsOnly: choices.openWeightsOnly,
+        nameQuery: choices.nameQuery,
         creators: choices.creators,
         intelligenceIndex: resolveRange(
             choices.intelligenceIndex,

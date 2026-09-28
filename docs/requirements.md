@@ -31,6 +31,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="qry-10"></a>QRY-10 | Option to treat **missing values as included** when filters would otherwise drop them | must | done |
 | <a id="qry-11"></a>QRY-11 | Filter and sort by **open weights** (boolean from models.dev) | must | done |
 | <a id="qry-12"></a>QRY-12 | Filter and sort by **parameter size** (billions; display as e.g. `7B`) | must | done |
+| <a id="qry-13"></a>QRY-13 | Filter by **name** (case-insensitive substring; finds names/families) | must | done — panel text search |
 
 ---
 
@@ -56,7 +57,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | --- | --- | --- | --- |
 | <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done — table + filters ship; throughput still open ([QRY-03](requirements.md#qry-03)) |
 | <a id="ui-02"></a>UI-02 | Generate plots from user-selected metrics/models | stretch | not started |
-| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox controls (not only grid column menus) | must | partial — panel covers QRY-01–QRY-02, QRY-04–QRY-12; throughput ranges still missing |
+| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | partial — panel covers QRY-01–QRY-02, QRY-04–QRY-13; throughput ranges still missing |
 | <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, creator, description, created, knowledge cutoff, context length, input/output modalities, open weights, size | must | done |
 | <a id="ui-05"></a>UI-05 | Show **outbound links** to OpenRouter model pages | must | done |
 | <a id="ui-06"></a>UI-06 | Show **pricing and latency** columns: input/output price, tokens/s, time-to-first-token, time-to-first-answer-token | must | partial — price columns live; speed columns present but null until a throughput source lands |

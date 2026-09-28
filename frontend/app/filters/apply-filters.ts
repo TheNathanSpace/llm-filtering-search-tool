@@ -15,6 +15,21 @@ function passesRange(
     return value >= range[0] && value <= range[1];
 }
 
+function passesNameQuery(
+    name: string | undefined,
+    query: string,
+    includeMissing: boolean,
+): boolean {
+    const trimmed = query.trim();
+    if (trimmed.length === 0) {
+        return true;
+    }
+    if (!name) {
+        return includeMissing;
+    }
+    return name.toLowerCase().includes(trimmed.toLowerCase());
+}
+
 function passesCreators(
     creator: string | undefined,
     selected: string[],
@@ -66,6 +81,15 @@ export function filterModels(
             !passesOpenWeightsOnly(
                 model.is_open_weights,
                 filters.openWeightsOnly,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesNameQuery(
+                model.name,
+                filters.nameQuery,
                 filters.includeMissing,
             )
         ) {

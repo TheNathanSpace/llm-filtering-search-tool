@@ -35,6 +35,7 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
 | Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column). |
 | Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column). |
+| Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel substring search). |
 
 Related UX: always-visible range controls for shipped numeric filters (**done**). Throughput panel ranges wait on the source above.
 
@@ -61,6 +62,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 - Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
 - Drop OpenRouter `~` provider listings at combine time; remove unused OR/util helpers
 - Price output/input range filters (QRY-02)
+- Name / family panel text search (QRY-13)
 - Open weights + size: models.dev + Hugging Face enrichment, columns, filter panel (QRY-11/12, SRC-09, UI-09)
 - OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
 - External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)

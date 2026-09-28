@@ -41,19 +41,22 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 
 ## Building the model table (OpenRouter + enrichment)
 
-1. Fetch OpenRouter `GET /models` and write the raw payload under
-   `DATA_DIR/intermediate/raw/raw_or_models.json`.
+1. Load OpenRouter `GET /models` from a ≤24h cache under `DATA_DIR/cache/openrouter/models.json`,
+   or fetch and write that cache; always mirror under `DATA_DIR/intermediate/raw/raw_or_models.json`
+   (debug only; not a rebuild source).
 2. Drop OpenRouter models whose provider id starts with ``~`` (router/variant listings).
-3. For each remaining model, fetch `GET /models/{author}/{slug}/endpoints` with a
-   bounded thread pool (default 8 workers) and 429/5xx retries with backoff. Write
-   raw payloads to `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
+3. For each remaining model, load `GET /models/{author}/{slug}/endpoints` from a ≤24h cache under
+   `DATA_DIR/cache/openrouter/endpoints.json`, or fetch with a bounded thread pool (default 8
+   workers) and 429/5xx retries with backoff. Mirror raw payloads to
+   `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
 4. Fetch [models.dev](https://models.dev) `api.json` (or reuse a ≤24h cache under
    `DATA_DIR/cache/models_dev/`) and map the `openrouter` provider’s `open_weights` flags by
    OpenRouter model id. Mirror the payload to `DATA_DIR/intermediate/raw/raw_models_dev.json`.
 5. For each distinct non-empty OpenRouter `hugging_face_id`, resolve parameter count from the
    Hugging Face Hub model API (`safetensors.total` → billions as `parameters_b`). Responses are
-   cached under `DATA_DIR/cache/hf/`; network calls use a project User-Agent, ~1s pacing, and
-   429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
+   cached under `DATA_DIR/cache/hf/` (permanent per repo id; new ids still fetch on cache miss);
+   network calls use a project User-Agent, ~1s pacing, and 429 backoff. Optional `HF_TOKEN` raises
+   Hub rate limits.
 6. Map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
    modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
    plus `is_open_weights` / `parameters_b` when enrichment succeeds. List-level OR `pricing` is
@@ -69,8 +72,16 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
    status/uptime/quantization/context. Primary key is ``{model_id}|{tag}``.
 9. Store both tables in SQLite (`models`, `model_provider_endpoints`).
 
-`DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer unauthenticated
-upstreams or re-bill web enrichment for known model ids.
+`DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer upstreams
+or re-bill web enrichment for known model ids.
 
-On API startup, if `DATA_DIR/database.db` does not exist, the server runs this pipeline automatically
-(`populate_with_models`). Use `POST /refresh` or `python -m llm_rankings.database` to wipe and rebuild later.
+### Refresh cadence (hard 24h cap)
+
+All wipe-and-rebuild entry points go through `llm_rankings.refresh.refresh_if_stale`:
+
+- Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h (no
+  force bypass).
+- Otherwise wipe SQLite (if present), run the pipeline above (OpenRouter models/endpoints and
+  models.dev may be served from disk cache), then write `last_refresh_at`.
+- API lifespan calls this on startup and again about every hour via an in-process checker.
+- `python -m llm_rankings.database` uses the same gate (no public HTTP refresh endpoint).

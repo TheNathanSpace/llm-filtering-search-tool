@@ -46,6 +46,8 @@ services:
     environment:
       BACKEND_HOST: "0.0.0.0"
       WATCHFILES_FORCE_POLLING: "true"
+      # Interactive Swagger/ReDoc; off by default in prod (see ENABLE_API_DOCS).
+      ENABLE_API_DOCS: "1"
     volumes:
       - ./backend:/app/backend
       - ./data:/app/data

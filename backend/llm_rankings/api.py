@@ -11,7 +11,13 @@ from pydantic import BaseModel, Field
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models
 from llm_rankings.refresh import last_refresh_at_iso, refresh_if_stale
-from llm_rankings.util import bootstrap_env_from_argv, get_env_var, setup_logging, validate_env_vars
+from llm_rankings.util import (
+    bootstrap_env_from_argv,
+    get_env_var,
+    is_truthy_env,
+    setup_logging,
+    validate_env_vars,
+)
 from llm_rankings.web_enrichment import read_lifetime_cost_usd
 
 bootstrap_env_from_argv()
@@ -24,6 +30,8 @@ backend_port = get_env_var("BACKEND_PORT")
 
 # How often the in-process checker wakes to call refresh_if_stale (hard 24h gate).
 _REFRESH_CHECK_INTERVAL_SECONDS = 60 * 60
+
+_CLIENT_ERROR_DETAIL = "Internal server error"
 
 
 async def _periodic_refresh_loop() -> None:
@@ -54,7 +62,14 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
             pass
 
 
-app = FastAPI(title="LLM Rankings API", lifespan=lifespan)
+_api_docs_enabled = is_truthy_env("ENABLE_API_DOCS")
+app = FastAPI(
+    title="LLM Rankings API",
+    lifespan=lifespan,
+    docs_url="/docs" if _api_docs_enabled else None,
+    redoc_url="/redoc" if _api_docs_enabled else None,
+    openapi_url="/openapi.json" if _api_docs_enabled else None,
+)
 
 origins = [
     f"http://localhost:{frontend_port}",
@@ -93,17 +108,7 @@ def get_meta():
         )
     except Exception as e:
         logger.exception("Failed to read app metadata")
-        raise HTTPException(status_code=500, detail=str(e)) from e
-
-
-@app.post("/refresh")
-def refresh_data():
-    try:
-        result = refresh_if_stale(reason="api")
-        return result.as_api_dict()
-    except Exception as e:
-        logger.exception("Failed to refresh data")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=_CLIENT_ERROR_DETAIL) from e
 
 
 @app.get("/models", response_model=list[CombinedModel])
@@ -112,7 +117,7 @@ def get_models():
         return get_all_models()
     except Exception as e:
         logger.exception("Failed to retrieve models")
-        raise HTTPException(status_code=500, detail=str(e)) from e
+        raise HTTPException(status_code=500, detail=_CLIENT_ERROR_DETAIL) from e
 
 
 if __name__ == "__main__":

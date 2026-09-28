@@ -24,14 +24,6 @@ class RefreshResult:
     last_refresh_at: str | None
     detail: str
 
-    def as_api_dict(self) -> dict[str, object]:
-        return {
-            "refreshed": self.refreshed,
-            "skipped": self.skipped,
-            "last_refresh_at": self.last_refresh_at,
-            "message": self.detail,
-        }
-
 
 def _metadata_path() -> Path:
     return get_cache_dir() / "last_refresh.json"

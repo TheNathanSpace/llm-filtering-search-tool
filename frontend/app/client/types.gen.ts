@@ -152,20 +152,6 @@ export type GetMetaMetaGetResponses = {
 
 export type GetMetaMetaGetResponse = GetMetaMetaGetResponses[keyof GetMetaMetaGetResponses];
 
-export type RefreshDataRefreshPostData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/refresh';
-};
-
-export type RefreshDataRefreshPostResponses = {
-    /**
-     * Successful Response
-     */
-    200: unknown;
-};
-
 export type GetModelsModelsGetData = {
     body?: never;
     path?: never;

@@ -303,3 +303,9 @@ def get_env_var(name: str) -> str:
     if not value:
         raise ValueError(f"Environment variable is not set: {name}")
     return value
+
+
+def is_truthy_env(name: str) -> bool:
+    """True when ``name`` is set to a common truthy string (1/true/yes/on)."""
+    raw = (os.environ.get(name) or "").strip().lower()
+    return raw in ("1", "true", "yes", "on")

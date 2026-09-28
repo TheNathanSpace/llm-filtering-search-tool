@@ -40,7 +40,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="src-01"></a>SRC-01 | Ingest model metadata from configured upstream APIs into SQLite | must | done (OpenRouter only; skip provider ids starting with `~`) |
-| <a id="src-02"></a>SRC-02 | Expose refresh path to wipe and rebuild local data when stale (hard 24h cap; no force bypass) | must | done (`POST /refresh`, `python -m llm_rankings.database` → `refresh_if_stale`) |
+| <a id="src-02"></a>SRC-02 | Wipe and rebuild local data when stale (hard 24h cap; no force bypass) via auto-refresh and CLI — no public HTTP refresh endpoint | must | done (API startup + hourly checker; `python -m llm_rankings.database` → `refresh_if_stale`) |
 | <a id="src-03"></a>SRC-03 | Prefer a single coherent benchmark story for intelligence UX | must | done — OpenRouter-embedded AA indices (`benchmark_or_*`) |
 | <a id="src-04"></a>SRC-04 | ~~Match OpenRouter and Artificial Analysis providers/models~~ | — | dropped — OpenRouter-only ([todo D-01](todo.md#open-decisions)) |
 | <a id="src-05"></a>SRC-05 | **Auto-refresh** SQLite on API startup when the DB is missing or last successful refresh is ≥24h old | must | done |
@@ -75,9 +75,9 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="plt-01"></a>PLT-01 | REST API for health, model list, metadata, and data refresh (`GET /health`, `GET /models`, `GET /meta`, `POST /refresh`) | must | done — `/refresh` returns `{refreshed, skipped, last_refresh_at, message}` under the 24h hard cap ([SRC-11](#src-11)); `/meta` returns `{enrichment_cost_usd, last_refresh_at}` |
+| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`) | must | done — `/meta` returns `{enrichment_cost_usd, last_refresh_at}`; data refresh is automatic / CLI only ([SRC-02](#src-02), [SRC-11](#src-11)); interactive API docs off unless `ENABLE_API_DOCS`; 500 responses use a generic client message |
 | <a id="plt-02"></a>PLT-02 | Docker Compose run paths documented in README (`prod` default, `dev` hot-reload profile) | must | done |
-| <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT` / `OR_ENRICHMENT_MODEL`, `DATA_DIR`, logging, host/ports) | must | done |
+| <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT` / `OR_ENRICHMENT_MODEL`, optional `ENABLE_API_DOCS`, `DATA_DIR`, logging, host/ports) | must | done |
 | <a id="plt-04"></a>PLT-04 | **Logging** to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |
 | <a id="plt-05"></a>PLT-05 | Front-end **proxies** `/api/*` to the back-end using runtime `BACKEND_HOST` / `BACKEND_PORT` | must | done |
 | <a id="plt-06"></a>PLT-06 | **Docker** Compose: `prod` image runs API + Next via supervisord; `dev` profile runs separate reloadable backend/frontend services; UI port published; API health-checked | must | done |

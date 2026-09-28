@@ -95,10 +95,11 @@ Optional (lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and N
      (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
    - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on
      startup; `latest.log` symlink is excluded)
-   - `BACKEND_HOST` — FastAPI listen address for host tooling (default `127.0.0.1`); Compose overrides this inside containers
-   - `BACKEND_PORT` — FastAPI listen port (default `8000`)
-   - `FRONTEND_PORT` — Next.js listen port (default `3030`)
-   - `COMPOSE_PROFILES` — Compose stack to start: `prod` (default) or `dev` (hot reload)
+- `BACKEND_HOST` — FastAPI listen address for host tooling (default `127.0.0.1`); Compose overrides this inside containers
+- `BACKEND_PORT` — FastAPI listen port (default `8000`)
+- `ENABLE_API_DOCS` — optional; set to `1` for FastAPI `/docs` / `/redoc` / `/openapi.json` (off by default; Compose `dev` enables it)
+- `FRONTEND_PORT` — Next.js listen port (default `3030`)
+- `COMPOSE_PROFILES` — Compose stack to start: `prod` (default) or `dev` (hot reload)
 
 `.env` is gitignored. Compose loads it via `env_file` and mounts it at `/app/.env`. The back-end also
 reads it via `python-dotenv` (or `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`). The browser calls
@@ -138,8 +139,9 @@ COMPOSE_PROFILES=dev docker compose up --build
 
 Or set `COMPOSE_PROFILES=dev` in `.env` and run `docker compose up --build`.
 
-UI: [http://localhost:3030](http://localhost:3030). API docs:
-[http://localhost:8000/docs](http://localhost:8000/docs) (backend port is published in `dev`).
+UI: [http://localhost:3030](http://localhost:3030). API docs (Swagger; `ENABLE_API_DOCS`
+forced on by the Compose `dev` profile):
+[http://localhost:8000/docs](http://localhost:8000/docs).
 
 ## Development
 
@@ -173,27 +175,19 @@ is ≥24 hours old, it wipe-rebuilds SQLite via the normal OpenRouter → enrich
 OpenRouter and models.dev responses are reused from `DATA_DIR/cache/` when still fresh; HF is
 cached permanently per repo id (new ids still fetch on miss).
 
-To request a refresh while the API is running (skipped if still within the 24h window):
+There is no public HTTP refresh endpoint (avoids unauthenticated wipe/rebuilds on an exposed
+instance). To request a refresh from the host while respecting the same 24h gate:
 
 ```bash
-# prod: API is in-container only — exec into the stack, or use the UI once models load
-docker compose exec llm-filtering curl -sS -X POST "http://127.0.0.1:${BACKEND_PORT:-8000}/refresh"
-
-# dev: backend port is published on the host
-curl -X POST "http://localhost:${BACKEND_PORT:-8000}/refresh"
-```
-
-Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
-`GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).
-
-Or, with the host virtualenv activated and without Compose:
-
-```bash
+source .venv/bin/activate
 python -m llm_rankings.database
 ```
 
-Both use the same gate. A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites
-it; a skip leaves the DB untouched and returns/logs that data is already fresh.
+A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites it; a skip leaves the
+DB untouched and logs that data is already fresh.
+
+Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
+`GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).
 
 ### Regenerate the front-end API client
 

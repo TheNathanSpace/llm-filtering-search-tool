@@ -20,6 +20,19 @@ export function formatNumber(value: number | undefined) {
     return number_.toLocaleString();
 }
 
+/** Format parameter count in billions as e.g. ``7B`` / ``1.8B``. */
+export function formatParametersB(value: number | undefined | null) {
+    if (typeof value !== "number") {
+        return "";
+    }
+    const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+    const text =
+        Number.isInteger(rounded) || Math.abs(rounded - Math.round(rounded)) < 1e-9
+            ? String(Math.round(rounded))
+            : String(rounded);
+    return `${text}B`;
+}
+
 export function formatCommaSeparatedList(
     value: readonly string[] | undefined | null,
 ): string {

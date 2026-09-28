@@ -36,16 +36,27 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
   - This project's FastAPI OpenAPI export (for the front-end client) is written to
     `DATA_DIR/openapi.json` by `bin/generate-openapi-docs.sh` (default `./data/openapi.json`).
 
-## Building the model table (OpenRouter-only)
+## Building the model table (OpenRouter + enrichment)
 
 1. Fetch OpenRouter `GET /models` and write the raw payload under
    `DATA_DIR/intermediate/raw/raw_or_models.json`.
-2. Map each OpenRouter model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
-   pricing, modalities, OpenRouter URL, and embedded Artificial Analysis indices as
-   `benchmark_or_*`. Nested Design Arena rows are not copied (list of objects, not a single score).
-3. Throughput / latency fields (`speed_*`) are left null until an OpenRouter (or other) source is
+2. Fetch [models.dev](https://models.dev) `api.json` (or reuse a ≤24h cache under
+   `DATA_DIR/cache/models_dev/`) and map the `openrouter` provider’s `open_weights` flags by
+   OpenRouter model id. Mirror the payload to `DATA_DIR/intermediate/raw/raw_models_dev.json`.
+3. For each distinct non-empty OpenRouter `hugging_face_id`, resolve parameter count from the
+   Hugging Face Hub model API (`safetensors.total` → billions as `parameters_b`). Responses are
+   cached under `DATA_DIR/cache/hf/`; network calls use a project User-Agent, ~1s pacing, and
+   429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
+4. Map each OpenRouter model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
+   pricing, modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
+   plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows are
+   not copied (list of objects, not a single score).
+5. Throughput / latency fields (`speed_*`) are left null until an OpenRouter (or other) source is
    wired later.
-4. Store models in SQLite (`pk` = OpenRouter model `id`).
+6. Store models in SQLite (`pk` = OpenRouter model `id`).
+
+`DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer unauthenticated
+upstreams.
 
 On API startup, if `DATA_DIR/database.db` does not exist, the server runs this pipeline automatically
 (`populate_with_models`). Use `POST /refresh` or `python -m llm_rankings.database` to wipe and rebuild later.

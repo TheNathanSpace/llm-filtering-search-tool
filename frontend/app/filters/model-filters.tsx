@@ -40,6 +40,20 @@ export default function ModelFilters(
                         }
                         label="Treat entries with missing values as included in filters"
                     />
+                    <FormControlLabel
+                        control={
+                            <Switch
+                                checked={filters.openWeightsOnly}
+                                onChange={(_event, checked) => {
+                                    setFilters((previous) => ({
+                                        ...previous,
+                                        openWeightsOnly: checked,
+                                    }));
+                                }}
+                            />
+                        }
+                        label="Open weights only"
+                    />
                 </FormGroup>
                 {bounds.intelligenceIndex && (
                     <NumberRangeFilter
@@ -133,6 +147,20 @@ export default function ModelFilters(
                             setFilters((previous) => ({
                                 ...previous,
                                 contextLength,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.parametersB && (
+                    <NumberRangeFilter
+                        name="Size (B params)"
+                        minValue={bounds.parametersB[0]}
+                        maxValue={bounds.parametersB[1]}
+                        step={0.1}
+                        onChange={(parametersB) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                parametersB,
                             }));
                         }}
                     />

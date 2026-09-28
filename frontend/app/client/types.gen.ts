@@ -80,6 +80,14 @@ export type CombinedModel = {
      * Benchmark Or Agentic Index
      */
     benchmark_or_agentic_index?: number | null;
+    /**
+     * Is Open Weights
+     */
+    is_open_weights?: boolean | null;
+    /**
+     * Parameters B
+     */
+    parameters_b?: number | null;
 };
 
 /**

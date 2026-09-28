@@ -11,9 +11,7 @@ logger = logging.getLogger(__name__)
 
 _ENV_FILE: Path | None = None
 _LOGGING_CONFIGURED = False
-_LOG_FORMAT = (
-    "%(asctime)s.%(msecs)03d | %(name)-35s | %(funcName)-25s | %(levelname)-8s | %(message)s"
-)
+_LOG_FORMAT = "%(asctime)s.%(msecs)03d | %(name)-35s | %(funcName)-25s | %(levelname)-8s | %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
 
 
@@ -31,11 +29,7 @@ def _prune_log_files(logs_dir: Path, keep: int, current: Path) -> None:
     """
     current_resolved = current.resolve()
     others = sorted(
-        (
-            p
-            for p in logs_dir.glob("*.log")
-            if p.is_file() and not p.is_symlink() and p.resolve() != current_resolved
-        ),
+        (p for p in logs_dir.glob("*.log") if p.is_file() and not p.is_symlink() and p.resolve() != current_resolved),
         key=lambda p: p.name,
     )
     retain_others = max(keep - 1, 0)
@@ -245,14 +239,50 @@ def get_raw_data_dir() -> Path:
     return raw_dir
 
 
+CACHE_DIR_LOGGED = False
+
+
+def get_cache_dir() -> Path:
+    """
+    Durable HTTP/response cache under ``DATA_DIR/cache/``.
+
+    Survives ``erase_data_dir()`` so unauthenticated upstreams (models.dev, Hugging Face)
+    are not re-hit on every local wipe.
+    """
+    global CACHE_DIR_LOGGED
+    if not CACHE_DIR_LOGGED:
+        logger.debug("Getting cache directory")
+    cache_dir = get_data_dir() / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    if not CACHE_DIR_LOGGED:
+        CACHE_DIR_LOGGED = True
+        logger.debug(f"Cache directory is: {cache_dir.as_posix()}")
+    return cache_dir
+
+
 def erase_data_dir():
-    logger.debug("Erasing data directory")
+    """Erase ``DATA_DIR`` contents except the durable ``cache/`` directory."""
+    logger.debug("Erasing data directory (preserving cache/)")
     data_dir = get_data_dir()
-    if data_dir.exists():
-        shutil.rmtree(data_dir)
-        logger.debug(f"Data directory erased: {data_dir.as_posix()}")
-    else:
+    if not data_dir.exists():
         logger.debug(f"Data directory does not exist: {data_dir.as_posix()}")
+        return
+
+    cache_dir = data_dir / "cache"
+    preserved: Path | None = None
+    if cache_dir.exists():
+        preserved = data_dir.parent / f".{data_dir.name}-cache-preserve"
+        if preserved.exists():
+            shutil.rmtree(preserved)
+        shutil.move(str(cache_dir), str(preserved))
+
+    shutil.rmtree(data_dir)
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    if preserved is not None and preserved.exists():
+        shutil.move(str(preserved), str(data_dir / "cache"))
+
+    logger.debug(f"Data directory erased (cache preserved): {data_dir.as_posix()}")
 
 
 LOGGED_ENV_VARS = set()

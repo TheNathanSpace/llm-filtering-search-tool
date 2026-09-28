@@ -2,6 +2,8 @@ import json
 import logging
 
 from llm_rankings.combined_models import CombinedModel
+from llm_rankings.hf_enrichment import parameters_b_for_repo_ids
+from llm_rankings.models_dev import open_weights_by_openrouter_id
 from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
 from llm_rankings.retrieve_data import get_all_model_data
 from llm_rankings.util import (
@@ -18,7 +20,12 @@ def _prefixed_scores(prefix: str, values: dict[str, object]) -> dict[str, float]
     return {f"{prefix}{key}": round(float(value), 4) for key, value in values.items()}
 
 
-def openrouter_to_combined(or_model: OpenRouterModel) -> CombinedModel:
+def openrouter_to_combined(
+    or_model: OpenRouterModel,
+    *,
+    open_weights: dict[str, bool],
+    parameters_b: dict[str, float | None],
+) -> CombinedModel:
     created = or_model.get_created_date()
     cutoff = or_model.get_cutoff_date()
     pricing = or_model.get_minimal_pricing()
@@ -27,6 +34,7 @@ def openrouter_to_combined(or_model: OpenRouterModel) -> CombinedModel:
         if or_model.benchmarks and or_model.benchmarks.artificial_analysis
         else {}
     )
+    hf_id = (or_model.hugging_face_id or "").strip() or None
     return CombinedModel(
         id=or_model.id,
         name=or_model.name,
@@ -41,12 +49,21 @@ def openrouter_to_combined(or_model: OpenRouterModel) -> CombinedModel:
         pricing_input=pricing.get("input"),
         pricing_output=pricing.get("output"),
         # speed_* left null — see CombinedModel.
+        is_open_weights=open_weights.get(or_model.id),
+        parameters_b=parameters_b.get(hf_id) if hf_id else None,
         **_prefixed_scores("benchmark_or_", or_benchmarks),
     )
 
 
 def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[CombinedModel]:
-    return [openrouter_to_combined(model) for model in or_models.data]
+    open_weights = open_weights_by_openrouter_id()
+    hf_ids = {
+        (model.hugging_face_id or "").strip() for model in or_models.data if (model.hugging_face_id or "").strip()
+    }
+    parameters_b = parameters_b_for_repo_ids(hf_ids)
+    return [
+        openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b) for model in or_models.data
+    ]
 
 
 def write_combined_models(combined_models: list[CombinedModel]):

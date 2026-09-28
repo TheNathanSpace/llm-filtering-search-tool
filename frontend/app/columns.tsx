@@ -2,6 +2,7 @@ import { GridColDef } from "@mui/x-data-grid";
 import {
     formatCommaSeparatedList,
     formatNumber,
+    formatParametersB,
     formatPrice,
     formatTimestamp,
 } from "@/app/utility";
@@ -11,6 +12,20 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 export const columns: GridColDef[] = [
     { field: "name", headerName: "Name", width: 200 },
     { field: "creator", headerName: "Creator", width: 150 },
+    {
+        field: "is_open_weights",
+        headerName: "Open Weights",
+        type: "boolean",
+        width: 120,
+    },
+    {
+        field: "parameters_b",
+        headerName: "Size",
+        description: "Parameter count (billions)",
+        type: "number",
+        width: 90,
+        valueFormatter: formatParametersB,
+    },
     {
         field: "benchmark_or_intelligence_index",
         headerName: "Intelligence",

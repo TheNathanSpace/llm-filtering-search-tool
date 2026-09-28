@@ -18,6 +18,7 @@ import {
 function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
     return {
         includeMissing: filters.includeMissing,
+        openWeightsOnly: filters.openWeightsOnly,
         creators: filters.creators,
         intelligenceIndex: filters.intelligenceIndex,
         codingIndex: filters.codingIndex,
@@ -25,6 +26,7 @@ function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
         creationDate: filters.creationDate,
         knowledgeCutoff: filters.knowledgeCutoff,
         contextLength: filters.contextLength,
+        parametersB: filters.parametersB,
         inputModalities: filters.inputModalities,
         outputModalities: filters.outputModalities,
     };

@@ -52,10 +52,12 @@ without a dedicated filter; throughput columns exist but are empty pending a dat
 **Current pipeline:**
 
 1. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
-2. Map each OpenRouter model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
-3. Populate an SQLite database with the model data.
-4. Expose the data via a REST API back-end.
-5. Create a Next.js front-end to retrieve the data and display it in
+2. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
+   Hugging Face Hub (when OpenRouter provides a `hugging_face_id`).
+3. Map each OpenRouter model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
+4. Populate an SQLite database with the model data.
+5. Expose the data via a REST API back-end.
+6. Create a Next.js front-end to retrieve the data and display it in
    an [MUI Data Grid](https://mui.com/x/react-data-grid/).
 
 More detail: [backend/README.md](backend/README.md) (including [logging](backend/README.md#logging)),
@@ -80,7 +82,8 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
 
 2. Set the variables documented in [`.env.template`](.env.template):
    - `OR_API_KEY` — OpenRouter API key for models, pricing, and embedded benchmarks
-   - `DATA_DIR` — path for SQLite DB, logs, and related files (default `./data`, relative to the `.env` location)
+   - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
+   - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
    - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
      (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
    - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on

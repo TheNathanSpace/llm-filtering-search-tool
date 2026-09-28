@@ -43,11 +43,34 @@ function passesModalities<T extends string>(
     return required.every((item) => actual.includes(item));
 }
 
+function passesOpenWeightsOnly(
+    isOpenWeights: boolean | null | undefined,
+    openWeightsOnly: boolean,
+    includeMissing: boolean,
+): boolean {
+    if (!openWeightsOnly) {
+        return true;
+    }
+    if (typeof isOpenWeights !== "boolean") {
+        return includeMissing;
+    }
+    return isOpenWeights === true;
+}
+
 export function filterModels(
     models: CombinedModel[],
     filters: ModelFiltersState,
 ): CombinedModel[] {
     return models.filter((model) => {
+        if (
+            !passesOpenWeightsOnly(
+                model.is_open_weights,
+                filters.openWeightsOnly,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
         if (
             !passesCreators(
                 model.creator,
@@ -106,6 +129,15 @@ export function filterModels(
             !passesRange(
                 model.context_length,
                 filters.contextLength,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.parameters_b,
+                filters.parametersB,
                 filters.includeMissing,
             )
         ) {

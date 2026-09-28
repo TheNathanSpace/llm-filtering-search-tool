@@ -57,6 +57,9 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
     const [minAgentic, maxAgentic] = getMinMax(
         models.map((model) => model.benchmark_or_agentic_index),
     );
+    const [minParametersB, maxParametersB] = getMinMax(
+        models.map((model) => model.parameters_b),
+    );
 
     return {
         creators: getUniqueCreators(models),
@@ -66,5 +69,6 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
         creationDate: toRange(minCreationDate, maxCreationDate),
         knowledgeCutoff: toRange(minKnowledgeCutoff, maxKnowledgeCutoff),
         contextLength: toRange(minContextLength, maxContextLength),
+        parametersB: toRange(minParametersB, maxParametersB),
     };
 }

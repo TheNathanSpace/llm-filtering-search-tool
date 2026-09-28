@@ -7,6 +7,10 @@ updating fetch/parse logic in this project. They are **not** loaded at runtime.
 | --- | --- | --- |
 | [`openapi-openrouter.json`](openapi-openrouter.json) | https://openrouter.ai/openapi.json | JSON |
 
+No OpenAPI is vendored for [models.dev](https://models.dev) (`https://models.dev/api.json`) or the
+Hugging Face Hub model API; see `backend/llm_rankings/models_dev.py` and
+`backend/llm_rankings/hf_enrichment.py`.
+
 ## Refresh
 
 From the repo root:

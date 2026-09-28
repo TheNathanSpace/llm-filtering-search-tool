@@ -4,6 +4,7 @@ export type NumberRange = [number, number];
 
 export type ModelFiltersState = {
     includeMissing: boolean;
+    openWeightsOnly: boolean;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
@@ -11,6 +12,7 @@ export type ModelFiltersState = {
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
+    parametersB: NumberRange | undefined;
     inputModalities: InputModality[];
     outputModalities: OutputModality[];
 };
@@ -18,6 +20,7 @@ export type ModelFiltersState = {
 /** User-edited filter fields; unset range fields fall back to bounds when resolved. */
 export type UserFilterChoices = {
     includeMissing: boolean;
+    openWeightsOnly: boolean;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
@@ -25,6 +28,7 @@ export type UserFilterChoices = {
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
+    parametersB: NumberRange | undefined;
     inputModalities: InputModality[];
     outputModalities: OutputModality[];
 };
@@ -37,11 +41,13 @@ export type FilterBounds = {
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
+    parametersB: NumberRange | undefined;
 };
 
 export function createInitialUserChoices(): UserFilterChoices {
     return {
         includeMissing: true,
+        openWeightsOnly: false,
         creators: [],
         intelligenceIndex: undefined,
         codingIndex: undefined,
@@ -49,6 +55,7 @@ export function createInitialUserChoices(): UserFilterChoices {
         creationDate: undefined,
         knowledgeCutoff: undefined,
         contextLength: undefined,
+        parametersB: undefined,
         inputModalities: [],
         outputModalities: [],
     };
@@ -70,6 +77,7 @@ export function resolveFilters(
 ): ModelFiltersState {
     return {
         includeMissing: choices.includeMissing,
+        openWeightsOnly: choices.openWeightsOnly,
         creators: choices.creators,
         intelligenceIndex: resolveRange(
             choices.intelligenceIndex,
@@ -86,6 +94,7 @@ export function resolveFilters(
             choices.contextLength,
             bounds.contextLength,
         ),
+        parametersB: resolveRange(choices.parametersB, bounds.parametersB),
         inputModalities: choices.inputModalities,
         outputModalities: choices.outputModalities,
     };

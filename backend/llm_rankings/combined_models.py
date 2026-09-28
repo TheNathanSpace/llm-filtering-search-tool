@@ -39,5 +39,9 @@ class CombinedModel(CombinedModelBase):
     benchmark_or_coding_index: float | None = None
     benchmark_or_agentic_index: float | None = None
 
+    # models.dev (OpenRouter catalog slice) + Hugging Face Hub enrichment.
+    is_open_weights: bool | None = None
+    parameters_b: float | None = None  # Parameter count in billions (e.g. 7.0)
+
     def add_to_database(self, db: DataBase) -> None:
         db.add("models", self, pk="id")

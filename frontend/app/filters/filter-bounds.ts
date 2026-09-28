@@ -8,14 +8,8 @@ export function getMinMax(
     if (filtered.length === 0) {
         return [undefined, undefined];
     }
-    let min = Math.min(...filtered);
-    let max = Math.max(...filtered);
-    if (!min) {
-        min = max;
-    } else if (!max) {
-        max = min;
-    }
-    return [min, max];
+    // Preserve legitimate zeros (e.g. free-tier pricing); do not treat 0 as missing.
+    return [Math.min(...filtered), Math.max(...filtered)];
 }
 
 export function getUniqueCreators(models: CombinedModel[]): string[] {
@@ -60,12 +54,20 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
     const [minParametersB, maxParametersB] = getMinMax(
         models.map((model) => model.parameters_b),
     );
+    const [minPricingInput, maxPricingInput] = getMinMax(
+        models.map((model) => model.pricing_input),
+    );
+    const [minPricingOutput, maxPricingOutput] = getMinMax(
+        models.map((model) => model.pricing_output),
+    );
 
     return {
         creators: getUniqueCreators(models),
         intelligenceIndex: toRange(minIntelligence, maxIntelligence),
         codingIndex: toRange(minCoding, maxCoding),
         agenticIndex: toRange(minAgentic, maxAgentic),
+        pricingInput: toRange(minPricingInput, maxPricingInput),
+        pricingOutput: toRange(minPricingOutput, maxPricingOutput),
         creationDate: toRange(minCreationDate, maxCreationDate),
         knowledgeCutoff: toRange(minKnowledgeCutoff, maxKnowledgeCutoff),
         contextLength: toRange(minContextLength, maxContextLength),

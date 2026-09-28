@@ -7,6 +7,7 @@ import {
 } from "@/app/filters/modality-options";
 import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
+import { formatPrice } from "@/app/utility";
 import { FormControlLabel, FormGroup, Grid, Switch } from "@mui/material";
 import dayjs from "dayjs";
 import { Dispatch, SetStateAction } from "react";
@@ -93,6 +94,36 @@ export default function ModelFilters(
                             setFilters((previous) => ({
                                 ...previous,
                                 agenticIndex,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.pricingOutput && (
+                    <NumberRangeFilter
+                        name="Pricing output ($/1M)"
+                        minValue={bounds.pricingOutput[0]}
+                        maxValue={bounds.pricingOutput[1]}
+                        step={0.01}
+                        formatValue={formatPrice}
+                        onChange={(pricingOutput) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                pricingOutput,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.pricingInput && (
+                    <NumberRangeFilter
+                        name="Pricing input ($/1M)"
+                        minValue={bounds.pricingInput[0]}
+                        maxValue={bounds.pricingInput[1]}
+                        step={0.01}
+                        formatValue={formatPrice}
+                        onChange={(pricingInput) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                pricingInput,
                             }));
                         }}
                     />

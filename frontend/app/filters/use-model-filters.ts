@@ -23,6 +23,8 @@ function toUserChoices(filters: ModelFiltersState): UserFilterChoices {
         intelligenceIndex: filters.intelligenceIndex,
         codingIndex: filters.codingIndex,
         agenticIndex: filters.agenticIndex,
+        pricingInput: filters.pricingInput,
+        pricingOutput: filters.pricingOutput,
         creationDate: filters.creationDate,
         knowledgeCutoff: filters.knowledgeCutoff,
         contextLength: filters.contextLength,

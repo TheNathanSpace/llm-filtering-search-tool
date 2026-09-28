@@ -1,14 +1,8 @@
 import datetime
-import logging
-import string
 from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict
-
-from llm_rankings import util
-
-logger = logging.getLogger(__name__)
 
 
 class ORBaseModel(BaseModel):
@@ -102,12 +96,6 @@ class ORArchitecture(ORBaseModel):
     tokenizer: str | None = None
     instruct_type: str | None = None
 
-    def is_text(self) -> bool:
-        return (
-            InputModality.TEXT in self.input_modalities
-            and OutputModality.TEXT in self.output_modalities
-        )
-
 
 class ORTopProvider(ORBaseModel):
     is_moderated: bool
@@ -189,24 +177,12 @@ class OpenRouterModel(ORBaseModel):
     def get_minimal_pricing(self) -> dict[str, float]:
         return self.pricing.get_minimal()
 
-    def get_minimal_created(self) -> str | None:
-        return util.unix_epoch_to_utc(self.created)
-
     def get_provider(self) -> str:
         return self.id.split("/")[0]
 
-    def get_clean_name(self) -> str:
-        """google/gemini-3.5-flash -> gemini 3 5 flash"""
-        name = "/".join(self.id.split("/")[1:])
-        name = (
-            name.translate(str.maketrans(string.punctuation, " " * len(string.punctuation)))
-            .strip()
-            .lower()
-        )
-        name = name.replace("thinking", "reasoning")
-        # Collapse extra spaces
-        name = " ".join(name.split())
-        return name
+    def is_tilde_provider(self) -> bool:
+        """OpenRouter router/variant listings use a leading ``~`` on the provider id."""
+        return self.get_provider().startswith("~")
 
     def get_created_date(self) -> datetime.datetime | None:
         if self.created:
@@ -222,9 +198,6 @@ class OpenRouterModel(ORBaseModel):
         else:
             return None
 
-    def __hash__(self) -> int:
-        return self.id.__hash__()
-
 
 class ORModelsListLinks(ORBaseModel):
     next: str | None
@@ -234,24 +207,3 @@ class OpenRouterAPIResponse(ORBaseModel):
     data: list[OpenRouterModel]
     total_count: int
     links: ORModelsListLinks
-
-    def get_minimal_models(self) -> list[dict]:
-        logger.debug("Cleaning OpenRouter models")
-        all_minimal: list[dict] = []
-        for model in self.data:
-            minimal = model.get_minimal()
-            if minimal is not None:
-                all_minimal.append(minimal)
-        return all_minimal
-
-    def get_providers(self) -> list[str]:
-        return list(
-            {
-                model.get_provider()
-                for model in self.data
-                if not model.get_provider().startswith("~")
-            }
-        )
-
-    def get_models_for_provider(self, provider: str) -> list[OpenRouterModel]:
-        return [model for model in self.data if model.get_provider() == provider]

@@ -43,9 +43,9 @@ models by these more complex metrics. In my ideal world, I would be able to set 
 And then I could sort from highest to lowest intelligence, probably choosing the highest-ranked one!
 
 Today the table ships with Intelligence / Coding / Agentic columns (default sort: intelligence
-descending) and matching range filters; context-window and creation-date filters; price as a column
-without a dedicated filter; throughput columns exist but are empty pending a data source. See
-[`docs/todo.md`](docs/todo.md) §1.
+descending) and matching range filters; context-window and creation-date filters; dedicated
+pricing output/input ($/1M) range filters; throughput columns exist but are empty pending a data
+source. See [`docs/todo.md`](docs/todo.md) §1.
 
 ## Technical Overview
 
@@ -54,7 +54,8 @@ without a dedicated filter; throughput columns exist but are empty pending a dat
 1. Download model data from the [OpenRouter API](https://openrouter.ai/docs/api/api-reference/models/get-models).
 2. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
    Hugging Face Hub (when OpenRouter provides a `hugging_face_id`).
-3. Map each OpenRouter model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
+3. Drop OpenRouter models whose provider id starts with `~`, then map each remaining model into a
+   `CombinedModel` (embedded AA indices become `benchmark_or_*`).
 4. Populate an SQLite database with the model data.
 5. Expose the data via a REST API back-end.
 6. Create a Next.js front-end to retrieve the data and display it in

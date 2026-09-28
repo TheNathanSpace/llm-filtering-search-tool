@@ -47,7 +47,8 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
    Hugging Face Hub model API (`safetensors.total` → billions as `parameters_b`). Responses are
    cached under `DATA_DIR/cache/hf/`; network calls use a project User-Agent, ~1s pacing, and
    429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
-4. Map each OpenRouter model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
+4. Drop OpenRouter models whose provider id starts with ``~`` (router/variant listings), then
+   map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
    pricing, modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
    plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows are
    not copied (list of objects, not a single score).

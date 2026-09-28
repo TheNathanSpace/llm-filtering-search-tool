@@ -5,9 +5,9 @@ export function formatTimestamp(value: number | undefined) {
     return new Date(value).toLocaleDateString();
 }
 
-export function formatPrice(value: number | undefined) {
-    if (!value) {
-        return value;
+export function formatPrice(value: number | undefined | null) {
+    if (typeof value !== "number") {
+        return "";
     }
     return `$${value.toFixed(2)}`;
 }

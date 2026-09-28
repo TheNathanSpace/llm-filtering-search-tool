@@ -109,6 +109,24 @@ export function filterModels(
         }
         if (
             !passesRange(
+                model.pricing_input,
+                filters.pricingInput,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.pricing_output,
+                filters.pricingOutput,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
                 model.created,
                 filters.creationDate,
                 filters.includeMissing,

@@ -12,6 +12,8 @@ interface NumberRangeFilterProperties {
     defaultEnd?: number;
     onChange?: (range: [number, number]) => void;
     step?: number;
+    /** Label formatter for the slider thumb and the range text under the control. */
+    formatValue?: (value: number) => string;
 }
 
 export default function NumberRangeFilter(
@@ -19,6 +21,7 @@ export default function NumberRangeFilter(
 ) {
     const initialStart = properties.defaultStart ?? properties.minValue;
     const initialEnd = properties.defaultEnd ?? properties.maxValue;
+    const formatValue = properties.formatValue ?? formatNumber;
 
     const [value, setValue] = useState<number[]>([initialStart, initialEnd]);
 
@@ -37,7 +40,7 @@ export default function NumberRangeFilter(
                     value={value}
                     onChange={handleChange}
                     valueLabelDisplay="auto"
-                    valueLabelFormat={formatNumber}
+                    valueLabelFormat={formatValue}
                     min={properties.minValue}
                     max={properties.maxValue}
                     step={properties.step ?? 100}
@@ -47,7 +50,7 @@ export default function NumberRangeFilter(
                     variant="body2"
                     sx={{ mt: -1, textAlign: "center", lineHeight: 1.2 }}
                 >
-                    {formatNumber(value[0])} – {formatNumber(value[1])}
+                    {formatValue(value[0])} – {formatValue(value[1])}
                 </Typography>
             </MuiFontSans>
         </FilterOption>

@@ -9,6 +9,8 @@ export type ModelFiltersState = {
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
     agenticIndex: NumberRange | undefined;
+    pricingInput: NumberRange | undefined;
+    pricingOutput: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -25,6 +27,8 @@ export type UserFilterChoices = {
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
     agenticIndex: NumberRange | undefined;
+    pricingInput: NumberRange | undefined;
+    pricingOutput: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -38,6 +42,8 @@ export type FilterBounds = {
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
     agenticIndex: NumberRange | undefined;
+    pricingInput: NumberRange | undefined;
+    pricingOutput: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -52,6 +58,8 @@ export function createInitialUserChoices(): UserFilterChoices {
         intelligenceIndex: undefined,
         codingIndex: undefined,
         agenticIndex: undefined,
+        pricingInput: undefined,
+        pricingOutput: undefined,
         creationDate: undefined,
         knowledgeCutoff: undefined,
         contextLength: undefined,
@@ -85,6 +93,11 @@ export function resolveFilters(
         ),
         codingIndex: resolveRange(choices.codingIndex, bounds.codingIndex),
         agenticIndex: resolveRange(choices.agenticIndex, bounds.agenticIndex),
+        pricingInput: resolveRange(choices.pricingInput, bounds.pricingInput),
+        pricingOutput: resolveRange(
+            choices.pricingOutput,
+            bounds.pricingOutput,
+        ),
         creationDate: resolveRange(choices.creationDate, bounds.creationDate),
         knowledgeCutoff: resolveRange(
             choices.knowledgeCutoff,

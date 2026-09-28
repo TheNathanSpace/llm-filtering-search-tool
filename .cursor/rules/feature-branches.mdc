@@ -1,0 +1,89 @@
+---
+description: Private worktree isolation; merge to main only with go-ahead; then delete worktree and branch.
+alwaysApply: true
+---
+
+# Feature worktrees
+
+Do **not** implement or commit on `main` in the primary checkout unless the user explicitly asks to edit `main`.
+
+## Isolation (required for edits)
+
+Any task that changes the repo runs in a **private worktree** on its own branch. Keep the primary checkout on `main` untouched until the user says to merge.
+
+1. Prefer Cursor-managed isolation: Agents Window **New Worktree** or IDE **`/worktree`**. Those create the checkout and point the agent at it — do **not** DIY with `git worktree add` + `move_agent_to_root` by default.
+2. Before creating a worktree or editing, fetch and check whether remote `main` has moved beyond local `main`:
+
+```bash
+git fetch origin
+# If this prints any commits, STOP — do not create the worktree or reconcile.
+git log --oneline main..origin/main
+```
+
+   If `main..origin/main` is non-empty, **stop and tell the user**. Do not fast-forward, merge, rebase, reset, or otherwise reconcile local `main` with `origin/main` unless the user explicitly asks.
+3. Call `SetActiveBranch` with the worktree path and branch name when the branch is known.
+4. If this agent is **already** in the correct task worktree on the right branch, continue there. Do not nest another worktree for the same task.
+
+Worktree setup (deps, `.env`) is owned by [`.cursor/worktrees.json`](../worktrees.json). After Cursor creates a worktree, read that file and run its setup commands if they have not already run. Do not symlink `node_modules` or `.venv` into worktrees.
+
+### Escape hatch only
+
+Use `git worktree add` and/or `move_agent_to_root` / `move_agent_to_cloned_root` only when:
+
+- The user already created a sibling checkout and the chat must adopt it, or
+- Cursor did not create a worktree and the user explicitly asks for a manual one.
+
+```bash
+git worktree add -b <type>/<short-description> ../llm-filtering-search-tool-<slug> main
+```
+
+Then move this agent’s workspace root to that directory.
+
+## Naming
+
+`feature/…`, `fix/…`, `refactor/…`, `cleanup/…`, `docs/…` — short kebab description. One branch per task; do not reuse another agent’s in-progress branch.
+
+## While working
+
+- Stay on the task branch and worktree for the whole session.
+- Do not edit in the primary checkout or another agent’s worktree.
+- Do not checkout `main` or another feature branch in the task worktree to “quickly fix” something.
+- Do not force-push, reset shared history, or delete worktrees/branches you did not create unless the user asks.
+- Commits follow `.cursor/rules/commit-messages.mdc` and `.cursor/rules/status.mdc` (docs/status in the **same** commit as the work).
+
+## Integrating (only with go-ahead)
+
+When the work is done (committed on the task branch), **stop and ask** whether to merge into `main`. Do **not** merge, apply, or land until the user explicitly says to.
+
+After go-ahead:
+
+1. Prefer **local `--no-ff` merge into `main` in the primary checkout**. Do **not** open a remote PR unless the user explicitly asks.
+2. Merge from the primary path so the task worktree stays on its branch:
+
+```bash
+git -C /path/to/primary-checkout checkout main
+git -C /path/to/primary-checkout merge --no-ff <type>/<short-description>
+```
+
+Use a `[Category] Merge …` subject for the merge commit. **Do not** add a follow-up commit on `main` whose only purpose is to restate that the merge happened — status/docs belong in the work commit(s) on the branch. Merge commits themselves need no extra `docs/status.md` edit.
+
+`/apply-worktree` is optional for bringing uncommitted/worktree changes into the primary tree for inspection; it is **not** a substitute for the merge-with-go-ahead flow above unless the user asks for that instead.
+
+## After merge — delete worktree and branch
+
+After a successful merge, remove **this** task’s worktree and branch. Do not leave merged feature checkouts around.
+
+Prefer **`/delete-worktree`** when available; otherwise:
+
+```bash
+git worktree remove <worktree-path>
+git branch -d <type>/<short-description>
+git push origin --delete <type>/<short-description>   # only if it was pushed
+```
+
+Do not delete worktrees or branches owned by another in-progress agent.
+
+## Exceptions
+
+- Read-only questions that change no files may stay on the current branch / checkout.
+- The user explicitly asks to work on `main`, open a PR, or keep a branch/worktree after merge.

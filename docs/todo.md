@@ -56,6 +56,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
+- Agent private-worktree lifecycle: `.cursor/worktrees.json` setup; feature-branch rule isolates edits, merges to primary `main` only with go-ahead, then deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
 - Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
 - Drop OpenRouter `~` provider listings at combine time; remove unused OR/util helpers
@@ -64,5 +65,5 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 - OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
 - External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)
 - Docker compose aligned with app ports/healthcheck
-- Agent guidance moved to `.cursor/rules/` (root `AGENTS.md` is a pointer)
+- Agent guidance lives in `.cursor/rules/` (no root `AGENTS.md`)
 - Context length + creation date filters

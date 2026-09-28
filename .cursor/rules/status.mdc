@@ -1,13 +1,13 @@
 ---
-description: Edit docs/status.md in every commit.
+description: Edit docs/status.md in every work commit; no merge-only status notes.
 alwaysApply: true
 ---
 
 # Status on every commit
 
-Every git commit in this repository **must** include an edit to `docs/status.md` in the same commit.
+Every **work** commit in this repository **must** include an edit to `docs/status.md` in the **same** commit as the code, config, docs, or rules it describes.
 
-Do not commit code, configuration, documentation, or rules without changing that file.
+Do not commit code, configuration, documentation, or rules without changing that file in that commit.
 
 ## What to write
 
@@ -15,6 +15,10 @@ Do not commit code, configuration, documentation, or rules without changing that
 2. Replace **Latest change** so it describes this commit.
 3. If the commit lands a milestone, replaces a stub, or changes the next starting point, also update the status tables, UI map, and the **Next session** pointer (which should stay aimed at `docs/todo.md`).
 
-A commit that only updates `docs/status.md` still refreshes **Latest change**.
+## Bundle with the work
 
-Never skip this because the change "doesn't affect product behavior." Pickup status must move with the git history.
+- Put status (and other doc updates for the change) in the **same commit** as the substantive change. Do not land the work first and then add a separate “note merge / update status” commit.
+- A commit whose **only** change is `docs/status.md` is fine when status itself is the work (e.g. correcting pickup text). Do **not** use that pattern to restate a merge that already landed.
+- **`--no-ff` merge commits** are exempt: they need no `docs/status.md` edit; the branch tip should already describe the work.
+
+Never skip status on a work commit because the change "doesn't affect product behavior." Pickup status must move with the git history.

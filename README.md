@@ -114,6 +114,12 @@ listens inside the container, publishes `${FRONTEND_PORT:-3030}`, and health-che
 
 ## Development
 
+Parallel agent edits: use Cursor **`/worktree`** (or Agents Window New Worktree).
+New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + backend/frontend setup.
+Merge into primary `main` only with explicit go-ahead, then delete the worktree and branch —
+[`.cursor/rules/feature-branches.mdc`](.cursor/rules/feature-branches.mdc).
+
+
 ### Install
 
 Set up the Python virtualenv and back-end package (creates `.venv` and installs `llm-rankings` editable with

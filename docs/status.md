@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-28 — Docs hygiene accuracy  
-**Latest change:** Cleared stale backlog/status wording (finished intelligence/price/always-visible-range items; UI-01 note; collapsed done benchmarks section).
+**Last updated:** 2026-09-28 — Private worktree agent lifecycle  
+**Latest change:** Restore `.cursor/worktrees.json` setup and rewrite feature-branch rules so agents edit in a private worktree, merge to primary `main` only with go-ahead, then delete the worktree and branch (no `AGENTS.md`).
 
 ## Pickup
 

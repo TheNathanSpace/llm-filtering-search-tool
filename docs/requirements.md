@@ -40,7 +40,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="src-01"></a>SRC-01 | Ingest model metadata from configured upstream APIs into SQLite | must | done (OpenRouter only; skip `~`, `:free` / `:batch`, `openrouter/*`, `*-router`, floating `*-latest`) |
-| <a id="src-02"></a>SRC-02 | Wipe and rebuild local data when stale (hard 24h cap; no force bypass) via auto-refresh and CLI — no public HTTP refresh endpoint | must | done (API startup + hourly checker; `python -m llm_rankings.database` → `refresh_if_stale`) |
+| <a id="src-02"></a>SRC-02 | Wipe and rebuild local data when stale (hard 24h cap on auto/default CLI) via auto-refresh and CLI — no public HTTP refresh endpoint. Ops may `--force` (selective cache bust + rebuild) via `python -m llm_rankings.refresh` / `./bin/refresh-data.sh` | must | done (API startup + hourly checker; gated CLI; ops `--force` with `--source`) |
 | <a id="src-03"></a>SRC-03 | Prefer a single coherent benchmark story for intelligence UX | must | done — OpenRouter-embedded AA indices (`benchmark_or_*`) |
 | <a id="src-04"></a>SRC-04 | ~~Match OpenRouter and Artificial Analysis providers/models~~ | — | dropped — OpenRouter-only ([todo D-01](todo.md#open-decisions)) |
 | <a id="src-05"></a>SRC-05 | **Auto-refresh** SQLite on API startup when the DB is missing or last successful refresh is ≥24h old | must | done |
@@ -49,7 +49,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="src-08"></a>SRC-08 | Write raw upstream model payloads under `DATA_DIR/intermediate/raw/` for debugging | stretch | done |
 | <a id="src-09"></a>SRC-09 | Enrich models with **open weights** (models.dev) and **parameter size** (Hugging Face Hub via `hugging_face_id`), with durable disk cache and polite rate limits | must | done |
 | <a id="src-10"></a>SRC-10 | Fetch OpenRouter `GET /models/{author}/{slug}/endpoints` per catalog model (polite concurrency + 429 backoff); persist per-provider **pricing + throughput/latency** rows (`model_provider_endpoints`) | must | done |
-| <a id="src-11"></a>SRC-11 | Hit upstream model APIs **at most once per 24h**: OpenRouter models + endpoints + models.dev ≤24h disk caches; HF durable per-repo cache; in-process hourly checker calls the same hard-capped refresh gate; rebuild SQLite via normal populate (cache hits when fresh) | must | done |
+| <a id="src-11"></a>SRC-11 | Hit upstream model APIs **at most once per 24h** on automatic/default paths: OpenRouter models + endpoints + models.dev ≤24h disk caches; HF durable per-repo cache; in-process hourly checker calls the same hard-capped refresh gate; rebuild SQLite via normal populate (cache hits when fresh). Ops `--force` may invalidate selected caches and rebuild immediately | must | done |
 | <a id="src-12"></a>SRC-12 | Opt-in **web gap-fill** for missing `is_open_weights` / `parameters_b` / `knowledge_cutoff` via OpenRouter chat + Exa (`OR_WEB_ENRICHMENT`, `OR_ENRICHMENT_MODEL`); never overwrite OR/models.dev/HF; durable cache + local cost ledger under `DATA_DIR/cache/web_enrichment/` | stretch | done |
 
 ---
@@ -75,7 +75,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`) | must | done — `/meta` returns `{enrichment_cost_usd, last_refresh_at}`; data refresh is automatic / CLI only ([SRC-02](#src-02), [SRC-11](#src-11)); interactive API docs off unless `ENABLE_API_DOCS`; 500 responses use a generic client message |
+| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`) | must | done — `/meta` returns `{enrichment_cost_usd, last_refresh_at}`; data refresh is automatic / CLI (incl. ops `--force`); no public HTTP refresh ([SRC-02](#src-02), [SRC-11](#src-11)); interactive API docs off unless `ENABLE_API_DOCS`; 500 responses use a generic client message |
 | <a id="plt-02"></a>PLT-02 | Docker Compose run paths documented in README (`prod` default, `dev` hot-reload profile) | must | done |
 | <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT` / `OR_ENRICHMENT_MODEL`, optional `ENABLE_API_DOCS`, `DATA_DIR`, logging, host/ports) | must | done |
 | <a id="plt-04"></a>PLT-04 | **Logging** to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |

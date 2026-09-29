@@ -9,7 +9,7 @@ from pydantic_sqlite._core import TableBaseModel
 from llm_rankings.clean_data import get_and_clean_data
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.provider_endpoints import ModelProviderEndpoint
-from llm_rankings.util import bootstrap_env_from_argv, get_data_dir, setup_logging
+from llm_rankings.util import get_data_dir
 
 logger = logging.getLogger(__name__)
 
@@ -82,10 +82,7 @@ def get_all_provider_endpoints() -> list[ModelProviderEndpoint]:
 
 
 if __name__ == "__main__":
-    from llm_rankings.refresh import refresh_if_stale
+    # Prefer: python -m llm_rankings.refresh [--force] [--source …]
+    from llm_rankings.refresh import main as refresh_main
 
-    bootstrap_env_from_argv()
-    setup_logging()
-    result = refresh_if_stale(reason="cli")
-    if result.skipped:
-        logger.info(result.detail)
+    raise SystemExit(refresh_main())

@@ -76,13 +76,16 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 `DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer upstreams
 or re-bill web enrichment for known model ids.
 
-### Refresh cadence (hard 24h cap)
+### Refresh cadence (hard 24h cap + ops force)
 
-All wipe-and-rebuild entry points go through `llm_rankings.refresh.refresh_if_stale`:
+Wipe-and-rebuild goes through `llm_rankings.refresh.refresh_data` (API uses `refresh_if_stale`):
 
-- Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h (no
-  force bypass).
-- Otherwise wipe SQLite (if present), run the pipeline above (OpenRouter models/endpoints and
+- **Automatic / default CLI:** skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json`
+  is younger than 24h. Otherwise wipe SQLite, run the pipeline (OpenRouter models/endpoints and
   models.dev may be served from disk cache), then write `last_refresh_at`.
-- API lifespan calls this on startup and again about every hour via an in-process checker.
-- `python -m llm_rankings.database` uses the same gate (no public HTTP refresh endpoint).
+- **Ops `--force`:** bypass the gate; invalidate selected caches (`models`, `providers`,
+  `models-dev`, `hf`, `enrichment`, or `all`), then wipe-rebuild. Selecting `models` also
+  invalidates `providers`. Concurrent API + CLI callers share `DATA_DIR/cache/refresh.lock`.
+- API lifespan calls the gated path on startup and about every hour.
+- CLI: `python -m llm_rankings.refresh` (or `./bin/refresh-data.sh` via docker exec). No public
+  HTTP refresh endpoint. `last_refresh_at` means last successful DB rebuild, not per-source fetch.

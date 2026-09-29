@@ -173,20 +173,34 @@ installed so commits are checked automatically.
 (and about every hour while the API is up), the back-end runs a hard-capped refresh: if
 `DATA_DIR/database.db` is missing or the last successful refresh in `DATA_DIR/cache/last_refresh.json`
 is ≥24 hours old, it wipe-rebuilds SQLite via the normal OpenRouter → enrich → write pipeline
-(requires `.env` with `OR_API_KEY`). Within 24 hours, refresh is a no-op (no force bypass).
+(requires `.env` with `OR_API_KEY`). Within 24 hours, that automatic path is a no-op.
 OpenRouter models/endpoints and models.dev responses are reused from `DATA_DIR/cache/` when still
 fresh; HF is cached permanently per repo id (new ids still fetch on miss).
 
 There is no public HTTP refresh endpoint (avoids unauthenticated wipe/rebuilds on an exposed
-instance). To request a refresh from the host while respecting the same 24h gate:
+instance). Ops can refresh from the host (same 24h gate by default, or `--force` to bypass):
 
 ```bash
+# Prefer Docker when Compose is up (prod `llm-filtering` or dev `llm-filtering-backend-dev`):
+./bin/refresh-data.sh
+./bin/refresh-data.sh --force
+./bin/refresh-data.sh --force --source hf
+./bin/refresh-data.sh --force --source models --source models-dev
+
+# Or on the host venv:
 source .venv/bin/activate
-python -m llm_rankings.database
+python -m llm_rankings.refresh
+python -m llm_rankings.refresh --force --source providers
 ```
 
-A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites it; a skip leaves the
-DB untouched and logs that data is already fresh.
+`--force` invalidates selected disk caches then wipe-rebuilds SQLite. Sources: `models`,
+`providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force` has no `--source`).
+Selecting `models` also busts `providers` (endpoints cache is one blob). `last_refresh_at` is the
+last successful **DB rebuild** (not per-source freshness) and resets the auto 24h gate.
+`python -m llm_rankings.database` is an alias for the same CLI.
+
+A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites it; a gated skip leaves
+the DB untouched and logs that data is already fresh.
 
 Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
 `GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).

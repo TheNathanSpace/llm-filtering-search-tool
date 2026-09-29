@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Fast-forward land, no merge commits  
-**Latest change:** Agent rules land task branches with `merge --ff-only` (rebase onto `main` if needed); drop `--no-ff` merge commits and the status exemption for them.
+**Last updated:** 2026-09-29 — Mandatory post-land worktree cleanup  
+**Latest change:** Removed leftover agent worktrees/branches; agent land flow now requires deleting this task’s worktree and branch before the turn ends (no second ask).
 
 ## Pickup
 

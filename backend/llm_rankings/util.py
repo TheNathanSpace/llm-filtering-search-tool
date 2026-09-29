@@ -241,13 +241,24 @@ def get_raw_data_dir() -> Path:
 
 CACHE_DIR_LOGGED = False
 
+# Shared ceiling for OpenRouter / models.dev disk caches and the refresh gate.
+REFRESH_MAX_AGE_SECONDS = 24 * 60 * 60
+
+
+def cache_file_is_fresh(path: Path, max_age_seconds: float = REFRESH_MAX_AGE_SECONDS) -> bool:
+    """Return True if ``path`` exists and its mtime is younger than ``max_age_seconds``."""
+    if not path.is_file():
+        return False
+    age = datetime.datetime.now().timestamp() - path.stat().st_mtime
+    return age < max_age_seconds
+
 
 def get_cache_dir() -> Path:
     """
     Durable HTTP/response cache under ``DATA_DIR/cache/``.
 
-    Survives ``erase_data_dir()`` so unauthenticated upstreams (models.dev, Hugging Face)
-    and opt-in web enrichment caches/ledgers are not re-hit on every local wipe.
+    Survives ``erase_data_dir()`` so OpenRouter, models.dev, Hugging Face, and opt-in
+    web enrichment caches/ledgers are not re-hit on every local wipe.
     """
     global CACHE_DIR_LOGGED
     if not CACHE_DIR_LOGGED:

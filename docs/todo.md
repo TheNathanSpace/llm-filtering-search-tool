@@ -33,7 +33,7 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Source fetched:** per-provider rows in `model_provider_endpoints`. Still need model-level aggregation into `speed_*` + dedicated filter. |
 | Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
-| Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in Exa gap-fill [SRC-11](requirements.md#src-11)). |
+| Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in Exa gap-fill [SRC-12](requirements.md#src-12)). |
 | Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column; opt-in Exa gap-fill when HF missing). |
 | Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel substring search). |
 
@@ -57,7 +57,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
-- OpenRouter Exa web gap-fill (SRC-11): open-weights, size, and knowledge cutoff; cache + cost ledger
+- OpenRouter Exa web gap-fill (SRC-12): open-weights, size, and knowledge cutoff; cache + cost ledger
 - OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
 - Agent private-worktree lifecycle: `.cursor/worktrees.json` setup; feature-branch rule isolates edits, merges to primary `main` only with go-ahead, then deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section

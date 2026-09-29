@@ -148,7 +148,8 @@ forced on by the Compose `dev` profile):
 
 Parallel agent edits: use Cursor **`/worktree`** (or Agents Window New Worktree).
 New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + optional host tooling setup.
-Merge into primary `main` only with explicit go-ahead, then delete the worktree and branch —
+Merge into primary `main` only with explicit go-ahead (`merge --ff-only`); landing is not finished
+until that task’s worktree and branch are deleted —
 [`.cursor/rules/feature-branches.mdc`](.cursor/rules/feature-branches.mdc).
 
 ### Host tooling (optional)
@@ -173,8 +174,8 @@ installed so commits are checked automatically.
 `DATA_DIR/database.db` is missing or the last successful refresh in `DATA_DIR/cache/last_refresh.json`
 is ≥24 hours old, it wipe-rebuilds SQLite via the normal OpenRouter → enrich → write pipeline
 (requires `.env` with `OR_API_KEY`). Within 24 hours, refresh is a no-op (no force bypass).
-OpenRouter and models.dev responses are reused from `DATA_DIR/cache/` when still fresh; HF is
-cached permanently per repo id (new ids still fetch on miss).
+OpenRouter models/endpoints and models.dev responses are reused from `DATA_DIR/cache/` when still
+fresh; HF is cached permanently per repo id (new ids still fetch on miss).
 
 There is no public HTTP refresh endpoint (avoids unauthenticated wipe/rebuilds on an exposed
 instance). To request a refresh from the host while respecting the same 24h gate:

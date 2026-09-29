@@ -131,10 +131,13 @@ class WebEnrichmentResult(BaseModel):
             return None
         if number <= 0:
             return None
-        # Heuristic: raw parameter counts instead of billions.
-        if number > 1000:
+        # Raw counts (e.g. 70_000_000_000) vs billions (e.g. 70, or 2400 for
+        # a 2.4T MoE). Threshold must sit above plausible "already billions"
+        # values — 1000 wrongly crushed trillion-scale models to ~0.
+        if number >= 1_000_000:
             number = number / 1e9
-        return round(number, 2)
+        number = round(number, 2)
+        return number if number > 0 else None
 
     @field_validator("knowledge_cutoff", mode="before")
     @classmethod
@@ -225,7 +228,7 @@ class _CostTracker:
                 add_lifetime_calls=self.network_calls,
             )
             logger.info(
-                "web enrichment cost: $%.4f (%d network calls, %d cache hits; "
+                "Web enrichment cost: $%.4f (%d network calls, %d cache hits; "
                 "inference=$%.4f search/tools=$%.4f)",
                 self.run_usd,
                 self.network_calls,
@@ -326,7 +329,10 @@ def _load_cached(model_id: str) -> dict[str, Any] | None:
     try:
         return json.loads(path.read_text())
     except json.JSONDecodeError:
-        logger.warning("Corrupt web enrichment cache for %s; re-fetching", model_id)
+        logger.warning(
+            "Web enrichment [%s]: corrupt cache; re-fetching",
+            model_id,
+        )
         return None
 
 
@@ -391,7 +397,7 @@ def _merge_into_model(
     return filled_open, filled_params, filled_cutoff
 
 
-def _parse_content(content: str | None) -> WebEnrichmentResult:
+def _parse_content(content: str | None, *, model_id: str) -> WebEnrichmentResult:
     if not content or not content.strip():
         return WebEnrichmentResult()
     text = content.strip()
@@ -406,12 +412,20 @@ def _parse_content(content: str | None) -> WebEnrichmentResult:
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        logger.warning("Failed to parse web enrichment JSON content: %s", content[:200])
+        logger.warning(
+            "Web enrichment [%s]: failed to parse JSON content: %s",
+            model_id,
+            content[:200],
+        )
         return WebEnrichmentResult()
     try:
         return WebEnrichmentResult.model_validate(data)
     except ValidationError as exc:
-        logger.warning("Invalid web enrichment payload: %s", exc)
+        logger.warning(
+            "Web enrichment [%s]: invalid payload: %s",
+            model_id,
+            exc,
+        )
         return WebEnrichmentResult()
 
 
@@ -436,11 +450,33 @@ def _cache_usable_for_model(model: CombinedModel, cached: dict[str, Any]) -> boo
         version < 2 or "knowledge_cutoff" not in cached
     ):
         return False
+    # Old heuristic treated billions > 1000 as raw counts (e.g. 2400 → 0.0).
+    # Re-fetch when we still need size and a pass recorded that mangled zero.
+    if model.parameters_b is None:
+        cached_params = cached.get("parameters_b")
+        try:
+            if cached_params is not None and float(cached_params) == 0.0:
+                return False
+        except (TypeError, ValueError):
+            return False
+        for attempt in cached.get("attempts") or []:
+            if not isinstance(attempt, dict):
+                continue
+            result = attempt.get("result")
+            if not isinstance(result, dict):
+                continue
+            raw = result.get("parameters_b")
+            try:
+                if raw is not None and float(raw) == 0.0:
+                    return False
+            except (TypeError, ValueError):
+                return False
     return True
 
 
 def _chat_completion(
     *,
+    model_id: str,
     api_key: str,
     enrichment_model: str,
     user_content: str,
@@ -484,7 +520,8 @@ def _chat_completion(
         except requests.RequestException as exc:
             last_error = str(exc)
             logger.warning(
-                "Web enrichment request error (attempt %d/%d): %s",
+                "Web enrichment [%s]: request error (attempt %d/%d): %s",
+                model_id,
                 attempt,
                 MAX_RETRIES,
                 exc,
@@ -500,7 +537,8 @@ def _chat_completion(
             retry_after = response.headers.get("Retry-After")
             wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff
             logger.warning(
-                "Web enrichment rate-limited; sleeping %.1fs (attempt %d/%d)",
+                "Web enrichment [%s]: rate-limited; sleeping %.1fs (attempt %d/%d)",
+                model_id,
                 wait,
                 attempt,
                 MAX_RETRIES,
@@ -512,7 +550,8 @@ def _chat_completion(
         if response.status_code in (500, 502, 503, 504):
             last_error = f"{response.status_code}: {response.text[:200]}"
             logger.warning(
-                "Web enrichment server error %s (attempt %d/%d)",
+                "Web enrichment [%s]: server error %s (attempt %d/%d)",
+                model_id,
                 response.status_code,
                 attempt,
                 MAX_RETRIES,
@@ -522,10 +561,16 @@ def _chat_completion(
             continue
 
         last_error = f"{response.status_code}: {response.text[:300]}"
-        logger.warning("Web enrichment unexpected status: %s", last_error)
+        logger.warning(
+            "Web enrichment [%s]: unexpected status: %s",
+            model_id,
+            last_error,
+        )
         break
 
-    raise RuntimeError(f"Web enrichment chat failed after retries: {last_error}")
+    raise RuntimeError(
+        f"Web enrichment [{model_id}]: chat failed after retries: {last_error}"
+    )
 
 
 def _extract_message_content(payload: dict[str, Any]) -> str | None:
@@ -569,12 +614,18 @@ def _fetch_for_model(
     enrichment_model: str,
     costs: _CostTracker,
 ) -> WebEnrichmentResult:
+    logger.info(
+        "Web enrichment [%s]: starting fetch (chat_model=%s)",
+        model.id,
+        enrichment_model,
+    )
     user_content = USER_PROMPT_TEMPLATE.format(
         id=model.id,
         name=model.name or model.id,
         creator=model.creator or "",
     )
     payload = _chat_completion(
+        model_id=model.id,
         api_key=api_key,
         enrichment_model=enrichment_model,
         user_content=user_content,
@@ -586,7 +637,7 @@ def _fetch_for_model(
         generation_id=payload.get("id") if isinstance(payload.get("id"), str) else None,
         usage=usage,
     )
-    parsed = _parse_content(_extract_message_content(payload))
+    parsed = _parse_content(_extract_message_content(payload), model_id=model.id)
     attempts = [
         {
             "pass": 1,
@@ -602,15 +653,23 @@ def _fetch_for_model(
             name=model.name or model.id,
             creator=model.creator or "",
         )
-        logger.info("Web enrichment retry for %s (gaps remain after first pass)", model.id)
+        logger.info(
+            "Web enrichment [%s]: retrying (gaps remain after first pass)",
+            model.id,
+        )
         try:
             retry_payload = _chat_completion(
+                model_id=model.id,
                 api_key=api_key,
                 enrichment_model=enrichment_model,
                 user_content=retry_content,
             )
         except RuntimeError as exc:
-            logger.warning("Web enrichment retry failed for %s: %s", model.id, exc)
+            logger.warning(
+                "Web enrichment [%s]: retry failed: %s",
+                model.id,
+                exc,
+            )
             retry_payload = None
 
         if retry_payload is not None:
@@ -629,7 +688,10 @@ def _fetch_for_model(
                 ),
                 usage=retry_usage,
             )
-            retry_parsed = _parse_content(_extract_message_content(retry_payload))
+            retry_parsed = _parse_content(
+                _extract_message_content(retry_payload),
+                model_id=model.id,
+            )
             attempts.append(
                 {
                     "pass": 2,
@@ -686,9 +748,11 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
         return
 
     logger.info(
-        "Web enrichment: %d candidate model(s) (model=%s, exa max_results=%d)",
+        "Web enrichment: %d candidate model(s) (chat_model=%s, workers=%d, "
+        "exa max_results=%d)",
         len(candidates),
         enrichment_model,
+        MAX_WORKERS,
         EXA_MAX_RESULTS,
     )
     costs = _CostTracker()
@@ -703,7 +767,8 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
             return model.id, _result_from_cache(cached), True
         if cached is not None:
             logger.info(
-                "Web enrichment cache stale for %s (schema); re-fetching", model.id
+                "Web enrichment [%s]: cache stale (schema); re-fetching",
+                model.id,
             )
         try:
             result = _fetch_for_model(
@@ -713,7 +778,7 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
                 costs=costs,
             )
         except RuntimeError as exc:
-            logger.warning("Web enrichment failed for %s: %s", model.id, exc)
+            logger.warning("Web enrichment [%s]: failed: %s", model.id, exc)
             stub = {
                 "model_id": model.id,
                 "is_open_weights": None,
@@ -738,7 +803,7 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
             done += 1
             cache_note = " [cached]" if from_cache else ""
             logger.info(
-                "Web enrichment for %s (%d/%d)%s",
+                "Web enrichment [%s]: finished (%d/%d)%s",
                 model_id,
                 done,
                 total,

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Fix docker refresh .env discovery
-**Latest change:** `bin/refresh-data.sh` passes `--env-file /app/.env`; env discovery also checks cwd and `/app/.env` when site-packages `find_dotenv()` fails in prod images.
+**Last updated:** 2026-09-29 — Web enrichment size + logging
+**Latest change:** Web enrichment logs include the target model id on concurrent fetch/errors; `parameters_b` raw-count heuristic no longer crushes trillion-scale billions values (e.g. 2400 → 0.0), and mangled `0.0` caches re-fetch when size is still needed.
 
 ## Pickup
 

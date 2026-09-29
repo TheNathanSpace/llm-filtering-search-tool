@@ -62,12 +62,28 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
     kept: list[OpenRouterModel] = []
     skipped_tilde = 0
     skipped_free = 0
+    skipped_batch = 0
+    skipped_meta = 0
+    skipped_router = 0
+    skipped_latest = 0
     for model in or_models.data:
         if model.is_tilde_provider():
             skipped_tilde += 1
             continue
         if model.is_free_variant():
             skipped_free += 1
+            continue
+        if model.is_batch_variant():
+            skipped_batch += 1
+            continue
+        if model.is_openrouter_meta():
+            skipped_meta += 1
+            continue
+        if model.is_named_router():
+            skipped_router += 1
+            continue
+        if model.is_floating_latest_alias():
+            skipped_latest += 1
             continue
         kept.append(model)
     if skipped_tilde:
@@ -79,6 +95,26 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         logger.info(
             "Skipping %s OpenRouter free model(s) (ids ending in ':free')",
             skipped_free,
+        )
+    if skipped_batch:
+        logger.info(
+            "Skipping %s OpenRouter batch model(s) (ids ending in ':batch')",
+            skipped_batch,
+        )
+    if skipped_meta:
+        logger.info(
+            "Skipping %s OpenRouter meta model(s) (openrouter/* routers/tools)",
+            skipped_meta,
+        )
+    if skipped_router:
+        logger.info(
+            "Skipping %s named router model(s) (ids ending in '-router')",
+            skipped_router,
+        )
+    if skipped_latest:
+        logger.info(
+            "Skipping %s floating latest alias(es) (ids ending in '-latest')",
+            skipped_latest,
         )
     open_weights = open_weights_by_openrouter_id()
     hf_ids = {

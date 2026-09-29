@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Mandatory post-land worktree cleanup  
-**Latest change:** Removed leftover agent worktrees/branches; agent land flow now requires deleting this task’s worktree and branch before the turn ends (no second ask).
+**Last updated:** 2026-09-29 — Skip OR routers, batch, latest aliases
+**Latest change:** Combine-time skips for `:batch`, `openrouter/*`, `*-router` (e.g. Jev), and floating `*-latest` aliases (e.g. gpt-chat-latest), alongside `~` / `:free`.
 
 ## Pickup
 

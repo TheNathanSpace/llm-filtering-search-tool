@@ -44,8 +44,8 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 1. Load OpenRouter `GET /models` from a ≤24h cache under `DATA_DIR/cache/openrouter/models.json`,
    or fetch and write that cache; always mirror under `DATA_DIR/intermediate/raw/raw_or_models.json`
    (debug only; not a rebuild source).
-2. Drop OpenRouter models whose provider id starts with ``~`` (router/variant listings) or whose id
-   ends with ``:free`` (free-tier variants).
+2. Drop non-comparable OpenRouter listings: provider ids starting with ``~``; ids ending in
+   ``:free``, ``:batch``, ``-router``, or ``-latest``; and provider ``openrouter`` (Auto/Fusion/etc.).
 3. For each remaining model, load `GET /models/{author}/{slug}/endpoints` from a ≤24h cache under
    `DATA_DIR/cache/openrouter/endpoints.json`, or fetch with a bounded thread pool (default 8
    workers) and 429/5xx retries with backoff. Mirror raw payloads to

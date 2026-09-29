@@ -57,7 +57,7 @@ from per-provider OpenRouter endpoints (already stored in SQLite). See [`docs/to
    Hugging Face Hub (when OpenRouter provides a `hugging_face_id`). Optionally gap-fill remaining
    nulls for open-weights, size, and knowledge cutoff via OpenRouter chat + Exa web search
    (`OR_WEB_ENRICHMENT=1`).
-4. Drop OpenRouter models whose provider id starts with `~` or whose id ends with `:free`, then map
+4. Drop non-comparable OpenRouter listings (`~` providers, `:free` / `:batch`, `openrouter/*` meta, `*-router`, floating `*-latest` aliases), then map
    each remaining model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`;
    list-level pricing/speed left null).
 5. Populate SQLite with `models` and `model_provider_endpoints`.

@@ -62,6 +62,9 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 - Agent private-worktree lifecycle: `.cursor/worktrees.json` setup; feature-branch rule isolates edits, merges to primary `main` only with go-ahead, then deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
 - Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
+- Drop `typesafe/jev-router` / floating `*-latest` aliases (e.g. `openai/gpt-chat-latest`) at combine time
+- Drop OpenRouter `openrouter/*` meta routers/tools at combine time
+- Drop OpenRouter `:batch` variants at combine time (alongside `~` / `:free`)
 - Drop OpenRouter `:free` variants at combine time (alongside `~` provider listings)
 - Drop OpenRouter `~` provider listings at combine time; remove unused OR/util helpers
 - Price output/input range filters (QRY-02)

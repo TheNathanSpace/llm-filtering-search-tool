@@ -189,6 +189,23 @@ class OpenRouterModel(ORBaseModel):
         """OpenRouter free-tier listings use a ``:free`` suffix on the model id."""
         return self.id.endswith(":free")
 
+    def is_batch_variant(self) -> bool:
+        """OpenRouter Batch API listings use a ``:batch`` suffix on the model id."""
+        return self.id.endswith(":batch")
+
+    def is_openrouter_meta(self) -> bool:
+        """OpenRouter-owned routers/tools (``openrouter/auto``, Fusion, etc.), not base models."""
+        return self.get_provider() == "openrouter"
+
+    def is_named_router(self) -> bool:
+        """Third-party router products (e.g. ``typesafe/jev-router``), not base models."""
+        slug = self.id.split("/", 1)[-1]
+        return slug == "router" or slug.endswith("-router")
+
+    def is_floating_latest_alias(self) -> bool:
+        """Moving ``*-latest`` API aliases (e.g. ``openai/gpt-chat-latest``)."""
+        return self.id.endswith("-latest")
+
     def get_created_date(self) -> datetime.datetime | None:
         if self.created:
             return datetime.datetime.fromtimestamp(self.created, datetime.UTC)

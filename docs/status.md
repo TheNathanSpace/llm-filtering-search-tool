@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Refresh progress logging  
-**Latest change:** Per-item progress logs during data refresh for Hugging Face listings, OpenRouter endpoints, and optional web enrichment (`name (n/total)`), plus stage banners in the clean/combine pipeline ([PLT-04](requirements.md#plt-04)).
+**Last updated:** 2026-09-29 — Exclude OR free models  
+**Latest change:** Drop OpenRouter `:free` model variants at combine time (same path as `~` provider skips); [SRC-01](requirements.md#src-01) / [SRC-06](requirements.md#src-06).
 
 ## Pickup
 

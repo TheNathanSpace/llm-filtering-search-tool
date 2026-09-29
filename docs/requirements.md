@@ -39,12 +39,12 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="src-01"></a>SRC-01 | Ingest model metadata from configured upstream APIs into SQLite | must | done (OpenRouter only; skip provider ids starting with `~`) |
+| <a id="src-01"></a>SRC-01 | Ingest model metadata from configured upstream APIs into SQLite | must | done (OpenRouter only; skip provider ids starting with `~` and ids ending in `:free`) |
 | <a id="src-02"></a>SRC-02 | Wipe and rebuild local data when stale (hard 24h cap; no force bypass) via auto-refresh and CLI — no public HTTP refresh endpoint | must | done (API startup + hourly checker; `python -m llm_rankings.database` → `refresh_if_stale`) |
 | <a id="src-03"></a>SRC-03 | Prefer a single coherent benchmark story for intelligence UX | must | done — OpenRouter-embedded AA indices (`benchmark_or_*`) |
 | <a id="src-04"></a>SRC-04 | ~~Match OpenRouter and Artificial Analysis providers/models~~ | — | dropped — OpenRouter-only ([todo D-01](todo.md#open-decisions)) |
 | <a id="src-05"></a>SRC-05 | **Auto-refresh** SQLite on API startup when the DB is missing or last successful refresh is ≥24h old | must | done |
-| <a id="src-06"></a>SRC-06 | Persist a **combined model** record (identity, modalities, OpenRouter URL, OR AA indices as `benchmark_or_*`; list-level `pricing_*` / `speed_*` reserved/null pending provider aggregation; open-weights + size when enrichment succeeds); exclude OpenRouter `~` provider listings | must | done |
+| <a id="src-06"></a>SRC-06 | Persist a **combined model** record (identity, modalities, OpenRouter URL, OR AA indices as `benchmark_or_*`; list-level `pricing_*` / `speed_*` reserved/null pending provider aggregation; open-weights + size when enrichment succeeds); exclude OpenRouter `~` provider listings and `:free` variants | must | done |
 | <a id="src-07"></a>SRC-07 | ~~Fetch OpenRouter `GET /benchmarks` and store the raw response~~ | — | dropped — unused dump removed ([todo D-03](todo.md#open-decisions)) |
 | <a id="src-08"></a>SRC-08 | Write raw upstream model payloads under `DATA_DIR/intermediate/raw/` for debugging | stretch | done |
 | <a id="src-09"></a>SRC-09 | Enrich models with **open weights** (models.dev) and **parameter size** (Hugging Face Hub via `hugging_face_id`), with durable disk cache and polite rate limits | must | done |

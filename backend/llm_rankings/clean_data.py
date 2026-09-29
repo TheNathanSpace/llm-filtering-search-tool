@@ -59,12 +59,26 @@ def openrouter_to_combined(
 
 
 def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[CombinedModel]:
-    kept = [model for model in or_models.data if not model.is_tilde_provider()]
-    skipped = len(or_models.data) - len(kept)
-    if skipped:
+    kept: list[OpenRouterModel] = []
+    skipped_tilde = 0
+    skipped_free = 0
+    for model in or_models.data:
+        if model.is_tilde_provider():
+            skipped_tilde += 1
+            continue
+        if model.is_free_variant():
+            skipped_free += 1
+            continue
+        kept.append(model)
+    if skipped_tilde:
         logger.info(
             "Skipping %s OpenRouter model(s) with '~' provider ids (router/variant listings)",
-            skipped,
+            skipped_tilde,
+        )
+    if skipped_free:
+        logger.info(
+            "Skipping %s OpenRouter free model(s) (ids ending in ':free')",
+            skipped_free,
         )
     open_weights = open_weights_by_openrouter_id()
     hf_ids = {

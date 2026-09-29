@@ -185,6 +185,10 @@ class OpenRouterModel(ORBaseModel):
         """OpenRouter router/variant listings use a leading ``~`` on the provider id."""
         return self.get_provider().startswith("~")
 
+    def is_free_variant(self) -> bool:
+        """OpenRouter free-tier listings use a ``:free`` suffix on the model id."""
+        return self.id.endswith(":free")
+
     def get_created_date(self) -> datetime.datetime | None:
         if self.created:
             return datetime.datetime.fromtimestamp(self.created, datetime.UTC)

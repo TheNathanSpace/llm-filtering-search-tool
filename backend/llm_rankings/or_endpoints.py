@@ -48,6 +48,12 @@ class ORPerfByWorkload(ORBaseModel):
     rerank: ORWorkloadPerf | None = None
 
 
+class ORNativeTool(ORBaseModel):
+    """Provider-native tool mapping (OpenAPI ``PublicEndpoint.native_tools`` values)."""
+
+    type: str
+
+
 class ORPublicEndpoint(ORBaseModel):
     """One hosting provider endpoint for a model (OpenAPI ``PublicEndpoint``)."""
 
@@ -67,6 +73,7 @@ class ORPublicEndpoint(ORBaseModel):
     uptime_last_5m: float | None
     uptime_last_1d: float | None
     supports_implicit_caching: bool
+    native_tools: dict[str, ORNativeTool]
     latency_last_30m: ORPercentileStats | None
     throughput_last_30m: ORPercentileStats | None
     status: int | None = None

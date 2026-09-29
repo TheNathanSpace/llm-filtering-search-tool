@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Skip OR routers, batch, latest aliases
-**Latest change:** Combine-time skips for `:batch`, `openrouter/*`, `*-router` (e.g. Jev), and floating `*-latest` aliases (e.g. gpt-chat-latest), alongside `~` / `:free`.
+**Last updated:** 2026-09-29 — Accept OR `native_tools` on endpoints
+**Latest change:** Parse OpenRouter `PublicEndpoint.native_tools` (required map of provider-native tools) so endpoint refresh no longer fails validation; refresh vendored OpenAPI.
 
 ## Pickup
 

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Web enrichment size + logging
-**Latest change:** Web enrichment logs include the target model id on concurrent fetch/errors; `parameters_b` raw-count heuristic no longer crushes trillion-scale billions values (e.g. 2400 → 0.0), and mangled `0.0` caches re-fetch when size is still needed.
+**Last updated:** 2026-09-29 — Footer meta row bottom-left
+**Latest change:** Replaced the fixed bottom-right Data meta table with a single in-flow bottom-left footer row (last refresh + enrichment cost; [UI-10](requirements.md#ui-10)); page layout reserves footer space so the model table no longer covers it. Also: filter panel `overflow: auto`; dropped OS `prefers-color-scheme` dark overrides.
 
 ## Pickup
 

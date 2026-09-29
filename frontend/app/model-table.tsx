@@ -20,7 +20,7 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
     return (
         <div style={{ width: "100%", height: "100%" }}>
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <div style={{ height: "50%" }}>
+                <div style={{ height: "50%", overflow: "auto" }}>
                     <ModelFilters
                         bounds={bounds}
                         filters={filters}

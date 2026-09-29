@@ -24,22 +24,38 @@ export default function Home() {
 
     return (
         <div
-            style={{ width: "100%", height: "100%" }}
-            className={"flex-center-everything"}
+            style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+            }}
         >
             <div
-                style={{ width: "100%", height: "25%", overflow: "scroll" }}
+                style={{
+                    width: "100%",
+                    flex: "0 0 25%",
+                    overflow: "auto",
+                }}
                 className={"flex-center-everything"}
             >
                 <Titles />
             </div>
             <div
-                style={{ width: "80%", height: "75%", overflow: "scroll" }}
+                style={{
+                    width: "80%",
+                    flex: "1 1 0",
+                    minHeight: 0,
+                    overflow: "auto",
+                    alignSelf: "center",
+                }}
                 className={"p-5"}
             >
                 <ModelTable models={models} />
             </div>
-            <MetadataNote />
+            <div style={{ flex: "0 0 auto", width: "100%" }}>
+                <MetadataNote />
+            </div>
         </div>
     );
 }

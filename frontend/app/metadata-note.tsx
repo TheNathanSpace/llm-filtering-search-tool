@@ -78,86 +78,26 @@ export default function MetadataNote() {
     return (
         <div
             style={{
-                position: "fixed",
-                bottom: "0.75rem",
-                right: "0.75rem",
-                zIndex: 10,
+                display: "flex",
+                flexDirection: "row",
+                flexWrap: "wrap",
+                alignItems: "baseline",
+                gap: "0.35rem 1.25rem",
+                fontSize: "0.75rem",
+                lineHeight: 1.35,
                 opacity: 0.85,
             }}
         >
-            <table
-                style={{
-                    borderCollapse: "collapse",
-                    fontSize: "0.75rem",
-                    lineHeight: 1.35,
-                }}
-            >
-                <caption
-                    className="font-sans"
-                    style={{
-                        captionSide: "top",
-                        textAlign: "left",
-                        paddingBottom: "0.25rem",
-                        fontWeight: 600,
-                    }}
-                >
-                    Data
-                </caption>
-                <thead>
-                    <tr>
-                        <th
-                            className="font-sans"
-                            scope="col"
-                            style={{
-                                textAlign: "left",
-                                padding: "0.1rem 0.6rem 0.1rem 0",
-                                fontWeight: 600,
-                            }}
-                        >
-                            Field
-                        </th>
-                        <th
-                            className="font-sans"
-                            scope="col"
-                            style={{
-                                textAlign: "left",
-                                padding: "0.1rem 0",
-                                fontWeight: 600,
-                            }}
-                        >
-                            Value
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td
-                            className="font-casual"
-                            style={{ padding: "0.1rem 0.6rem 0.1rem 0" }}
-                        >
-                            Enrichment cost
-                        </td>
-                        <td className="font-mono" style={{ padding: "0.1rem 0" }}>
-                            {costDisplay}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td
-                            className="font-casual"
-                            style={{ padding: "0.1rem 0.6rem 0.1rem 0" }}
-                        >
-                            Last refresh
-                        </td>
-                        <td
-                            className="font-mono"
-                            style={{ padding: "0.1rem 0" }}
-                            title={refreshUtcTitle}
-                        >
-                            {refreshDisplay}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            <span>
+                <span className="font-casual">Last refresh</span>{" "}
+                <span className="font-mono" title={refreshUtcTitle}>
+                    {refreshDisplay}
+                </span>
+            </span>
+            <span>
+                <span className="font-casual">Enrichment cost</span>{" "}
+                <span className="font-mono">{costDisplay}</span>
+            </span>
         </div>
     );
 }

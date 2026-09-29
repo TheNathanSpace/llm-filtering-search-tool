@@ -47,5 +47,7 @@ if ! container="$(resolve_container)"; then
   exit 1
 fi
 
-echo "Refreshing via docker exec ${container} python -m llm_rankings.refresh $*"
-exec docker exec "${container}" python -m llm_rankings.refresh "$@"
+# Prod image installs the package under site-packages, so find_dotenv() cannot
+# walk to /app/.env — pass it explicitly (same path uvicorn uses under supervisord).
+echo "Refreshing via docker exec ${container} python -m llm_rankings.refresh --env-file /app/.env $*"
+exec docker exec -w /app "${container}" python -m llm_rankings.refresh --env-file /app/.env "$@"

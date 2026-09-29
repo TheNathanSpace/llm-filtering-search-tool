@@ -48,12 +48,35 @@ def _update_latest_log_symlink(logs_dir: Path, log_path: Path) -> Path:
     return latest
 
 
+def _discover_env_file() -> Path | None:
+    """
+    Locate a ``.env`` without an explicit path.
+
+    ``find_dotenv()`` walks from the caller module path. That works for an editable
+    checkout, but fails in the prod image where the package lives under
+    site-packages — so also try cwd and the Compose mount at ``/app/.env``.
+    """
+    for candidate in (
+        find_dotenv(),
+        find_dotenv(usecwd=True),
+        Path.cwd() / ".env",
+        Path("/app/.env"),
+    ):
+        if not candidate:
+            continue
+        path = Path(candidate).expanduser().resolve()
+        if path.is_file():
+            return path
+    return None
+
+
 def configure_env_file(path: str | Path | None = None) -> Path:
     """
     Load environment variables from the given ``.env`` file (or discover one).
 
     :param path: Explicit path to a ``.env`` file. When ``None``, uses
-        ``LLM_RANKINGS_ENV_FILE`` if set, otherwise ``find_dotenv()``.
+        ``LLM_RANKINGS_ENV_FILE`` if set, otherwise discovery (see
+        ``_discover_env_file``).
     :return: Resolved path to the loaded ``.env`` file.
     """
     global _ENV_FILE
@@ -65,10 +88,10 @@ def configure_env_file(path: str | Path | None = None) -> Path:
         if from_env:
             env_file = Path(from_env).expanduser().resolve()
         else:
-            dotenv_path = find_dotenv()
-            if not dotenv_path:
+            discovered = _discover_env_file()
+            if discovered is None:
                 raise ValueError("No .env file found")
-            env_file = Path(dotenv_path).resolve()
+            env_file = discovered
 
     if not env_file.is_file():
         raise ValueError(f".env file not found: {env_file.as_posix()}")
@@ -90,7 +113,7 @@ def bootstrap_env_from_argv() -> Path:
     Load ``.env`` before other back-end setup.
 
     Honors ``--env-file`` / ``-e`` on ``sys.argv`` (removed after parsing), then
-    ``LLM_RANKINGS_ENV_FILE``, then ``find_dotenv()``.
+    ``LLM_RANKINGS_ENV_FILE``, then env-file discovery.
     """
     if _ENV_FILE is not None:
         return _ENV_FILE

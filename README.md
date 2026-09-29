@@ -181,7 +181,8 @@ There is no public HTTP refresh endpoint (avoids unauthenticated wipe/rebuilds o
 instance). Ops can refresh from the host (same 24h gate by default, or `--force` to bypass):
 
 ```bash
-# Prefer Docker when Compose is up (prod `llm-filtering` or dev `llm-filtering-backend-dev`):
+# Prefer Docker when Compose is up (prod `llm-filtering` or dev `llm-filtering-backend-dev`).
+# The script passes `--env-file /app/.env` (prod images cannot discover `.env` via site-packages).
 ./bin/refresh-data.sh
 ./bin/refresh-data.sh --force
 ./bin/refresh-data.sh --force --source hf

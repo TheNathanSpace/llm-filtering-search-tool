@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Ops selective force refresh CLI
-**Latest change:** Add `python -m llm_rankings.refresh --force [--source …]` and `./bin/refresh-data.sh` (docker exec); cross-process refresh lock; auto paths stay 24h-gated; no public HTTP refresh.
+**Last updated:** 2026-09-29 — Fix docker refresh .env discovery
+**Latest change:** `bin/refresh-data.sh` passes `--env-file /app/.env`; env discovery also checks cwd and `/app/.env` when site-packages `find_dotenv()` fails in prod images.
 
 ## Pickup
 

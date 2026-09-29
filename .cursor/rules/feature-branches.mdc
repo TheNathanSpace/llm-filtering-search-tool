@@ -1,5 +1,5 @@
 ---
-description: Private worktree isolation; merge to main only with go-ahead; then delete worktree and branch.
+description: Private worktree isolation; fast-forward onto main only with go-ahead; then delete worktree and branch.
 alwaysApply: true
 ---
 
@@ -53,25 +53,27 @@ Then move this agent’s workspace root to that directory.
 
 ## Integrating (only with go-ahead)
 
-When the work is done (committed on the task branch), **stop and ask** whether to merge into `main`. Do **not** merge, apply, or land until the user explicitly says to.
+When the work is done (committed on the task branch), **stop and ask** whether to land into `main`. Do **not** merge, apply, or land until the user explicitly says to.
 
 After go-ahead:
 
-1. Prefer **local `--no-ff` merge into `main` in the primary checkout**. Do **not** open a remote PR unless the user explicitly asks.
-2. Merge from the primary path so the task worktree stays on its branch:
+1. Prefer **local fast-forward into `main` in the primary checkout**. Do **not** create merge commits (`--no-ff`, default non-ff merges, or `[Category] Merge …` commits). Do **not** open a remote PR unless the user explicitly asks.
+2. Land from the primary path so the task worktree stays on its branch:
 
 ```bash
 git -C /path/to/primary-checkout checkout main
-git -C /path/to/primary-checkout merge --no-ff <type>/<short-description>
+git -C /path/to/primary-checkout merge --ff-only <type>/<short-description>
 ```
 
-Use a `[Category] Merge …` subject for the merge commit. **Do not** add a follow-up commit on `main` whose only purpose is to restate that the merge happened — status/docs belong in the work commit(s) on the branch. Merge commits themselves need no extra `docs/status.md` edit.
+3. If `--ff-only` fails because `main` has moved, **rebase the task branch onto `main` in the task worktree**, then retry `--ff-only` from the primary checkout. Do not resolve that by creating a merge commit.
 
-`/apply-worktree` is optional for bringing uncommitted/worktree changes into the primary tree for inspection; it is **not** a substitute for the merge-with-go-ahead flow above unless the user asks for that instead.
+Status/docs belong in the work commit(s) on the branch. Do **not** add a follow-up commit on `main` whose only purpose is to restate that the branch landed.
 
-## After merge — delete worktree and branch
+`/apply-worktree` is optional for bringing uncommitted/worktree changes into the primary tree for inspection; it is **not** a substitute for the land-with-go-ahead flow above unless the user asks for that instead.
 
-After a successful merge, remove **this** task’s worktree and branch. Do not leave merged feature checkouts around.
+## After landing — delete worktree and branch
+
+After a successful fast-forward onto `main`, remove **this** task’s worktree and branch. Do not leave landed feature checkouts around.
 
 Prefer **`/delete-worktree`** when available; otherwise:
 
@@ -86,4 +88,4 @@ Do not delete worktrees or branches owned by another in-progress agent.
 ## Exceptions
 
 - Read-only questions that change no files may stay on the current branch / checkout.
-- The user explicitly asks to work on `main`, open a PR, or keep a branch/worktree after merge.
+- The user explicitly asks to work on `main`, open a PR, or keep a branch/worktree after landing.

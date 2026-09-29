@@ -1,5 +1,5 @@
 ---
-description: Edit docs/status.md in every work commit; no merge-only status notes.
+description: Edit docs/status.md in every work commit; no land-only status notes.
 alwaysApply: true
 ---
 
@@ -17,8 +17,7 @@ Do not commit code, configuration, documentation, or rules without changing that
 
 ## Bundle with the work
 
-- Put status (and other doc updates for the change) in the **same commit** as the substantive change. Do not land the work first and then add a separate “note merge / update status” commit.
-- A commit whose **only** change is `docs/status.md` is fine when status itself is the work (e.g. correcting pickup text). Do **not** use that pattern to restate a merge that already landed.
-- **`--no-ff` merge commits** are exempt: they need no `docs/status.md` edit; the branch tip should already describe the work.
+- Put status (and other doc updates for the change) in the **same commit** as the substantive change. Do not land the work first and then add a separate “note land / update status” commit.
+- A commit whose **only** change is `docs/status.md` is fine when status itself is the work (e.g. correcting pickup text). Do **not** use that pattern to restate that a branch already landed on `main`.
 
 Never skip status on a work commit because the change "doesn't affect product behavior." Pickup status must move with the git history.

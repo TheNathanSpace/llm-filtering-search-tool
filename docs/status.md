@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Exclude OR free models  
-**Latest change:** Drop OpenRouter `:free` model variants at combine time (same path as `~` provider skips); [SRC-01](requirements.md#src-01) / [SRC-06](requirements.md#src-06).
+**Last updated:** 2026-09-29 — Fast-forward land, no merge commits  
+**Latest change:** Agent rules land task branches with `merge --ff-only` (rebase onto `main` if needed); drop `--no-ff` merge commits and the status exemption for them.
 
 ## Pickup
 

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Footer meta row bottom-left
-**Latest change:** Replaced the fixed bottom-right Data meta table with a single in-flow bottom-left footer row (last refresh + enrichment cost; [UI-10](requirements.md#ui-10)); page layout reserves footer space so the model table no longer covers it. Also: filter panel `overflow: auto`; dropped OS `prefers-color-scheme` dark overrides.
+**Last updated:** 2026-09-29 — Wider gap in footer meta pairs
+**Latest change:** Added space between each footer meta label and its value (last refresh, enrichment cost) so the script and block faces no longer sit against each other ([UI-10](requirements.md#ui-10)).
 
 ## Pickup
 

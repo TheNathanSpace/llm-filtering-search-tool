@@ -12,6 +12,12 @@ function formatCostUsd(usd: number): string {
     });
 }
 
+const metaPairStyle = {
+    display: "inline-flex",
+    alignItems: "baseline",
+    columnGap: "0.85rem",
+} as const;
+
 const REFRESH_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
     year: "numeric",
     month: "short",
@@ -88,15 +94,15 @@ export default function MetadataNote() {
                 opacity: 0.85,
             }}
         >
-            <span>
-                <span className="font-casual">Last refresh</span>{" "}
+            <span style={metaPairStyle}>
+                <span className="font-casual" style={{ fontSize: "1.1rem" }}>Last refresh:</span>
                 <span className="font-mono" title={refreshUtcTitle}>
-                    {refreshDisplay}
+                    {refreshDisplay}.
                 </span>
             </span>
-            <span>
-                <span className="font-casual">Enrichment cost</span>{" "}
-                <span className="font-mono">{costDisplay}</span>
+            <span style={metaPairStyle}>
+                <span className="font-casual" style={{ fontSize: "1.1rem" }}>Enrichment cost:</span>
+                <span className="font-mono">{costDisplay}.</span>
             </span>
         </div>
     );

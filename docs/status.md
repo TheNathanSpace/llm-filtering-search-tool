@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-28 — Harden public API surface  
-**Latest change:** API docs off unless `ENABLE_API_DOCS` (Compose `dev` on); handlers return generic 500 detail to clients while logging full exceptions ([PLT-01](requirements.md#plt-01)). Prior on this branch: dropped public `POST /refresh`.
+**Last updated:** 2026-09-29 — Refresh progress logging  
+**Latest change:** Per-item progress logs during data refresh for Hugging Face listings, OpenRouter endpoints, and optional web enrichment (`name (n/total)`), plus stage banners in the clean/combine pipeline ([PLT-04](requirements.md#plt-04)).
 
 ## Pickup
 

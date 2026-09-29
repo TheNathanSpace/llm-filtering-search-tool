@@ -729,10 +729,21 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
         return model.id, result, False
 
     by_id = {m.id: m for m in candidates}
+    total = len(candidates)
+    done = 0
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
         futures = [pool.submit(_process, m) for m in candidates]
         for future in as_completed(futures):
-            model_id, parsed, _from_cache = future.result()
+            model_id, parsed, from_cache = future.result()
+            done += 1
+            cache_note = " [cached]" if from_cache else ""
+            logger.info(
+                "Web enrichment for %s (%d/%d)%s",
+                model_id,
+                done,
+                total,
+                cache_note,
+            )
             model = by_id[model_id]
             open_filled, params_filled, cutoff_filled = _merge_into_model(model, parsed)
             if open_filled:

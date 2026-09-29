@@ -148,12 +148,26 @@ def parameters_b_for_repo_ids(repo_ids: set[str]) -> dict[str, float | None]:
     logger.info("Resolving HF parameter counts for %d distinct repo ids", len(ids))
     network_fetches = 0
     last_network_at = 0.0
+    total = len(ids)
 
-    for repo_id in ids:
+    for index, repo_id in enumerate(ids, start=1):
         cached = _load_cached(repo_id)
         if cached is not None:
+            logger.info(
+                "Getting Hugging Face listing for %s (%d/%d) [cached]",
+                repo_id,
+                index,
+                total,
+            )
             results[repo_id] = _parameters_b_from_payload(cached)
             continue
+
+        logger.info(
+            "Getting Hugging Face listing for %s (%d/%d)",
+            repo_id,
+            index,
+            total,
+        )
 
         # Pace only actual network requests.
         elapsed = time.time() - last_network_at

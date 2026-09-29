@@ -111,15 +111,23 @@ def write_provider_endpoints(rows: list[ModelProviderEndpoint]) -> None:
 
 
 def get_and_clean_data() -> tuple[list[CombinedModel], list[ModelProviderEndpoint]]:
-    logger.debug("Retrieving and cleaning data")
+    logger.info("Refresh pipeline: fetching OpenRouter model catalog")
     or_models = get_all_model_data()
+    logger.info(
+        "Refresh pipeline: combining models (models.dev + Hugging Face + optional web enrichment)"
+    )
     combined_models = combine_openrouter_models(or_models)
     kept_ids = {m.id for m in combined_models}
     kept_or_models = [m for m in or_models.data if m.id in kept_ids]
+    logger.info(
+        "Refresh pipeline: fetching OpenRouter endpoints for %d models",
+        len(kept_or_models),
+    )
     endpoint_lists = get_endpoints_for_models(kept_or_models)
     provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
     write_combined_models(combined_models)
     write_provider_endpoints(provider_rows)
+    logger.info("Refresh pipeline: done (%d models, %d provider rows)", len(combined_models), len(provider_rows))
     return combined_models, provider_rows
 
 

@@ -1,7 +1,12 @@
 # Status
 
+<<<<<<< HEAD
 **Last updated:** 2026-09-30 — Worktree preview shares primary data
 **Latest change:** Documented `HOST_DATA_DIR` in the README env list (Compose mount for worktree previews reusing primary `data/`).
+=======
+**Last updated:** 2026-09-29 — Type numeric range endpoints
+**Latest change:** Numeric filter ranges (size, context length, indices, price) accept a typed minimum or maximum: click the value under the slider. Date ranges stay slider-only.
+>>>>>>> 3c2b72f ([Feature] Allow typing numeric filter range endpoints)
 
 ## Pickup
 

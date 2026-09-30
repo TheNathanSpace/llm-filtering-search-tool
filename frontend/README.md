@@ -34,6 +34,10 @@ Filter UI and logic live under `app/filters/`:
 `model-table.tsx` only composes the filter panel and Data Grid. Column definitions live in
 `app/columns.tsx`. Input and output modalities display as comma-separated lists (e.g. `text, image`).
 The modality filters keep models that include **every** checked type (unchecked means no constraint).
+Numeric range controls (`NumberRangeFilter`, including size) show the selected minimum and maximum under the slider.
+Click either number to type a value; Enter or leaving the field applies it, and Escape cancels.
+The value is kept inside the data bounds. If it crosses the other end, that end moves with it so the range stays ordered.
+Date range filters stay slider-only.
 
 ### Adding a new filter
 

@@ -1,3 +1,5 @@
+import { CombinedModel } from "@/app/client";
+import { formatTokenMillions, usageCost } from "@/app/usage-cost";
 import {
     creatorLabel,
     formatNumber,
@@ -121,3 +123,35 @@ export const columns: GridColDef[] = [
         valueGetter: (_value, row) => creatorLabel(row.creator, row.name),
     },
 ];
+
+function usageCostColumn(tokenMillions: number): GridColDef<CombinedModel> {
+    const amount = formatTokenMillions(tokenMillions);
+    return {
+        field: "usage_cost",
+        headerName: `Cost (${amount}M)`,
+        description: `Listed cost of ${amount} million tokens for the chosen provider (90% input / 10% output)`,
+        type: "number",
+        width: 130,
+        valueGetter: (_value, row) =>
+            usageCost(tokenMillions, row.pricing_input, row.pricing_output),
+        valueFormatter: formatPrice,
+    };
+}
+
+/** Table columns, with a usage-cost column left of pricing input when a token count is set. */
+export function columnsForTokenMillions(
+    tokenMillions: number | undefined,
+): GridColDef[] {
+    if (tokenMillions === undefined) {
+        return columns;
+    }
+    const pricingIndex = columns.findIndex(
+        (column) => column.field === "pricing_input",
+    );
+    const costColumn = usageCostColumn(tokenMillions);
+    return [
+        ...columns.slice(0, pricingIndex),
+        costColumn,
+        ...columns.slice(pricingIndex),
+    ];
+}

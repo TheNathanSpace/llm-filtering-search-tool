@@ -48,7 +48,8 @@ range filters. The model name links to its OpenRouter page. Creator labels use t
 capitalization (`OpenAI`), not the lowercase author slug. Input/output price, median throughput,
 and median latency come from one OpenRouter host: the cheapest listed 90/10 input/output blend,
 unless the next host is much faster on both. The panel can filter that provider, throughput, and
-latency, and column-backed filters follow the table column order.
+latency, and column-backed filters follow the table column order. Entering a token count in
+millions adds a cost column left of pricing input, using that same 90/10 blend.
 See [`docs/todo.md`](docs/todo.md).
 
 ## Technical Overview

@@ -22,6 +22,7 @@ Filter UI and logic live under `app/filters/`:
 | Module                                                                          | Role                                           |
 | ------------------------------------------------------------------------------- | ---------------------------------------------- |
 | `model-filters.tsx`                                                             | Filter panel layout                            |
+| `token-count-field.tsx`                                                        | Token-count box that drives the usage-cost column |
 | `filter-option.tsx`                                                             | Shared label + control row                     |
 | `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` / `text-filter.tsx` | Reusable range, select, and text controls |
 | `checkbox-row-filter.tsx`                                                       | Row of checkboxes with a label under each      |
@@ -36,6 +37,10 @@ The panel lays those controls out in two columns and balances them so each colum
 `model-table.tsx` only composes the filter panel and Data Grid. Column definitions live in
 `app/columns.tsx`. Column-backed filters follow that column order. The missing-values switch stays
 first. Provider and modality filters have no column, so they come after the column-aligned controls.
+A **Millions of tokens** box (not a row filter) sits just before the price ranges. A positive count
+inserts a **Cost (NM)** column to the left of Pricing Input:
+`tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. Clearing the box
+removes the column. The blend matches provider ranking in `backend/llm_rankings/provider_choice.py`.
 The name cell links to the model’s OpenRouter page.
 Creator values in the table and the creator filter use the catalog display name (the `OpenAI:` prefix
 on the model name), not the lowercase author slug.

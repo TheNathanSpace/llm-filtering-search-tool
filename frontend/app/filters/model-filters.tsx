@@ -8,6 +8,7 @@ import {
 import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
 import TextFilter from "@/app/filters/text-filter";
+import TokenCountField from "@/app/filters/token-count-field";
 import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
 import { FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
@@ -17,12 +18,20 @@ interface ModelFiltersProperties {
     bounds: FilterBounds;
     filters: ModelFiltersState;
     setFilters: Dispatch<SetStateAction<ModelFiltersState>>;
+    tokenMillions: string;
+    onTokenMillionsChange: (value: string) => void;
 }
 
 export default function ModelFilters(
     properties: Readonly<ModelFiltersProperties>,
 ) {
-    const { bounds, filters, setFilters } = properties;
+    const {
+        bounds,
+        filters,
+        setFilters,
+        tokenMillions,
+        onTokenMillionsChange,
+    } = properties;
 
     return (
         <div className="w-full columns-2 gap-x-16">
@@ -156,6 +165,10 @@ export default function ModelFilters(
                     }}
                 />
             )}
+            <TokenCountField
+                value={tokenMillions}
+                onChange={onTokenMillionsChange}
+            />
             {bounds.pricingInput && (
                 <NumberRangeFilter
                     name="Pricing input ($/1M)"

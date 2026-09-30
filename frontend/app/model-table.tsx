@@ -1,11 +1,13 @@
 import { DataGrid } from "@mui/x-data-grid";
 import { CombinedModel } from "./client";
 import { MuiFontSans } from "@/app/mui-font";
-import { columns } from "@/app/columns";
+import { columnsForTokenMillions } from "@/app/columns";
+import { parseTokenMillions } from "@/app/usage-cost";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ModelFilters from "@/app/filters/model-filters";
 import { useModelFilters } from "@/app/filters/use-model-filters";
+import { useMemo, useState } from "react";
 
 const noRowsOverlay = () => (
     <div className={"flex-center-everything"}>
@@ -16,6 +18,12 @@ const noRowsOverlay = () => (
 export default function ModelTable({ models }: { models: CombinedModel[] }) {
     const { bounds, filters, setFilters, filteredModels } =
         useModelFilters(models);
+    const [tokenMillionsText, setTokenMillionsText] = useState("");
+    const tokenMillions = parseTokenMillions(tokenMillionsText);
+    const columns = useMemo(
+        () => columnsForTokenMillions(tokenMillions),
+        [tokenMillions],
+    );
 
     return (
         <div style={{ width: "100%", height: "100%" }}>
@@ -25,6 +33,8 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
                         bounds={bounds}
                         filters={filters}
                         setFilters={setFilters}
+                        tokenMillions={tokenMillionsText}
+                        onTokenMillionsChange={setTokenMillionsText}
                     />
                 </div>
                 <MuiFontSans style={{ height: "50%", width: "100%" }}>

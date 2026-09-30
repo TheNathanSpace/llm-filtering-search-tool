@@ -92,6 +92,7 @@ Optional (lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and N
    - `OR_ENRICHMENT_MODEL` — required when web enrichment is on (OpenRouter chat model id)
    - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
    - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
+   - `HOST_DATA_DIR` — optional host path Compose bind-mounts to `/app/data` (default `./data`); worktree setup points this at the primary checkout’s `data/`
    - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
      (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
    - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on

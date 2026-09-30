@@ -1,7 +1,7 @@
 # Status
 
 **Last updated:** 2026-09-30 — Worktree preview shares primary data
-**Latest change:** Compose mounts `${HOST_DATA_DIR:-./data}` so worktree `dev` stacks reuse the primary checkout’s warm DB/cache; worktree setup sets `HOST_DATA_DIR`; feature-branch rule covers start/stop preview and teardown on land.
+**Latest change:** Documented `HOST_DATA_DIR` in the README env list (Compose mount for worktree previews reusing primary `data/`).
 
 ## Pickup
 

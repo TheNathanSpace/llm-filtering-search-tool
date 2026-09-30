@@ -31,8 +31,14 @@ Filter UI and logic live under `app/filters/`:
 | `apply-filters.ts`                                                              | Pure `filterModels()`                          |
 | `use-model-filters.ts`                                                          | State + filtered rows for the table            |
 
+The panel lays those controls out in two columns and balances them so each column is about the same height. A control stays in one column (it is not split across the break).
+
 `model-table.tsx` only composes the filter panel and Data Grid. Column definitions live in
-`app/columns.tsx`. Input and output modalities display as comma-separated lists (e.g. `text, image`).
+`app/columns.tsx`. Column-backed filters follow that column order. The missing-values switch stays
+first. Provider and modality filters have no column, so they come after the column-aligned controls.
+The name cell links to the model’s OpenRouter page.
+Creator values in the table and the creator filter use the catalog display name (the `OpenAI:` prefix
+on the model name), not the lowercase author slug.
 The modality filters keep models that include **every** checked type (unchecked means no constraint).
 Numeric range controls (`NumberRangeFilter`, including size) show the selected minimum and maximum under the slider.
 Click either number to type a value; Enter or leaving the field applies it, and Escape cancels.

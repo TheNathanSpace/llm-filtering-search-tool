@@ -9,7 +9,7 @@ import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
 import TextFilter from "@/app/filters/text-filter";
 import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
-import { FormControlLabel, FormGroup, Grid, Switch } from "@mui/material";
+import { FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
 import { Dispatch, SetStateAction } from "react";
 
@@ -25,10 +25,17 @@ export default function ModelFilters(
     const { bounds, filters, setFilters } = properties;
 
     return (
-        <Grid container spacing={10}>
-            <Grid size={6}>
-                <FormGroup sx={{ width: "max-content" }}>
+        <div className="w-full columns-2 gap-x-16">
+            <div className="w-full break-inside-avoid">
+                <FormGroup sx={{ width: "100%" }}>
                     <FormControlLabel
+                        sx={{
+                            display: "flex",
+                            maxWidth: "100%",
+                            "& .MuiFormControlLabel-label": {
+                                whiteSpace: "normal",
+                            },
+                        }}
                         control={
                             <Switch
                                 checked={filters.includeMissing}
@@ -42,7 +49,29 @@ export default function ModelFilters(
                         }
                         label="Treat entries with missing values as included in filters"
                     />
+                </FormGroup>
+            </div>
+            <TextFilter
+                name="Name"
+                label="Search names or families"
+                value={filters.nameQuery}
+                onChange={(nameQuery) => {
+                    setFilters((previous) => ({
+                        ...previous,
+                        nameQuery,
+                    }));
+                }}
+            />
+            <div className="w-full break-inside-avoid">
+                <FormGroup sx={{ width: "100%" }}>
                     <FormControlLabel
+                        sx={{
+                            display: "flex",
+                            maxWidth: "100%",
+                            "& .MuiFormControlLabel-label": {
+                                whiteSpace: "normal",
+                            },
+                        }}
                         control={
                             <Switch
                                 checked={filters.openWeightsOnly}
@@ -57,224 +86,208 @@ export default function ModelFilters(
                         label="Open weights only"
                     />
                 </FormGroup>
-                <TextFilter
-                    name="Name"
-                    label="Search names or families"
-                    value={filters.nameQuery}
-                    onChange={(nameQuery) => {
+            </div>
+            {bounds.parametersB && (
+                <NumberRangeFilter
+                    name="Size (B params)"
+                    minValue={bounds.parametersB[0]}
+                    maxValue={bounds.parametersB[1]}
+                    step={0.1}
+                    onChange={(parametersB) => {
                         setFilters((previous) => ({
                             ...previous,
-                            nameQuery,
+                            parametersB,
                         }));
                     }}
                 />
-                {bounds.intelligenceIndex && (
-                    <NumberRangeFilter
-                        name="Intelligence"
-                        minValue={bounds.intelligenceIndex[0]}
-                        maxValue={bounds.intelligenceIndex[1]}
-                        step={0.1}
-                        onChange={(intelligenceIndex) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                intelligenceIndex,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.codingIndex && (
-                    <NumberRangeFilter
-                        name="Coding"
-                        minValue={bounds.codingIndex[0]}
-                        maxValue={bounds.codingIndex[1]}
-                        step={0.1}
-                        onChange={(codingIndex) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                codingIndex,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.agenticIndex && (
-                    <NumberRangeFilter
-                        name="Agentic"
-                        minValue={bounds.agenticIndex[0]}
-                        maxValue={bounds.agenticIndex[1]}
-                        step={0.1}
-                        onChange={(agenticIndex) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                agenticIndex,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.pricingOutput && (
-                    <NumberRangeFilter
-                        name="Pricing output ($/1M)"
-                        minValue={bounds.pricingOutput[0]}
-                        maxValue={bounds.pricingOutput[1]}
-                        step={0.01}
-                        formatValue={formatPrice}
-                        onChange={(pricingOutput) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                pricingOutput,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.pricingInput && (
-                    <NumberRangeFilter
-                        name="Pricing input ($/1M)"
-                        minValue={bounds.pricingInput[0]}
-                        maxValue={bounds.pricingInput[1]}
-                        step={0.01}
-                        formatValue={formatPrice}
-                        onChange={(pricingInput) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                pricingInput,
-                            }));
-                        }}
-                    />
-                )}
-                <MultiSelectFilter
-                    name="Provider"
-                    label="Pick providers"
-                    options={bounds.providers}
-                    value={filters.providers}
-                    onChange={(providers) => {
+            )}
+            {bounds.intelligenceIndex && (
+                <NumberRangeFilter
+                    name="Intelligence"
+                    minValue={bounds.intelligenceIndex[0]}
+                    maxValue={bounds.intelligenceIndex[1]}
+                    step={0.1}
+                    onChange={(intelligenceIndex) => {
                         setFilters((previous) => ({
                             ...previous,
-                            providers,
+                            intelligenceIndex,
                         }));
                     }}
                 />
-                {bounds.throughput && (
-                    <NumberRangeFilter
-                        name="Throughput (tok/s)"
-                        minValue={bounds.throughput[0]}
-                        maxValue={bounds.throughput[1]}
-                        step={1}
-                        formatValue={formatThroughput}
-                        onChange={(throughput) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                throughput,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.latencyMs && (
-                    <NumberRangeFilter
-                        name="Latency (ms)"
-                        minValue={bounds.latencyMs[0]}
-                        maxValue={bounds.latencyMs[1]}
-                        step={1}
-                        formatValue={formatLatencyMs}
-                        onChange={(latencyMs) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                latencyMs,
-                            }));
-                        }}
-                    />
-                )}
-                <MultiSelectFilter
-                    name="Creators"
-                    label="Pick creators"
-                    options={bounds.creators}
-                    value={filters.creators}
-                    onChange={(creators) => {
+            )}
+            {bounds.codingIndex && (
+                <NumberRangeFilter
+                    name="Coding"
+                    minValue={bounds.codingIndex[0]}
+                    maxValue={bounds.codingIndex[1]}
+                    step={0.1}
+                    onChange={(codingIndex) => {
                         setFilters((previous) => ({
                             ...previous,
-                            creators,
+                            codingIndex,
                         }));
                     }}
                 />
-                {bounds.creationDate && (
-                    <DateRangeFilter
-                        name="Creation date"
-                        minDate={dayjs(bounds.creationDate[0])}
-                        maxDate={dayjs(bounds.creationDate[1])}
-                        onChange={([start, end]) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                creationDate: [start.valueOf(), end.valueOf()],
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.knowledgeCutoff && (
-                    <DateRangeFilter
-                        name="Knowledge cutoff"
-                        minDate={dayjs(bounds.knowledgeCutoff[0])}
-                        maxDate={dayjs(bounds.knowledgeCutoff[1])}
-                        onChange={([start, end]) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                knowledgeCutoff: [
-                                    start.valueOf(),
-                                    end.valueOf(),
-                                ],
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.contextLength && (
-                    <NumberRangeFilter
-                        name="Context length"
-                        minValue={bounds.contextLength[0]}
-                        maxValue={bounds.contextLength[1]}
-                        onChange={(contextLength) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                contextLength,
-                            }));
-                        }}
-                    />
-                )}
-                {bounds.parametersB && (
-                    <NumberRangeFilter
-                        name="Size (B params)"
-                        minValue={bounds.parametersB[0]}
-                        maxValue={bounds.parametersB[1]}
-                        step={0.1}
-                        onChange={(parametersB) => {
-                            setFilters((previous) => ({
-                                ...previous,
-                                parametersB,
-                            }));
-                        }}
-                    />
-                )}
-            </Grid>
-            <Grid size={6}>
-                <CheckboxRowFilter
-                    name="Input modalities"
-                    options={INPUT_MODALITY_OPTIONS}
-                    value={filters.inputModalities}
-                    onChange={(inputModalities) => {
+            )}
+            {bounds.agenticIndex && (
+                <NumberRangeFilter
+                    name="Agentic"
+                    minValue={bounds.agenticIndex[0]}
+                    maxValue={bounds.agenticIndex[1]}
+                    step={0.1}
+                    onChange={(agenticIndex) => {
                         setFilters((previous) => ({
                             ...previous,
-                            inputModalities,
+                            agenticIndex,
                         }));
                     }}
                 />
-                <CheckboxRowFilter
-                    name="Output modalities"
-                    options={OUTPUT_MODALITY_OPTIONS}
-                    value={filters.outputModalities}
-                    onChange={(outputModalities) => {
+            )}
+            {bounds.contextLength && (
+                <NumberRangeFilter
+                    name="Context length"
+                    minValue={bounds.contextLength[0]}
+                    maxValue={bounds.contextLength[1]}
+                    onChange={(contextLength) => {
                         setFilters((previous) => ({
                             ...previous,
-                            outputModalities,
+                            contextLength,
                         }));
                     }}
                 />
-            </Grid>
-        </Grid>
+            )}
+            {bounds.pricingInput && (
+                <NumberRangeFilter
+                    name="Pricing input ($/1M)"
+                    minValue={bounds.pricingInput[0]}
+                    maxValue={bounds.pricingInput[1]}
+                    step={0.01}
+                    formatValue={formatPrice}
+                    onChange={(pricingInput) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            pricingInput,
+                        }));
+                    }}
+                />
+            )}
+            {bounds.pricingOutput && (
+                <NumberRangeFilter
+                    name="Pricing output ($/1M)"
+                    minValue={bounds.pricingOutput[0]}
+                    maxValue={bounds.pricingOutput[1]}
+                    step={0.01}
+                    formatValue={formatPrice}
+                    onChange={(pricingOutput) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            pricingOutput,
+                        }));
+                    }}
+                />
+            )}
+            {bounds.throughput && (
+                <NumberRangeFilter
+                    name="Throughput (tok/s)"
+                    minValue={bounds.throughput[0]}
+                    maxValue={bounds.throughput[1]}
+                    step={1}
+                    formatValue={formatThroughput}
+                    onChange={(throughput) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            throughput,
+                        }));
+                    }}
+                />
+            )}
+            {bounds.latencyMs && (
+                <NumberRangeFilter
+                    name="Latency (ms)"
+                    minValue={bounds.latencyMs[0]}
+                    maxValue={bounds.latencyMs[1]}
+                    step={1}
+                    formatValue={formatLatencyMs}
+                    onChange={(latencyMs) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            latencyMs,
+                        }));
+                    }}
+                />
+            )}
+            {bounds.creationDate && (
+                <DateRangeFilter
+                    name="Created"
+                    minDate={dayjs(bounds.creationDate[0])}
+                    maxDate={dayjs(bounds.creationDate[1])}
+                    onChange={([start, end]) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            creationDate: [start.valueOf(), end.valueOf()],
+                        }));
+                    }}
+                />
+            )}
+            {bounds.knowledgeCutoff && (
+                <DateRangeFilter
+                    name="Knowledge cutoff"
+                    minDate={dayjs(bounds.knowledgeCutoff[0])}
+                    maxDate={dayjs(bounds.knowledgeCutoff[1])}
+                    onChange={([start, end]) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            knowledgeCutoff: [start.valueOf(), end.valueOf()],
+                        }));
+                    }}
+                />
+            )}
+            <MultiSelectFilter
+                name="Creator"
+                label="Pick creators"
+                options={bounds.creators}
+                value={filters.creators}
+                onChange={(creators) => {
+                    setFilters((previous) => ({
+                        ...previous,
+                        creators,
+                    }));
+                }}
+            />
+            <MultiSelectFilter
+                name="Provider"
+                label="Pick providers"
+                options={bounds.providers}
+                value={filters.providers}
+                onChange={(providers) => {
+                    setFilters((previous) => ({
+                        ...previous,
+                        providers,
+                    }));
+                }}
+            />
+            <CheckboxRowFilter
+                name="Input modalities"
+                options={INPUT_MODALITY_OPTIONS}
+                value={filters.inputModalities}
+                onChange={(inputModalities) => {
+                    setFilters((previous) => ({
+                        ...previous,
+                        inputModalities,
+                    }));
+                }}
+            />
+            <CheckboxRowFilter
+                name="Output modalities"
+                options={OUTPUT_MODALITY_OPTIONS}
+                value={filters.outputModalities}
+                onChange={(outputModalities) => {
+                    setFilters((previous) => ({
+                        ...previous,
+                        outputModalities,
+                    }));
+                }}
+            />
+        </div>
     );
 }

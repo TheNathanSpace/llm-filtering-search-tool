@@ -44,9 +44,11 @@ And then I could sort from highest to lowest intelligence, probably choosing the
 
 Today the table ships with Intelligence / Coding / Agentic columns (default sort: intelligence
 descending) and matching range filters; context-window and creation-date filters; and price
-range filters. Input/output price, the chosen provider, median throughput, and median latency
-come from one OpenRouter host: the cheapest listed 90/10 input/output blend, unless the next
-host is much faster on both. The panel can filter that provider, throughput, and latency.
+range filters. The model name links to its OpenRouter page. Creator labels use the catalog’s
+capitalization (`OpenAI`), not the lowercase author slug. Input/output price, median throughput,
+and median latency come from one OpenRouter host: the cheapest listed 90/10 input/output blend,
+unless the next host is much faster on both. The panel can filter that provider, throughput, and
+latency, and column-backed filters follow the table column order.
 See [`docs/todo.md`](docs/todo.md).
 
 ## Technical Overview

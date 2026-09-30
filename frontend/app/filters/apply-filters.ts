@@ -1,5 +1,6 @@
 import { CombinedModel } from "@/app/client";
 import { ModelFiltersState, NumberRange } from "@/app/filters/filter-types";
+import { creatorLabel } from "@/app/utility";
 
 function passesRange(
     value: number | null | undefined,
@@ -97,7 +98,7 @@ export function filterModels(
         }
         if (
             !passesSelection(
-                model.creator,
+                creatorLabel(model.creator, model.name),
                 filters.creators,
                 filters.includeMissing,
             )

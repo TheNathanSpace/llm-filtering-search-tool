@@ -62,6 +62,60 @@ export function formatCommaSeparatedList(
     return value.join(", ");
 }
 
+/**
+ * Display form of an OpenRouter author slug.
+ *
+ * The stored creator is the lowercase id prefix (`openai`). Catalog names
+ * usually start with the capitalized author (`OpenAI: Claude …`); that prefix
+ * is the label. If the name has no `Author:` prefix but begins with a word
+ * that starts the slug (`Reka` / `rekaai`), that word is kept. Otherwise the
+ * slug is title-cased (`microsoft` → `Microsoft`).
+ */
+export function creatorLabel(
+    slug: string | null | undefined,
+    modelName: string | null | undefined,
+): string {
+    if (!slug) {
+        return "";
+    }
+    const prefix = catalogAuthorPrefix(modelName);
+    if (prefix) {
+        return prefix;
+    }
+    const leadingWord = modelName?.split(/\s+/, 1)[0];
+    if (leadingWord && slugStartsWithWord(slug, leadingWord)) {
+        return leadingWord;
+    }
+    return humanizeSlug(slug);
+}
+
+function catalogAuthorPrefix(
+    modelName: string | null | undefined,
+): string | undefined {
+    if (!modelName) {
+        return undefined;
+    }
+    const separator = modelName.indexOf(": ");
+    if (separator <= 0) {
+        return undefined;
+    }
+    return modelName.slice(0, separator);
+}
+
+function slugStartsWithWord(slug: string, word: string): boolean {
+    const token = word.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+    const compact = slug.toLowerCase().replaceAll(/[^a-z0-9]/g, "");
+    return token.length > 0 && compact.startsWith(token);
+}
+
+function humanizeSlug(slug: string): string {
+    return slug
+        .split(/[-_]+/)
+        .filter((part) => part.length > 0)
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(" ");
+}
+
 export function toTitleCase(label: string) {
     // https://stackoverflow.com/a/6475125/7492795
     let index, index_, string_;

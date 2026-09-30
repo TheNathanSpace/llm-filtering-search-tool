@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-30 — Provider, throughput, and latency filters
-**Latest change:** The filter panel can restrict models by the chosen provider, median throughput, and median latency.
+**Last updated:** 2026-09-30 — Filters aligned with columns
+**Latest change:** Filters share two balanced columns in table order, the model name links to OpenRouter, and creator labels use catalog capitalization.
 
 ## Pickup
 
@@ -17,21 +17,23 @@
 
 ## UI map (filters vs columns)
 
+Panel filters follow this column order. The missing-values switch stays first. Provider and modality filters have no column, so they stay after the column-aligned controls.
+
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
-| Name | yes | yes (substring search) | [QRY-13](requirements.md#qry-13) |
-| Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
-| Price | yes (chosen provider) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
-| Provider | yes | yes (multi-select) | [UI-06](requirements.md#ui-06) |
-| Throughput | yes (chosen provider p50) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
-| Latency | yes (chosen provider p50, ms) | yes | [UI-06](requirements.md#ui-06) |
-| Context length | yes | yes | [QRY-04](requirements.md#qry-04) |
-| Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
-| Creator | yes | yes | [QRY-06](requirements.md#qry-06) |
-| Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
-| Input / output modalities | yes | yes | [QRY-08](requirements.md#qry-08), [QRY-09](requirements.md#qry-09) |
+| Name | yes (links to the OpenRouter page) | yes (substring search) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
+| Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
+| Context length | yes | yes | [QRY-04](requirements.md#qry-04) |
+| Price | yes (chosen provider, input then output) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
+| Throughput | yes (chosen provider p50) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
+| Latency | yes (chosen provider p50, ms) | yes | [UI-06](requirements.md#ui-06) |
+| Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
+| Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
+| Creator | yes (catalog capitalization, not the lowercase slug) | yes | [QRY-06](requirements.md#qry-06) |
+| Provider | no | yes (multi-select) | [UI-06](requirements.md#ui-06) |
+| Input / output modalities | no | yes | [QRY-08](requirements.md#qry-08), [QRY-09](requirements.md#qry-09) |
 
 ## Next session
 

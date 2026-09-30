@@ -1,17 +1,31 @@
-import { GridColDef } from "@mui/x-data-grid";
 import {
-    formatCommaSeparatedList,
+    creatorLabel,
     formatNumber,
     formatParametersB,
     formatPrice,
     formatTimestamp,
 } from "@/app/utility";
 import { Link } from "@mui/material";
-import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import { GridColDef } from "@mui/x-data-grid";
 
 export const columns: GridColDef[] = [
-    { field: "name", headerName: "Name", width: 200 },
-    { field: "creator", headerName: "Creator", width: 150 },
+    {
+        field: "name",
+        headerName: "Name",
+        width: 200,
+        renderCell: (parameters) => {
+            const name = parameters.value;
+            const url = parameters.row.url_openrouter;
+            if (!name || !url) {
+                return name;
+            }
+            return (
+                <Link href={url} target="_blank" rel="noopener noreferrer">
+                    {name}
+                </Link>
+            );
+        },
+    },
     {
         field: "is_open_weights",
         headerName: "Open Weights",
@@ -50,57 +64,11 @@ export const columns: GridColDef[] = [
         width: 100,
         valueFormatter: formatNumber,
     },
-    { field: "description", headerName: "Description", width: 300 },
-    {
-        field: "created",
-        headerName: "Created",
-        width: 150,
-        valueFormatter: formatTimestamp,
-    },
-    {
-        field: "url_openrouter",
-        headerName: "OpenRouter URL",
-        width: 200,
-        renderCell: (parameters) => {
-            const value = parameters.value;
-            if (!value) {
-                return value;
-            }
-            return (
-                <Link
-                    className={"vertically-centered"}
-                    href={value}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    openrouter.ai <OpenInNewIcon sx={{ marginLeft: "0.5em" }} />
-                </Link>
-            );
-        },
-    },
-    {
-        field: "knowledge_cutoff",
-        headerName: "Knowledge Cutoff",
-        width: 150,
-        valueFormatter: formatTimestamp,
-    },
     {
         field: "context_length",
         headerName: "Context Length",
         type: "number",
         width: 130,
-    },
-    {
-        field: "input_modalities",
-        headerName: "Input Modalities",
-        width: 180,
-        valueFormatter: formatCommaSeparatedList,
-    },
-    {
-        field: "output_modalities",
-        headerName: "Output Modalities",
-        width: 180,
-        valueFormatter: formatCommaSeparatedList,
     },
     {
         field: "pricing_input",
@@ -117,15 +85,10 @@ export const columns: GridColDef[] = [
         valueFormatter: formatPrice,
     },
     {
-        field: "selected_provider",
-        headerName: "Provider",
-        description: "OpenRouter host chosen for the listed price and speed",
-        width: 140,
-    },
-    {
         field: "throughput",
         headerName: "Throughput",
-        description: "Median output tokens/sec (p50, last 30 minutes) for the chosen provider",
+        description:
+            "Median output tokens/sec (p50, last 30 minutes) for the chosen provider",
         type: "number",
         width: 120,
         valueFormatter: formatNumber,
@@ -133,9 +96,28 @@ export const columns: GridColDef[] = [
     {
         field: "latency_ms",
         headerName: "Latency (ms)",
-        description: "Median time to first token (p50, last 30 minutes) for the chosen provider",
+        description:
+            "Median time to first token (p50, last 30 minutes) for the chosen provider",
         type: "number",
         width: 120,
         valueFormatter: formatNumber,
+    },
+    {
+        field: "created",
+        headerName: "Created",
+        width: 150,
+        valueFormatter: formatTimestamp,
+    },
+    {
+        field: "knowledge_cutoff",
+        headerName: "Knowledge Cutoff",
+        width: 150,
+        valueFormatter: formatTimestamp,
+    },
+    {
+        field: "creator",
+        headerName: "Creator",
+        width: 150,
+        valueGetter: (_value, row) => creatorLabel(row.creator, row.name),
     },
 ];

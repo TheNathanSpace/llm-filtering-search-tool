@@ -24,7 +24,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="qry-03"></a>QRY-03 | Filter and sort by **throughput** (tokens/second) | must | done — column and panel range use the chosen provider’s p50 tokens/s |
 | <a id="qry-04"></a>QRY-04 | Filter and sort by **context window** | must | done |
 | <a id="qry-05"></a>QRY-05 | Filter and sort by **release / creation date** | must | done |
-| <a id="qry-06"></a>QRY-06 | Filter by **creator** (multi-select from data-derived options) | must | done |
+| <a id="qry-06"></a>QRY-06 | Filter by **creator** (multi-select from data-derived options) | must | done — options and the column use the catalog display name (`OpenAI`), not the lowercase author slug |
 | <a id="qry-07"></a>QRY-07 | Filter by **knowledge cutoff** date range | must | done |
 | <a id="qry-08"></a>QRY-08 | Filter by **input modalities** (model must include every checked type) | must | done |
 | <a id="qry-09"></a>QRY-09 | Filter by **output modalities** (model must include every checked type) | must | done |
@@ -60,10 +60,10 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | --- | --- | --- | --- |
 | <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done |
 | <a id="ui-02"></a>UI-02 | Generate plots from user-selected metrics/models | stretch | not started |
-| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | done — covers QRY-01–QRY-13 plus chosen-provider, throughput, and latency ranges; numeric endpoints can be typed; date ranges stay sliders |
-| <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, creator, description, created, knowledge cutoff, context length, input/output modalities, open weights, size | must | done |
-| <a id="ui-05"></a>UI-05 | Show **outbound links** to OpenRouter model pages | must | done |
-| <a id="ui-06"></a>UI-06 | Show **pricing and speed** for one provider: listed input/output price, provider name, median tokens/s, median time-to-first-token | must | done — columns plus panel filters; provider chosen by 90/10 listed blend, unless the next provider is much faster on both median latency and throughput |
+| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | done — covers QRY-01–QRY-13 plus chosen-provider, throughput, and latency ranges; numeric endpoints can be typed; date ranges stay sliders; controls flow into two columns of similar height; column-backed filters follow the table column order |
+| <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, open weights, size, context length, created, knowledge cutoff, creator | must | done — description and modality columns are omitted; modalities stay as panel filters |
+| <a id="ui-05"></a>UI-05 | Show **outbound links** to OpenRouter model pages | must | done — the name cell is the link; there is no separate URL column |
+| <a id="ui-06"></a>UI-06 | Show **pricing and speed** for one provider: listed input/output price, median tokens/s, median time-to-first-token | must | done — those columns plus panel filters, including a provider multi-select; the provider name is not a table column; provider chosen by 90/10 listed blend, unless the next provider is much faster on both median latency and throughput |
 | <a id="ui-07"></a>UI-07 | Load models from the API via a **generated TypeScript client** (same-origin `/api`) | must | done |
 | <a id="ui-08"></a>UI-08 | Landing header with product title, short goal copy, and GitHub link | stretch | done |
 | <a id="ui-09"></a>UI-09 | Show **open weights** and **size** columns; dedicated open-weights switch and size range filter in the filter panel | must | done |

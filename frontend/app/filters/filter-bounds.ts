@@ -1,5 +1,6 @@
 import { CombinedModel } from "@/app/client";
 import { FilterBounds, NumberRange } from "@/app/filters/filter-types";
+import { creatorLabel } from "@/app/utility";
 
 export function getMinMax(
     values: (number | null | undefined)[],
@@ -27,7 +28,9 @@ function uniqueLabels(
 }
 
 export function getUniqueCreators(models: CombinedModel[]): string[] {
-    return uniqueLabels(models, (model) => model.creator);
+    return uniqueLabels(models, (model) =>
+        creatorLabel(model.creator, model.name),
+    );
 }
 
 export function getUniqueProviders(models: CombinedModel[]): string[] {

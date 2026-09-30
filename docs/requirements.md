@@ -20,8 +20,8 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="qry-01"></a>QRY-01 | Filter and sort by **intelligence** (OpenRouter AA indices per [todo D-02](todo.md#open-decisions)) | must | done — Intelligence / Coding / Agentic columns, default intelligence sort, and panel range filters |
-| <a id="qry-02"></a>QRY-02 | Filter and sort by **price** (prefer $/1M output tokens; input optional) | must | partial — panel/columns exist; model-level `pricing_*` null until aggregated from [SRC-10](requirements.md#src-10) |
-| <a id="qry-03"></a>QRY-03 | Filter and sort by **throughput** (tokens/second) | must | stub — provider throughput stored ([SRC-10](requirements.md#src-10)); model-level `speed_*` + filter still TBD |
+| <a id="qry-02"></a>QRY-02 | Filter and sort by **price** (prefer $/1M output tokens; input optional) | must | done — model `pricing_*` are the chosen provider’s listed $/1M (90/10 input/output blend; see [SRC-06](requirements.md#src-06)) |
+| <a id="qry-03"></a>QRY-03 | Filter and sort by **throughput** (tokens/second) | must | done — column and panel range use the chosen provider’s p50 tokens/s |
 | <a id="qry-04"></a>QRY-04 | Filter and sort by **context window** | must | done |
 | <a id="qry-05"></a>QRY-05 | Filter and sort by **release / creation date** | must | done |
 | <a id="qry-06"></a>QRY-06 | Filter by **creator** (multi-select from data-derived options) | must | done |
@@ -44,7 +44,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="src-03"></a>SRC-03 | Prefer a single coherent benchmark story for intelligence UX | must | done — OpenRouter-embedded AA indices (`benchmark_or_*`) |
 | <a id="src-04"></a>SRC-04 | ~~Match OpenRouter and Artificial Analysis providers/models~~ | — | dropped — OpenRouter-only ([todo D-01](todo.md#open-decisions)) |
 | <a id="src-05"></a>SRC-05 | **Auto-refresh** SQLite on API startup when the DB is missing or last successful refresh is ≥24h old | must | done |
-| <a id="src-06"></a>SRC-06 | Persist a **combined model** record (identity, modalities, OpenRouter URL, OR AA indices as `benchmark_or_*`; list-level `pricing_*` / `speed_*` reserved/null pending provider aggregation; open-weights + size when enrichment succeeds); exclude OpenRouter `~`, `:free` / `:batch`, `openrouter/*`, `*-router`, and floating `*-latest` | must | done |
+| <a id="src-06"></a>SRC-06 | Persist a **combined model** record (identity, modalities, OpenRouter URL, OR AA indices as `benchmark_or_*`; chosen-provider listed `pricing_*`, `selected_provider`, p50 `throughput` / `latency_ms`; open-weights + size when enrichment succeeds); exclude OpenRouter `~`, `:free` / `:batch`, `openrouter/*`, `*-router`, and floating `*-latest` | must | done |
 | <a id="src-07"></a>SRC-07 | ~~Fetch OpenRouter `GET /benchmarks` and store the raw response~~ | — | dropped — unused dump removed ([todo D-03](todo.md#open-decisions)) |
 | <a id="src-08"></a>SRC-08 | Write raw upstream model payloads under `DATA_DIR/intermediate/raw/` for debugging | stretch | done |
 | <a id="src-09"></a>SRC-09 | Enrich models with **open weights** (models.dev) and **parameter size** (Hugging Face Hub via `hugging_face_id`), with durable disk cache and polite rate limits | must | done |
@@ -58,12 +58,12 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done — table + filters ship; throughput still open ([QRY-03](requirements.md#qry-03)) |
+| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid) | must | done |
 | <a id="ui-02"></a>UI-02 | Generate plots from user-selected metrics/models | stretch | not started |
-| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | partial — panel covers QRY-01–QRY-02, QRY-04–QRY-13; numeric range endpoints can be typed; date ranges stay sliders; throughput ranges still missing |
+| <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | done — covers QRY-01–QRY-13 plus chosen-provider, throughput, and latency ranges; numeric endpoints can be typed; date ranges stay sliders |
 | <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, creator, description, created, knowledge cutoff, context length, input/output modalities, open weights, size | must | done |
 | <a id="ui-05"></a>UI-05 | Show **outbound links** to OpenRouter model pages | must | done |
-| <a id="ui-06"></a>UI-06 | Show **pricing and latency** columns: input/output price, tokens/s, time-to-first-token, time-to-first-answer-token | must | partial — columns exist; values null until model-level aggregation from provider endpoints |
+| <a id="ui-06"></a>UI-06 | Show **pricing and speed** for one provider: listed input/output price, provider name, median tokens/s, median time-to-first-token | must | done — columns plus panel filters; provider chosen by 90/10 listed blend, unless the next provider is much faster on both median latency and throughput |
 | <a id="ui-07"></a>UI-07 | Load models from the API via a **generated TypeScript client** (same-origin `/api`) | must | done |
 | <a id="ui-08"></a>UI-08 | Landing header with product title, short goal copy, and GitHub link | stretch | done |
 | <a id="ui-09"></a>UI-09 | Show **open weights** and **size** columns; dedicated open-weights switch and size range filter in the filter panel | must | done |

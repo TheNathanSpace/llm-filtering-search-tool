@@ -60,9 +60,8 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
    Hub rate limits.
 6. Map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
    modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
-   plus `is_open_weights` / `parameters_b` when enrichment succeeds. List-level OR `pricing` is
-   **not** copied — model `pricing_*` / `speed_*` stay null until aggregated from providers.
-   Nested Design Arena rows are not copied (list of objects, not a single score).
+   plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows
+   are not copied (list of objects, not a single score).
 7. Optional (`OR_WEB_ENRICHMENT=1` + `OR_ENRICHMENT_MODEL`): gap-fill remaining null
    `is_open_weights` / `parameters_b` / `knowledge_cutoff` via OpenRouter
    `POST /chat/completions` with the Exa `web` plugin (`llm_rankings/web_enrichment.py`).
@@ -71,7 +70,11 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
 8. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`):
    `$/1M` input/output price, optional discount, throughput/latency percentiles (p50–p99),
    status/uptime/quantization/context. Primary key is ``{model_id}|{tag}``.
-9. Store both tables in SQLite (`models`, `model_provider_endpoints`).
+9. Choose one endpoint per model (`llm_rankings/provider_choice.py`): cheapest listed blend
+   ``0.90 * input + 0.10 * output``. If the next endpoint is much faster — latency p50 more
+   than 2× and throughput p50 less than half — use that one instead. Copy its list prices,
+   provider name, throughput p50, and latency p50 onto the model.
+10. Store both tables in SQLite (`models`, `model_provider_endpoints`).
 
 `DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer upstreams
 or re-bill web enrichment for known model ids.

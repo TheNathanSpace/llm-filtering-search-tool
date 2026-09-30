@@ -15,7 +15,7 @@ The goal of this project is to:
 3. Generate some nice plots based on the user's specifications.
 
 Product requirements and status for those goals: [`docs/requirements.md`](docs/requirements.md).
-Engineering backlog (aggregate provider price/speed onto model rows, then throughput filter):
+Engineering backlog (plots):
 [`docs/todo.md`](docs/todo.md).
 
 And, the intent is, given these tools, it will be easier for you to decide which LLM is best for your specific
@@ -43,9 +43,11 @@ models by these more complex metrics. In my ideal world, I would be able to set 
 And then I could sort from highest to lowest intelligence, probably choosing the highest-ranked one!
 
 Today the table ships with Intelligence / Coding / Agentic columns (default sort: intelligence
-descending) and matching range filters; context-window and creation-date filters; dedicated
-pricing and throughput columns/filters exist but model-level values are empty until we aggregate
-from per-provider OpenRouter endpoints (already stored in SQLite). See [`docs/todo.md`](docs/todo.md) §1.
+descending) and matching range filters; context-window and creation-date filters; and price
+range filters. Input/output price, the chosen provider, median throughput, and median latency
+come from one OpenRouter host: the cheapest listed 90/10 input/output blend, unless the next
+host is much faster on both. The panel can filter that provider, throughput, and latency.
+See [`docs/todo.md`](docs/todo.md).
 
 ## Technical Overview
 
@@ -58,8 +60,8 @@ from per-provider OpenRouter endpoints (already stored in SQLite). See [`docs/to
    nulls for open-weights, size, and knowledge cutoff via OpenRouter chat + Exa web search
    (`OR_WEB_ENRICHMENT=1`).
 4. Drop non-comparable OpenRouter listings (`~` providers, `:free` / `:batch`, `openrouter/*` meta, `*-router`, floating `*-latest` aliases), then map
-   each remaining model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`;
-   list-level pricing/speed left null).
+   each remaining model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
+   Listed price and median throughput/latency are copied from the chosen provider endpoint.
 5. Populate SQLite with `models` and `model_provider_endpoints`.
 6. Expose the data via a REST API back-end.
 7. Create a Next.js front-end to retrieve the data and display it in

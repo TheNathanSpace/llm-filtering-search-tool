@@ -8,7 +8,7 @@ import {
 import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
 import TextFilter from "@/app/filters/text-filter";
-import { formatPrice } from "@/app/utility";
+import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
 import { FormControlLabel, FormGroup, Grid, Switch } from "@mui/material";
 import dayjs from "dayjs";
 import { Dispatch, SetStateAction } from "react";
@@ -136,6 +136,48 @@ export default function ModelFilters(
                             setFilters((previous) => ({
                                 ...previous,
                                 pricingInput,
+                            }));
+                        }}
+                    />
+                )}
+                <MultiSelectFilter
+                    name="Provider"
+                    label="Pick providers"
+                    options={bounds.providers}
+                    value={filters.providers}
+                    onChange={(providers) => {
+                        setFilters((previous) => ({
+                            ...previous,
+                            providers,
+                        }));
+                    }}
+                />
+                {bounds.throughput && (
+                    <NumberRangeFilter
+                        name="Throughput (tok/s)"
+                        minValue={bounds.throughput[0]}
+                        maxValue={bounds.throughput[1]}
+                        step={1}
+                        formatValue={formatThroughput}
+                        onChange={(throughput) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                throughput,
+                            }));
+                        }}
+                    />
+                )}
+                {bounds.latencyMs && (
+                    <NumberRangeFilter
+                        name="Latency (ms)"
+                        minValue={bounds.latencyMs[0]}
+                        maxValue={bounds.latencyMs[1]}
+                        step={1}
+                        formatValue={formatLatencyMs}
+                        onChange={(latencyMs) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                latencyMs,
                             }));
                         }}
                     />

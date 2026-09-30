@@ -12,6 +12,25 @@ export function formatPrice(value: number | undefined | null) {
     return `$${value.toFixed(2)}`;
 }
 
+function formatOneDecimal(value: number): string {
+    const rounded = Math.round((value + Number.EPSILON) * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+export function formatThroughput(value: number | undefined | null) {
+    if (typeof value !== "number") {
+        return "";
+    }
+    return `${formatOneDecimal(value)} tok/s`;
+}
+
+export function formatLatencyMs(value: number | undefined | null) {
+    if (typeof value !== "number") {
+        return "";
+    }
+    return `${formatOneDecimal(value)} ms`;
+}
+
 export function formatNumber(value: number | undefined) {
     if (!value) {
         return value;
@@ -27,7 +46,8 @@ export function formatParametersB(value: number | undefined | null) {
     }
     const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
     const text =
-        Number.isInteger(rounded) || Math.abs(rounded - Math.round(rounded)) < 1e-9
+        Number.isInteger(rounded) ||
+        Math.abs(rounded - Math.round(rounded)) < 1e-9
             ? String(Math.round(rounded))
             : String(rounded);
     return `${text}B`;

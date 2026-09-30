@@ -117,29 +117,25 @@ export const columns: GridColDef[] = [
         valueFormatter: formatPrice,
     },
     {
-        field: "speed_tokens_per_second",
-        headerName: "Speed (tok/s)",
-        type: "number",
-        width: 130,
-        valueFormatter: (value: number | undefined) => {
-            if (!value) {
-                return "";
-            }
-            return value.toFixed(2);
-        },
+        field: "selected_provider",
+        headerName: "Provider",
+        description: "OpenRouter host chosen for the listed price and speed",
+        width: 140,
     },
     {
-        field: "speed_time_to_first_token",
-        headerName: "TTFT",
-        description: "Time to first token",
+        field: "throughput",
+        headerName: "Throughput",
+        description: "Median output tokens/sec (p50, last 30 minutes) for the chosen provider",
         type: "number",
-        width: 100,
+        width: 120,
+        valueFormatter: formatNumber,
     },
     {
-        field: "speed_time_to_first_answer_token",
-        headerName: "TTFAT",
-        description: "Time to first answer token",
+        field: "latency_ms",
+        headerName: "Latency (ms)",
+        description: "Median time to first token (p50, last 30 minutes) for the chosen provider",
         type: "number",
-        width: 100,
+        width: 120,
+        valueFormatter: formatNumber,
     },
 ];

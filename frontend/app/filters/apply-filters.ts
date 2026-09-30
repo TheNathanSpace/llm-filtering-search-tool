@@ -30,18 +30,18 @@ function passesNameQuery(
     return name.toLowerCase().includes(trimmed.toLowerCase());
 }
 
-function passesCreators(
-    creator: string | undefined,
+function passesSelection(
+    value: string | null | undefined,
     selected: string[],
     includeMissing: boolean,
 ): boolean {
     if (selected.length === 0) {
         return true;
     }
-    if (!creator) {
+    if (!value) {
         return includeMissing;
     }
-    return selected.includes(creator);
+    return selected.includes(value);
 }
 
 function passesModalities<T extends string>(
@@ -96,7 +96,7 @@ export function filterModels(
             return false;
         }
         if (
-            !passesCreators(
+            !passesSelection(
                 model.creator,
                 filters.creators,
                 filters.includeMissing,
@@ -144,6 +144,33 @@ export function filterModels(
             !passesRange(
                 model.pricing_output,
                 filters.pricingOutput,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesSelection(
+                model.selected_provider,
+                filters.providers,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.throughput,
+                filters.throughput,
+                filters.includeMissing,
+            )
+        ) {
+            return false;
+        }
+        if (
+            !passesRange(
+                model.latency_ms,
+                filters.latencyMs,
                 filters.includeMissing,
             )
         ) {

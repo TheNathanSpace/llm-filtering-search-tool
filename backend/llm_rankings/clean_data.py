@@ -6,6 +6,7 @@ from llm_rankings.hf_enrichment import parameters_b_for_repo_ids
 from llm_rankings.models_dev import open_weights_by_openrouter_id
 from llm_rankings.or_endpoints import ORListEndpointsData
 from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
+from llm_rankings.provider_choice import apply_provider_choice
 from llm_rankings.provider_endpoints import ModelProviderEndpoint, from_or_public_endpoint
 from llm_rankings.retrieve_data import get_all_model_data, get_endpoints_for_models
 from llm_rankings.util import (
@@ -48,10 +49,7 @@ def openrouter_to_combined(
         context_length=or_model.context_length,
         input_modalities=or_model.architecture.input_modalities,
         output_modalities=or_model.architecture.output_modalities,
-        # List-level OR pricing omitted — use ``model_provider_endpoints`` instead.
-        pricing_input=None,
-        pricing_output=None,
-        # Model-level speed_* still null until we choose an aggregation from providers.
+        # Price and speed are filled later from the chosen provider endpoint.
         is_open_weights=open_weights.get(or_model.id),
         parameters_b=parameters_b.get(hf_id) if hf_id else None,
         **_prefixed_scores("benchmark_or_", or_benchmarks),
@@ -175,6 +173,7 @@ def get_and_clean_data() -> tuple[list[CombinedModel], list[ModelProviderEndpoin
     )
     endpoint_lists = get_endpoints_for_models(kept_or_models)
     provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
+    apply_provider_choice(combined_models, provider_rows)
     write_combined_models(combined_models)
     write_provider_endpoints(provider_rows)
     logger.info("Refresh pipeline: done (%d models, %d provider rows)", len(combined_models), len(provider_rows))

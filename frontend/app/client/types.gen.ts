@@ -75,17 +75,17 @@ export type CombinedModel = {
      */
     pricing_output?: number | null;
     /**
-     * Speed Tokens Per Second
+     * Selected Provider
      */
-    speed_tokens_per_second?: number | null;
+    selected_provider?: string | null;
     /**
-     * Speed Time To First Token
+     * Throughput
      */
-    speed_time_to_first_token?: number | null;
+    throughput?: number | null;
     /**
-     * Speed Time To First Answer Token
+     * Latency Ms
      */
-    speed_time_to_first_answer_token?: number | null;
+    latency_ms?: number | null;
     /**
      * Benchmark Or Intelligence Index
      */

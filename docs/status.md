@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-30 — Type numeric range endpoints
-**Latest change:** Numeric filter ranges (size, context length, indices, price) accept a typed minimum or maximum: click the value under the slider. Date ranges stay slider-only.
+**Last updated:** 2026-09-30 — Provider, throughput, and latency filters
+**Latest change:** The filter panel can restrict models by the chosen provider, median throughput, and median latency.
 
 ## Pickup
 
@@ -9,7 +9,7 @@
 | --- | --- |
 | Data fetch (OR + models.dev + HF + opt-in Exa) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; `GET /meta` for enrichment cost + last refresh; gated + ops `--force` CLI / `bin/refresh-data.sh`; no public HTTP refresh; docs gated by `ENABLE_API_DOCS` |
-| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-02](requirements.md#qry-02), [QRY-04](requirements.md#qry-04)–[QRY-13](requirements.md#qry-13) + [UI-04](requirements.md#ui-04)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-10](requirements.md#ui-10); price/throughput model columns empty pending aggregation ([todo §1](todo.md#1-core-filtersort-dimensions-readme-motivation)) |
+| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13) + [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-10](requirements.md#ui-10) |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
 | Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) — Compose `prod`/`dev`; worktree preview via `HOST_DATA_DIR` → primary `data/` |
 | External + project OpenAPI tooling | [PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08) |
@@ -21,8 +21,10 @@
 | --- | --- | --- | --- |
 | Name | yes | yes (substring search) | [QRY-13](requirements.md#qry-13) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
-| Price | yes (empty until aggregation) | yes (ranges; no data yet) | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) — aggregate from providers |
-| Throughput | yes (empty until aggregation) | no | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) — provider rows stored |
+| Price | yes (chosen provider) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
+| Provider | yes | yes (multi-select) | [UI-06](requirements.md#ui-06) |
+| Throughput | yes (chosen provider p50) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
+| Latency | yes (chosen provider p50, ms) | yes | [UI-06](requirements.md#ui-06) |
 | Context length | yes | yes | [QRY-04](requirements.md#qry-04) |
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
 | Creator | yes | yes | [QRY-06](requirements.md#qry-06) |
@@ -33,4 +35,4 @@
 
 ## Next session
 
-Start from **[`todo.md`](todo.md)** (aggregate provider price/speed onto `CombinedModel`, then throughput filter). Do not resurrect parallel lists.
+Start from **[`todo.md`](todo.md)** (plots). Do not resurrect parallel lists.

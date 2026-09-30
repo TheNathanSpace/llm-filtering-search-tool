@@ -12,14 +12,26 @@ export function getMinMax(
     return [Math.min(...filtered), Math.max(...filtered)];
 }
 
-export function getUniqueCreators(models: CombinedModel[]): string[] {
-    const creators = new Set<string>();
+function uniqueLabels(
+    models: CombinedModel[],
+    read: (model: CombinedModel) => string | null | undefined,
+): string[] {
+    const labels = new Set<string>();
     for (const model of models) {
-        if (model.creator) {
-            creators.add(model.creator);
+        const label = read(model);
+        if (label) {
+            labels.add(label);
         }
     }
-    return [...creators].toSorted((a, b) => a.localeCompare(b));
+    return [...labels].toSorted((a, b) => a.localeCompare(b));
+}
+
+export function getUniqueCreators(models: CombinedModel[]): string[] {
+    return uniqueLabels(models, (model) => model.creator);
+}
+
+export function getUniqueProviders(models: CombinedModel[]): string[] {
+    return uniqueLabels(models, (model) => model.selected_provider);
 }
 
 function toRange(
@@ -60,14 +72,23 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
     const [minPricingOutput, maxPricingOutput] = getMinMax(
         models.map((model) => model.pricing_output),
     );
+    const [minThroughput, maxThroughput] = getMinMax(
+        models.map((model) => model.throughput),
+    );
+    const [minLatencyMs, maxLatencyMs] = getMinMax(
+        models.map((model) => model.latency_ms),
+    );
 
     return {
         creators: getUniqueCreators(models),
+        providers: getUniqueProviders(models),
         intelligenceIndex: toRange(minIntelligence, maxIntelligence),
         codingIndex: toRange(minCoding, maxCoding),
         agenticIndex: toRange(minAgentic, maxAgentic),
         pricingInput: toRange(minPricingInput, maxPricingInput),
         pricingOutput: toRange(minPricingOutput, maxPricingOutput),
+        throughput: toRange(minThroughput, maxThroughput),
+        latencyMs: toRange(minLatencyMs, maxLatencyMs),
         creationDate: toRange(minCreationDate, maxCreationDate),
         knowledgeCutoff: toRange(minKnowledgeCutoff, maxKnowledgeCutoff),
         contextLength: toRange(minContextLength, maxContextLength),

@@ -12,6 +12,9 @@ export type ModelFiltersState = {
     agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
+    providers: string[];
+    throughput: NumberRange | undefined;
+    latencyMs: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -31,6 +34,9 @@ export type UserFilterChoices = {
     agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
+    providers: string[];
+    throughput: NumberRange | undefined;
+    latencyMs: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -46,6 +52,9 @@ export type FilterBounds = {
     agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
+    providers: string[];
+    throughput: NumberRange | undefined;
+    latencyMs: NumberRange | undefined;
     creationDate: NumberRange | undefined;
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
@@ -63,6 +72,9 @@ export function createInitialUserChoices(): UserFilterChoices {
         agenticIndex: undefined,
         pricingInput: undefined,
         pricingOutput: undefined,
+        providers: [],
+        throughput: undefined,
+        latencyMs: undefined,
         creationDate: undefined,
         knowledgeCutoff: undefined,
         contextLength: undefined,
@@ -102,6 +114,9 @@ export function resolveFilters(
             choices.pricingOutput,
             bounds.pricingOutput,
         ),
+        providers: choices.providers,
+        throughput: resolveRange(choices.throughput, bounds.throughput),
+        latencyMs: resolveRange(choices.latencyMs, bounds.latencyMs),
         creationDate: resolveRange(choices.creationDate, bounds.creationDate),
         knowledgeCutoff: resolveRange(
             choices.knowledgeCutoff,

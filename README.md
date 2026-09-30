@@ -147,10 +147,25 @@ forced on by the Compose `dev` profile):
 ## Development
 
 Parallel agent edits: use Cursor **`/worktree`** (or Agents Window New Worktree).
-New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + optional host tooling setup.
+New worktrees run [`.cursor/worktrees.json`](.cursor/worktrees.json) for env + optional host tooling setup
+(including `HOST_DATA_DIR` → the primary checkout’s `data/` so Compose reuses the warm DB/cache).
 Merge into primary `main` only with explicit go-ahead (`merge --ff-only`); landing is not finished
 until that task’s worktree and branch are deleted —
 [`.cursor/rules/feature-branches.mdc`](.cursor/rules/feature-branches.mdc).
+
+### Worktree UI preview
+
+Only one Compose stack at a time (shared container names/ports). From the task worktree, when you want
+to try the branch UI:
+
+```bash
+# Ensure HOST_DATA_DIR points at the primary checkout's data/ (worktree setup sets this).
+COMPOSE_PROFILES=dev docker compose up --build -d
+```
+
+UI: [http://localhost:3030](http://localhost:3030) (or `FRONTEND_PORT`). Stop with `docker compose down`
+before landing or when done verifying. Agents start/stop preview only when asked; land cleanup always
+stops the preview stack first.
 
 ### Host tooling (optional)
 

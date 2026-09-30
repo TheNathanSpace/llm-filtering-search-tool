@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-29 — Wider gap in footer meta pairs
-**Latest change:** Added space between each footer meta label and its value (last refresh, enrichment cost) so the script and block faces no longer sit against each other ([UI-10](requirements.md#ui-10)).
+**Last updated:** 2026-09-30 — Worktree preview shares primary data
+**Latest change:** Compose mounts `${HOST_DATA_DIR:-./data}` so worktree `dev` stacks reuse the primary checkout’s warm DB/cache; worktree setup sets `HOST_DATA_DIR`; feature-branch rule covers start/stop preview and teardown on land.
 
 ## Pickup
 
@@ -11,7 +11,7 @@
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; `GET /meta` for enrichment cost + last refresh; gated + ops `--force` CLI / `bin/refresh-data.sh`; no public HTTP refresh; docs gated by `ENABLE_API_DOCS` |
 | Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-02](requirements.md#qry-02), [QRY-04](requirements.md#qry-04)–[QRY-13](requirements.md#qry-13) + [UI-04](requirements.md#ui-04)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-10](requirements.md#ui-10); price/throughput model columns empty pending aggregation ([todo §1](todo.md#1-core-filtersort-dimensions-readme-motivation)) |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
-| Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) — Compose `prod`/`dev` profiles; host live-start scripts removed |
+| Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) — Compose `prod`/`dev`; worktree preview via `HOST_DATA_DIR` → primary `data/` |
 | External + project OpenAPI tooling | [PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08) |
 | Requirements + backlog | [`requirements.md`](requirements.md), [`todo.md`](todo.md) |
 

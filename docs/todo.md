@@ -59,7 +59,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 - OpenRouter Exa web gap-fill (SRC-12): open-weights, size, and knowledge cutoff; cache + cost ledger
 - OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
-- Agent private-worktree lifecycle: `.cursor/worktrees.json` setup; feature-branch rule isolates edits, merges to primary `main` only with go-ahead, then deletes worktree + branch; README pointer
+- Agent private-worktree lifecycle: `.cursor/worktrees.json` setup (incl. `HOST_DATA_DIR` → primary `data/`); feature-branch rule isolates edits, Compose preview on ask, merges to primary `main` only with go-ahead, then stops preview + deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
 - Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
 - Drop `typesafe/jev-router` / floating `*-latest` aliases (e.g. `openai/gpt-chat-latest`) at combine time

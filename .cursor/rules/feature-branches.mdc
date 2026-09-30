@@ -52,14 +52,30 @@ Then move this agent’s workspace root to that directory.
 - Do not delete **another** agent’s in-progress worktree or branch unless the user asks. Deleting **this** task’s worktree/branch after a successful land is required (see below) — do not wait for a second ask.
 - Commits follow `.cursor/rules/commit-messages.mdc` and `.cursor/rules/status.mdc` (docs/status in the **same** commit as the work).
 
+## Worktree Compose preview (only when asked)
+
+One Compose stack at a time (fixed container names / ports). Preview always mounts the **primary** checkout’s `data/` via `HOST_DATA_DIR` (set by [`.cursor/worktrees.json`](../worktrees.json)); do not copy or symlink `data/` into the worktree, and do not run `--force` refresh as part of preview.
+
+**Start preview** when the user asks to try / verify the worktree UI:
+
+1. From the task worktree, stop any stack using the shared names (`docker compose down` here and/or in the primary checkout if it owns the containers). Use Docker with sandbox disabled (see `docker-outside-sandbox.mdc`).
+2. Confirm `.env` has `HOST_DATA_DIR` pointing at `$ROOT_WORKTREE_PATH/data` (absolute path to the primary `data/` directory).
+3. `COMPOSE_PROFILES=dev docker compose up --build -d`
+4. Wait until backend health succeeds; report `http://localhost:<FRONTEND_PORT>` (default 3030).
+
+**Stop preview** when the user says stop, or as the first step of landing:
+
+1. From the task worktree: `COMPOSE_PROFILES=dev docker compose down` (or `docker compose down`).
+
 ## Integrating (only with go-ahead)
 
 When the work is done (committed on the task branch), **stop and ask** whether to land into `main`. Do **not** merge, apply, or land until the user explicitly says to.
 
 After go-ahead, finish **all** of these steps in order. Landing is not complete until cleanup succeeds.
 
-1. Prefer **local fast-forward into `main` in the primary checkout**. Do **not** create merge commits (`--no-ff`, default non-ff merges, or `[Category] Merge …` commits). Do **not** open a remote PR unless the user explicitly asks.
-2. Land from the primary path so the task worktree stays on its branch:
+1. **Stop this task’s Compose preview** if it is running (`docker compose down` in the task worktree).
+2. Prefer **local fast-forward into `main` in the primary checkout**. Do **not** create merge commits (`--no-ff`, default non-ff merges, or `[Category] Merge …` commits). Do **not** open a remote PR unless the user explicitly asks.
+3. Land from the primary path so the task worktree stays on its branch:
 
 ```bash
 git -C /path/to/primary-checkout checkout main
@@ -67,8 +83,8 @@ git -C /path/to/primary-checkout merge --ff-only <type>/<short-description>
 ```
 
    Cursor-managed branches (`cursor/…`) use the same land command with that branch name.
-3. If `--ff-only` fails because `main` has moved, **rebase the task branch onto `main` in the task worktree**, then retry `--ff-only` from the primary checkout. Do not resolve that by creating a merge commit.
-4. **Immediately** remove **this** task’s worktree and branch. Do not leave landed checkouts or branches around. Do not end the turn after the merge without cleanup.
+4. If `--ff-only` fails because `main` has moved, **rebase the task branch onto `main` in the task worktree**, then retry `--ff-only` from the primary checkout. Do not resolve that by creating a merge commit.
+5. **Immediately** remove **this** task’s worktree and branch. Do not leave landed checkouts or branches around. Do not end the turn after the merge without cleanup.
 
 Prefer **`/delete-worktree`** when available; otherwise:
 

@@ -1,6 +1,7 @@
 {
   "setup-worktree-unix": [
     "test -f \"$ROOT_WORKTREE_PATH/.env\" && cp \"$ROOT_WORKTREE_PATH/.env\" .env || cp .env.template .env",
+    "grep -q '^HOST_DATA_DIR=' .env && sed -i \"s|^HOST_DATA_DIR=.*|HOST_DATA_DIR=$ROOT_WORKTREE_PATH/data|\" .env || echo \"HOST_DATA_DIR=$ROOT_WORKTREE_PATH/data\" >> .env",
     "./bin/setup-backend.sh",
     "./bin/setup-frontend.sh"
   ]

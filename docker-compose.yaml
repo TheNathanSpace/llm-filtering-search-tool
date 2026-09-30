@@ -2,6 +2,7 @@
 # Hot-reload development: `COMPOSE_PROFILES=dev docker compose up --build`
 #
 # Profiles are mutually exclusive — set exactly one of `prod` or `dev`.
+# Worktree previews: set HOST_DATA_DIR to the primary checkout's data/ (see .env.template).
 
 services:
   llm-filtering:
@@ -18,7 +19,8 @@ services:
       # Image must listen on all interfaces; host .env often uses 127.0.0.1 for tooling.
       BACKEND_HOST: "0.0.0.0"
     volumes:
-      - ./data:/app/data
+      # HOST_DATA_DIR: absolute path to primary checkout data/ for worktree previews.
+      - ${HOST_DATA_DIR:-./data}:/app/data
       - ./.env:/app/.env
     ports:
       - "${FRONTEND_PORT:-3030}:${FRONTEND_PORT:-3030}"
@@ -50,7 +52,7 @@ services:
       ENABLE_API_DOCS: "1"
     volumes:
       - ./backend:/app/backend
-      - ./data:/app/data
+      - ${HOST_DATA_DIR:-./data}:/app/data
       - ./.env:/app/.env
     ports:
       - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
@@ -83,7 +85,7 @@ services:
     volumes:
       - ./frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
-      - ./data:/app/data
+      - ${HOST_DATA_DIR:-./data}:/app/data
       - ./.env:/app/.env
     ports:
       - "${FRONTEND_PORT:-3030}:${FRONTEND_PORT:-3030}"

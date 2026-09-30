@@ -39,3 +39,14 @@ export function usageCost(
         INPUT_WEIGHT * pricingInput + OUTPUT_WEIGHT * pricingOutput;
     return tokenMillions * perMillion;
 }
+
+/** Slider step that stays usable from sub-cent costs up to large dollar spans. */
+export function usageCostStep(minimum: number, maximum: number): number {
+    const span = maximum - minimum;
+    if (!(span > 0)) {
+        return 0.01;
+    }
+    const rough = span / 100;
+    const exponent = Math.floor(Math.log10(rough));
+    return 10 ** exponent;
+}

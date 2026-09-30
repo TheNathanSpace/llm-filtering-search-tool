@@ -16,10 +16,12 @@ const noRowsOverlay = () => (
 );
 
 export default function ModelTable({ models }: { models: CombinedModel[] }) {
-    const { bounds, filters, setFilters, filteredModels } =
-        useModelFilters(models);
     const [tokenMillionsText, setTokenMillionsText] = useState("");
     const tokenMillions = parseTokenMillions(tokenMillionsText);
+    const { bounds, filters, setFilters, filteredModels } = useModelFilters(
+        models,
+        tokenMillions,
+    );
     const columns = useMemo(
         () => columnsForTokenMillions(tokenMillions),
         [tokenMillions],

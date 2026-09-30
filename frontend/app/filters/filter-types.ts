@@ -19,6 +19,7 @@ export type ModelFiltersState = {
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
     parametersB: NumberRange | undefined;
+    usageCost: NumberRange | undefined;
     inputModalities: InputModality[];
     outputModalities: OutputModality[];
 };
@@ -41,6 +42,7 @@ export type UserFilterChoices = {
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
     parametersB: NumberRange | undefined;
+    usageCost: NumberRange | undefined;
     inputModalities: InputModality[];
     outputModalities: OutputModality[];
 };
@@ -59,6 +61,7 @@ export type FilterBounds = {
     knowledgeCutoff: NumberRange | undefined;
     contextLength: NumberRange | undefined;
     parametersB: NumberRange | undefined;
+    usageCost: NumberRange | undefined;
 };
 
 export function createInitialUserChoices(): UserFilterChoices {
@@ -79,6 +82,7 @@ export function createInitialUserChoices(): UserFilterChoices {
         knowledgeCutoff: undefined,
         contextLength: undefined,
         parametersB: undefined,
+        usageCost: undefined,
         inputModalities: [],
         outputModalities: [],
     };
@@ -127,6 +131,7 @@ export function resolveFilters(
             bounds.contextLength,
         ),
         parametersB: resolveRange(choices.parametersB, bounds.parametersB),
+        usageCost: resolveRange(choices.usageCost, bounds.usageCost),
         inputModalities: choices.inputModalities,
         outputModalities: choices.outputModalities,
     };

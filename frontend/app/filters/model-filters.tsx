@@ -9,6 +9,7 @@ import MultiSelectFilter from "@/app/filters/multi-select-filter";
 import NumberRangeFilter from "@/app/filters/number-range-filter";
 import TextFilter from "@/app/filters/text-filter";
 import TokenCountField from "@/app/filters/token-count-field";
+import { parseTokenMillions, usageCostStep } from "@/app/usage-cost";
 import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
 import { FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
@@ -32,6 +33,8 @@ export default function ModelFilters(
         tokenMillions,
         onTokenMillionsChange,
     } = properties;
+    const parsedTokenMillions = parseTokenMillions(tokenMillions);
+    const usageCostBounds = bounds.usageCost;
 
     return (
         <div className="w-full columns-2 gap-x-16">
@@ -165,10 +168,40 @@ export default function ModelFilters(
                     }}
                 />
             )}
-            <TokenCountField
-                value={tokenMillions}
-                onChange={onTokenMillionsChange}
-            />
+            <div className="w-full break-inside-avoid">
+                <TokenCountField
+                    value={tokenMillions}
+                    onChange={(value) => {
+                        const nextTokens = parseTokenMillions(value);
+                        if (nextTokens !== parsedTokenMillions) {
+                            setFilters((previous) => ({
+                                ...previous,
+                                usageCost: undefined,
+                            }));
+                        }
+                        onTokenMillionsChange(value);
+                    }}
+                />
+                {parsedTokenMillions !== undefined && usageCostBounds && (
+                    <NumberRangeFilter
+                        key={parsedTokenMillions}
+                        name="Cost"
+                        minValue={usageCostBounds[0]}
+                        maxValue={usageCostBounds[1]}
+                        step={usageCostStep(
+                            usageCostBounds[0],
+                            usageCostBounds[1],
+                        )}
+                        formatValue={formatPrice}
+                        onChange={(usageCost) => {
+                            setFilters((previous) => ({
+                                ...previous,
+                                usageCost,
+                            }));
+                        }}
+                    />
+                )}
+            </div>
             {bounds.pricingInput && (
                 <NumberRangeFilter
                     name="Pricing input ($/1M)"

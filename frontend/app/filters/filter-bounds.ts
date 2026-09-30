@@ -1,5 +1,6 @@
 import { CombinedModel } from "@/app/client";
 import { FilterBounds, NumberRange } from "@/app/filters/filter-types";
+import { usageCost } from "@/app/usage-cost";
 import { creatorLabel } from "@/app/utility";
 
 export function getMinMax(
@@ -47,7 +48,10 @@ function toRange(
     return [min, max];
 }
 
-export function getFilterBounds(models: CombinedModel[]): FilterBounds {
+export function getFilterBounds(
+    models: CombinedModel[],
+    tokenMillions?: number,
+): FilterBounds {
     const [minCreationDate, maxCreationDate] = getMinMax(
         models.map((model) => model.created),
     );
@@ -81,6 +85,18 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
     const [minLatencyMs, maxLatencyMs] = getMinMax(
         models.map((model) => model.latency_ms),
     );
+    const [minUsageCost, maxUsageCost] =
+        tokenMillions === undefined
+            ? [undefined, undefined]
+            : getMinMax(
+                  models.map((model) =>
+                      usageCost(
+                          tokenMillions,
+                          model.pricing_input,
+                          model.pricing_output,
+                      ),
+                  ),
+              );
 
     return {
         creators: getUniqueCreators(models),
@@ -96,5 +112,6 @@ export function getFilterBounds(models: CombinedModel[]): FilterBounds {
         knowledgeCutoff: toRange(minKnowledgeCutoff, maxKnowledgeCutoff),
         contextLength: toRange(minContextLength, maxContextLength),
         parametersB: toRange(minParametersB, maxParametersB),
+        usageCost: toRange(minUsageCost, maxUsageCost),
     };
 }

@@ -1,5 +1,6 @@
 import { CombinedModel } from "@/app/client";
 import { ModelFiltersState, NumberRange } from "@/app/filters/filter-types";
+import { usageCost } from "@/app/usage-cost";
 import { creatorLabel } from "@/app/utility";
 
 function passesRange(
@@ -76,6 +77,7 @@ function passesOpenWeightsOnly(
 export function filterModels(
     models: CombinedModel[],
     filters: ModelFiltersState,
+    tokenMillions?: number,
 ): CombinedModel[] {
     return models.filter((model) => {
         if (
@@ -130,6 +132,17 @@ export function filterModels(
                 filters.includeMissing,
             )
         ) {
+            return false;
+        }
+        const cost =
+            tokenMillions === undefined
+                ? undefined
+                : usageCost(
+                      tokenMillions,
+                      model.pricing_input,
+                      model.pricing_output,
+                  );
+        if (!passesRange(cost, filters.usageCost, filters.includeMissing)) {
             return false;
         }
         if (

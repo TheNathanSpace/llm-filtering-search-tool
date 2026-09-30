@@ -57,7 +57,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
-- Usage cost column (UI-11): filter-panel token count in millions; column left of pricing input uses the 90/10 listed blend
+- Usage cost column and range (UI-11): filter-panel token count in millions; column left of pricing input uses the 90/10 listed blend; a cost range under that field filters rows to the same calculated cost
 - OpenRouter Exa web gap-fill (SRC-12): open-weights, size, and knowledge cutoff; cache + cost ledger
 - OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
 - Agent private-worktree lifecycle: `.cursor/worktrees.json` setup (incl. `HOST_DATA_DIR` → primary `data/`); feature-branch rule isolates edits, Compose preview on ask, merges to primary `main` only with go-ahead, then stops preview + deletes worktree + branch; README pointer

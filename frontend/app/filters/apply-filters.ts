@@ -164,15 +164,6 @@ export function filterModels(
             return false;
         }
         if (
-            !passesSelection(
-                model.selected_provider,
-                filters.providers,
-                filters.includeMissing,
-            )
-        ) {
-            return false;
-        }
-        if (
             !passesRange(
                 model.throughput,
                 filters.throughput,

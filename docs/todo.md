@@ -30,7 +30,7 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | --- | --- | --- |
 | Intelligence filter + column + default sort | [QRY-01](requirements.md#qry-01) | **Done** (columns, default sort, panel range filters for intelligence / coding / agentic). |
 | Price filter | [QRY-02](requirements.md#qry-02) | **Done.** Model prices are the chosen provider’s listed $/1M (90% input / 10% output). |
-| Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Done.** Panel range on the chosen provider’s p50 tokens/s. Provider multi-select and latency range ship with it. |
+| Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Done.** Panel range on the chosen provider’s p50 tokens/s. Latency range ships with it. |
 | Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
 | Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in Exa gap-fill [SRC-12](requirements.md#src-12)). |
@@ -57,6 +57,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
+- Removed the provider multi-select. Price, throughput, and latency still use the chosen provider
 - Usage cost column and range (UI-11): filter-panel token count in millions; column left of pricing input uses the 90/10 listed blend; a cost range under that field filters rows to the same calculated cost
 - OpenRouter Exa web gap-fill (SRC-12): open-weights, size, and knowledge cutoff; cache + cost ledger
 - OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table

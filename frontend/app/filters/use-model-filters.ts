@@ -48,7 +48,6 @@ function toUserChoices(
         agenticIndex: filters.agenticIndex,
         pricingInput: filters.pricingInput,
         pricingOutput: filters.pricingOutput,
-        providers: filters.providers,
         throughput: filters.throughput,
         latencyMs: filters.latencyMs,
         creationDate: filters.creationDate,

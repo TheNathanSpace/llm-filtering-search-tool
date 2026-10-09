@@ -34,10 +34,6 @@ export function getUniqueCreators(models: CombinedModel[]): string[] {
     );
 }
 
-export function getUniqueProviders(models: CombinedModel[]): string[] {
-    return uniqueLabels(models, (model) => model.selected_provider);
-}
-
 function toRange(
     min: number | undefined,
     max: number | undefined,
@@ -100,7 +96,6 @@ export function getFilterBounds(
 
     return {
         creators: getUniqueCreators(models),
-        providers: getUniqueProviders(models),
         intelligenceIndex: toRange(minIntelligence, maxIntelligence),
         codingIndex: toRange(minCoding, maxCoding),
         agenticIndex: toRange(minAgentic, maxAgentic),

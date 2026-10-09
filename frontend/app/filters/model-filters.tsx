@@ -300,18 +300,6 @@ export default function ModelFilters(
                     }));
                 }}
             />
-            <MultiSelectFilter
-                name="Provider"
-                label="Pick providers"
-                options={bounds.providers}
-                value={filters.providers}
-                onChange={(providers) => {
-                    setFilters((previous) => ({
-                        ...previous,
-                        providers,
-                    }));
-                }}
-            />
             <CheckboxRowFilter
                 name="Input modalities"
                 options={INPUT_MODALITY_OPTIONS}

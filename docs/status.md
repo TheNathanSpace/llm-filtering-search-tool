@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-09-30 — Usage cost range filter
-**Latest change:** A cost range appears under the token-count field and keeps models whose 90/10 listed cost falls inside it.
+**Last updated:** 2026-10-08 — Removed the providers filter
+**Latest change:** The filter panel no longer has a provider multi-select. Price, throughput, and latency still use the chosen provider.
 
 ## Pickup
 
@@ -17,7 +17,7 @@
 
 ## UI map (filters vs columns)
 
-Panel filters follow this column order. The missing-values switch stays first. Provider and modality filters have no column, so they stay after the column-aligned controls.
+Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
@@ -33,7 +33,6 @@ Panel filters follow this column order. The missing-values switch stays first. P
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
 | Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
 | Creator | yes (catalog capitalization, not the lowercase slug) | yes | [QRY-06](requirements.md#qry-06) |
-| Provider | no | yes (multi-select) | [UI-06](requirements.md#ui-06) |
 | Input / output modalities | no | yes | [QRY-08](requirements.md#qry-08), [QRY-09](requirements.md#qry-09) |
 
 ## Next session

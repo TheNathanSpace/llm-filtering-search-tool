@@ -38,7 +38,7 @@ The panel lays those controls out in two columns and balances them so each colum
 `app/columns.tsx`. Column-backed filters follow that column order. The missing-values switch stays
 first. Modality filters have no column, so they come after the column-aligned controls.
 A **Millions of tokens** box sits just before the price ranges. A positive count
-inserts a **Cost (NM)** column to the left of Pricing Input and a **Cost** range under the box:
+inserts a **Cost (NM)** column to the left of Input Cost and a **Cost** range under the box:
 `tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. The range keeps
 models whose calculated cost falls inside it (missing prices follow the missing-values switch).
 Changing or clearing the count resets that range and, when cleared, removes the column. The blend

@@ -49,7 +49,7 @@ capitalization (`OpenAI`), not the lowercase author slug. Input/output price, me
 and median latency come from one OpenRouter host: the cheapest listed 90/10 input/output blend,
 unless the next host is much faster on both. The panel can filter throughput and
 latency, and column-backed filters follow the table column order. Entering a token count in
-millions adds a cost column left of pricing input, using that same 90/10 blend, and a cost
+millions adds a cost column left of input cost, using that same 90/10 blend, and a cost
 range under the token field filters the table to that calculated cost.
 See [`docs/todo.md`](docs/todo.md).
 

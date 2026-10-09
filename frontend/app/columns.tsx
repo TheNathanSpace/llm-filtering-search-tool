@@ -74,14 +74,18 @@ export const columns: GridColDef[] = [
     },
     {
         field: "pricing_input",
-        headerName: "Pricing Input",
+        headerName: "Input Cost",
+        description:
+            "Listed price per million input tokens for the chosen provider",
         type: "number",
         width: 120,
         valueFormatter: formatPrice,
     },
     {
         field: "pricing_output",
-        headerName: "Pricing Output",
+        headerName: "Output Cost",
+        description:
+            "Listed price per million output tokens for the chosen provider",
         type: "number",
         width: 120,
         valueFormatter: formatPrice,
@@ -138,7 +142,7 @@ function usageCostColumn(tokenMillions: number): GridColDef<CombinedModel> {
     };
 }
 
-/** Table columns, with a usage-cost column left of pricing input when a token count is set. */
+/** Table columns, with a usage-cost column left of input cost when a token count is set. */
 export function columnsForTokenMillions(
     tokenMillions: number | undefined,
 ): GridColDef[] {

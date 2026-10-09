@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-08 — Removed the providers filter
-**Latest change:** The filter panel no longer has a provider multi-select. Price, throughput, and latency still use the chosen provider.
+**Last updated:** 2026-10-08 — Input and output cost column labels
+**Latest change:** Price columns are labeled Input Cost and Output Cost; header tooltips state the rate is per million tokens.
 
 ## Pickup
 
@@ -26,8 +26,8 @@ Panel filters follow this column order. The missing-values switch stays first. M
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
 | Context length | yes | yes | [QRY-04](requirements.md#qry-04) |
-| Usage cost | yes, when a positive token count is entered (left of pricing input) | token-count box, then a cost range | [UI-11](requirements.md#ui-11) |
-| Price | yes (chosen provider, input then output) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
+| Usage cost | yes, when a positive token count is entered (left of input cost) | token-count box, then a cost range | [UI-11](requirements.md#ui-11) |
+| Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
 | Throughput | yes (chosen provider p50) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
 | Latency | yes (chosen provider p50, ms) | yes | [UI-06](requirements.md#ui-06) |
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |

@@ -30,6 +30,7 @@ Filter UI and logic live under `app/filters/`:
 | `filter-types.ts`                                                               | Filter state and bounds types                  |
 | `filter-bounds.ts`                                                              | Derive min/max and unique creators from models |
 | `apply-filters.ts`                                                              | Pure `filterModels()`                          |
+| `name-query.ts`                                                                 | Name/slug search matching (punct, comma OR, `-` exclude) |
 | `use-model-filters.ts`                                                          | State + filtered rows for the table            |
 
 The panel lays those controls out in two columns and balances them so each column is about the same height. A control stays in one column (it is not split across the break).
@@ -44,6 +45,10 @@ models whose calculated cost falls inside it (missing prices follow the missing-
 Changing or clearing the count resets that range and, when cleared, removes the column. The blend
 matches provider ranking in `backend/llm_rankings/provider_choice.py`.
 The name cell links to the model’s OpenRouter page.
+Name search matches display names and OpenRouter ids/slugs, ignoring punctuation
+(so `gpt 5` finds `GPT-5`). Commas separate OR’d alternatives; a leading `-` on a
+comma unit excludes models that match every word in that unit. A help icon next to
+the Name label explains this.
 Creator values in the table and the creator filter use the catalog display name (the `OpenAI:` prefix
 on the model name), not the lowercase author slug.
 The modality filters keep models that include **every** checked type (unchecked means no constraint).

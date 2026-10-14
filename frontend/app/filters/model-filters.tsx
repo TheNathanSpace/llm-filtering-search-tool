@@ -65,8 +65,14 @@ export default function ModelFilters(
             </div>
             <TextFilter
                 name="Name"
-                label="Search names or families"
+                label="Search names or slugs"
                 value={filters.nameQuery}
+                help={
+                    "Matches display names and OpenRouter slugs (e.g. gpt-5-nano).\n" +
+                    "Punctuation is ignored, so gpt 5 matches GPT-5.\n" +
+                    "Commas OR alternatives: gpt 5, deepseek v4.1\n" +
+                    "A leading minus excludes matches: -nano"
+                }
                 onChange={(nameQuery) => {
                     setFilters((previous) => ({
                         ...previous,

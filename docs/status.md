@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-08 — Input and output cost column labels
-**Latest change:** Price columns are labeled Input Cost and Output Cost; header tooltips state the rate is per million tokens.
+**Last updated:** 2026-10-14 — Richer name search
+**Latest change:** Name filter matches slugs as well as display names, ignores punctuation, ORs comma-separated terms, supports leading `-` exclusions, and documents the syntax via a help tooltip.
 
 ## Pickup
 
@@ -21,7 +21,7 @@ Panel filters follow this column order. The missing-values switch stays first. M
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
-| Name | yes (links to the OpenRouter page) | yes (substring search) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
+| Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; comma OR; `-` exclude) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |

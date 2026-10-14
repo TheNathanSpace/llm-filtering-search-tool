@@ -31,7 +31,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | <a id="qry-10"></a>QRY-10 | Option to treat **missing values as included** when filters would otherwise drop them | must | done |
 | <a id="qry-11"></a>QRY-11 | Filter and sort by **open weights** (boolean from models.dev) | must | done |
 | <a id="qry-12"></a>QRY-12 | Filter and sort by **parameter size** (billions; display as e.g. `7B`) | must | done |
-| <a id="qry-13"></a>QRY-13 | Filter by **name** (case-insensitive substring; finds names/families) | must | done — panel text search |
+| <a id="qry-13"></a>QRY-13 | Filter by **name** (case-insensitive; names and slugs; punctuation ignored; comma = OR; leading `-` excludes) | must | done — panel text search |
 
 ---
 

@@ -1,5 +1,6 @@
 import { CombinedModel } from "@/app/client";
 import { ModelFiltersState, NumberRange } from "@/app/filters/filter-types";
+import { passesNameQuery } from "@/app/filters/name-query";
 import { usageCost } from "@/app/usage-cost";
 import { creatorLabel } from "@/app/utility";
 
@@ -15,21 +16,6 @@ function passesRange(
         return includeMissing;
     }
     return value >= range[0] && value <= range[1];
-}
-
-function passesNameQuery(
-    name: string | undefined,
-    query: string,
-    includeMissing: boolean,
-): boolean {
-    const trimmed = query.trim();
-    if (trimmed.length === 0) {
-        return true;
-    }
-    if (!name) {
-        return includeMissing;
-    }
-    return name.toLowerCase().includes(trimmed.toLowerCase());
 }
 
 function passesSelection(
@@ -92,6 +78,7 @@ export function filterModels(
         if (
             !passesNameQuery(
                 model.name,
+                model.id,
                 filters.nameQuery,
                 filters.includeMissing,
             )

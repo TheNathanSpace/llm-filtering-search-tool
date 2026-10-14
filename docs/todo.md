@@ -35,7 +35,7 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
 | Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in Exa gap-fill [SRC-12](requirements.md#src-12)). |
 | Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column; opt-in Exa gap-fill when HF missing). |
-| Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel substring search). |
+| Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel search: names + slugs, punctuation ignored, comma OR, `-` exclude). |
 
 Related UX: always-visible range controls for shipped numeric filters (**done**), including price, throughput, and latency for the chosen provider.
 

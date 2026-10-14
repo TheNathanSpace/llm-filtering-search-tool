@@ -58,14 +58,14 @@ One Compose stack at a time (fixed container names / ports). Preview always moun
 
 **Start preview** when the user asks to try / verify the worktree UI:
 
-1. From the task worktree, stop any stack using the shared names (`docker compose down` here and/or in the primary checkout if it owns the containers). Use Docker with sandbox disabled (see `docker-outside-sandbox.mdc`).
+1. From the task worktree, stop any stack using the shared names (`docker compose -f docker-compose.local.yaml down` here and/or in the primary checkout if it owns the containers). Use Docker with sandbox disabled (see `docker-outside-sandbox.mdc`).
 2. Confirm `.env` has `HOST_DATA_DIR` pointing at `$ROOT_WORKTREE_PATH/data` (absolute path to the primary `data/` directory).
-3. `COMPOSE_PROFILES=dev docker compose up --build -d`
+3. `COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build -d`
 4. Wait until backend health succeeds; report `http://localhost:<FRONTEND_PORT>` (default 3030).
 
 **Stop preview** when the user says stop, or as the first step of landing:
 
-1. From the task worktree: `COMPOSE_PROFILES=dev docker compose down` (or `docker compose down`).
+1. From the task worktree: `docker compose -f docker-compose.local.yaml down`.
 
 ## Integrating (only with go-ahead)
 
@@ -73,7 +73,7 @@ When the work is done (committed on the task branch), **stop and ask** whether t
 
 After go-ahead, finish **all** of these steps in order. Landing is not complete until cleanup succeeds.
 
-1. **Stop this task’s Compose preview** if it is running (`docker compose down` in the task worktree).
+1. **Stop this task’s Compose preview** if it is running (`docker compose -f docker-compose.local.yaml down` in the task worktree).
 2. Prefer **local fast-forward into `main` in the primary checkout**. Do **not** create merge commits (`--no-ff`, default non-ff merges, or `[Category] Merge …` commits). Do **not** open a remote PR unless the user explicitly asks.
 3. Land from the primary path so the task worktree stays on its branch:
 

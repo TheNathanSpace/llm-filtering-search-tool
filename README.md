@@ -81,60 +81,84 @@ Upstream OpenAPI specs for implementation reference live in [`api-docs/`](api-do
 ## Prerequisites
 
 - Docker Engine with Compose v2
-- OpenRouter API key (see [Configuration](#configuration))
+- OpenRouter API key
 
-Optional (lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and Node.js/npm.
+Optional (local builds, lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and Node.js/npm.
+
+## Run on a server
+
+Copy [`docker-compose.yaml`](docker-compose.yaml) onto the server. Set `OR_API_KEY` and any other
+values in that file’s `environment:` block, then:
+
+```bash
+docker compose up -d
+```
+
+That pulls `ghcr.io/thenathanspace/llm-filtering-search-tool:latest` (the package must be public, or
+run `docker login ghcr.io` first). The UI is at [http://localhost:3030](http://localhost:3030).
+SQLite, logs, and caches persist in `./data` next to the compose file. The API is only reached
+through the front-end `/api` proxy.
+
+Change the host side of `ports:` to publish a different port. The container side must match
+`FRONTEND_PORT`. Pin the image tag to a release tag instead of `latest` for a fixed build.
+
+[`.env.template`](.env.template) is optional. People who prefer a separate env file can copy it to
+`.env` and use `env_file` instead of inlining `environment:`.
 
 ## Configuration
 
-1. Copy the env template and edit values:
+Server deploys set variables in `docker-compose.yaml`. Local builds and host tooling use a `.env`
+file:
 
-   ```bash
-   cp .env.template .env
-   ```
+```bash
+cp .env.template .env
+```
 
-2. Set the variables documented in [`.env.template`](.env.template):
-   - `OR_API_KEY` — OpenRouter API key for models, per-provider endpoints, and embedded benchmarks
-   - `OR_WEB_ENRICHMENT` — optional; set to `1` to gap-fill missing open-weights / size / knowledge cutoff via OpenRouter Batch (hardcoded GPT-6 Luna + native web search; refresh job waits for the batch while the live DB keeps serving)
-   - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
-   - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
-   - `HOST_DATA_DIR` — optional host path Compose bind-mounts to `/app/data` (default `./data`); worktree setup points this at the primary checkout’s `data/`
-   - `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
-     (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
-   - `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on
-     startup; `latest.log` symlink is excluded)
-- `BACKEND_HOST` — FastAPI listen address for host tooling (default `127.0.0.1`); Compose overrides this inside containers
+Variables in [`.env.template`](.env.template):
+
+- `OR_API_KEY` — OpenRouter API key for models, per-provider endpoints, and embedded benchmarks
+- `OR_WEB_ENRICHMENT` — optional; set to `1` to gap-fill missing open-weights / size / knowledge cutoff via OpenRouter Batch (hardcoded GPT-6 Luna + native web search; refresh job waits for the batch while the live DB keeps serving)
+- `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
+- `DATA_DIR` — path for SQLite DB, logs, caches, and related files. Relative paths are resolved from the `.env` directory when that file is loaded, otherwise from the working directory. The server compose file sets `/app/data`.
+- `HOST_DATA_DIR` — local Compose only; host path `docker-compose.local.yaml` bind-mounts to `/app/data` (default `./data`). Worktree setup points this at the primary checkout’s `data/`
+- `LOG_LEVEL` — log level for the back-end and for front-end lines written to `latest.log`
+  (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
+- `LOG_FILE_COUNT` — max number of timestamped `DATA_DIR/logs/*.log` files to keep (oldest deleted on
+  startup; `latest.log` symlink is excluded)
+- `BACKEND_HOST` — FastAPI listen address (default `127.0.0.1` on the host). Containers use `0.0.0.0`
 - `BACKEND_PORT` — FastAPI listen port (default `8000`)
-- `ENABLE_API_DOCS` — optional; set to `1` for FastAPI `/docs` / `/redoc` / `/openapi.json` (off by default; Compose `dev` enables it)
+- `ENABLE_API_DOCS` — optional; set to `1` for FastAPI `/docs` / `/redoc` / `/openapi.json` (off by default; local `dev` profile enables it)
 - `FRONTEND_PORT` — Next.js listen port (default `3030`)
-- `COMPOSE_PROFILES` — Compose stack to start: `prod` (default) or `dev` (hot reload)
+- `COMPOSE_PROFILES` — local Compose only: `prod` (default) or `dev` (hot reload)
 
-`.env` is gitignored. Compose loads it via `env_file` and mounts it at `/app/.env`. The back-end also
-reads it via `python-dotenv` (or `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`). The browser calls
-`/api/*` on the front-end; `frontend/proxy.ts` rewrites those requests at runtime to
-`http://<BACKEND_HOST>:<BACKEND_PORT>` (mapping `0.0.0.0` → `127.0.0.1` for same-container bind-all).
-Host and port are read when each request is proxied, so Compose `environment:` overrides apply without
-rebuilding.
+`.env` is gitignored. The local compose file loads it with `env_file` and mounts it at `/app/.env`.
+The back-end reads the process environment first and fills gaps from a `.env` file when one is
+present (`python-dotenv`, or `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`). Values already set in
+the environment are kept. The browser calls `/api/*` on the front-end; `frontend/proxy.ts` rewrites
+those requests at runtime to `http://<BACKEND_HOST>:<BACKEND_PORT>` (mapping `0.0.0.0` → `127.0.0.1`
+for same-container bind-all). Host and port are read when each request is proxied, so Compose
+`environment:` overrides apply without rebuilding.
 
-## Run (Docker Compose)
+## Local build
 
-Profiles are mutually exclusive — set exactly one of `prod` or `dev` via `COMPOSE_PROFILES` in `.env`
-(or prefix the command). Do not combine `COMPOSE_PROFILES=prod` with `--profile dev` (both stacks would
-start and fight over ports).
+[`docker-compose.local.yaml`](docker-compose.local.yaml) builds from this checkout. Profiles are
+mutually exclusive — set exactly one of `prod` or `dev` via `COMPOSE_PROFILES` in `.env` (or prefix
+the command). Do not combine `COMPOSE_PROFILES=prod` with `--profile dev` (both stacks would start
+and fight over ports).
 
-### Production-like (default)
+### Production-like
 
-Single image: FastAPI + Next.js standalone under supervisord. Mounts `./data` and `./.env`, forces
-`BACKEND_HOST=0.0.0.0`, publishes `${FRONTEND_PORT:-3030}`, and health-checks
+Single image: FastAPI + Next.js standalone under supervisord. Mounts `./data` (or `HOST_DATA_DIR`)
+and `./.env`, forces `BACKEND_HOST=0.0.0.0`, publishes `${FRONTEND_PORT:-3030}`, and health-checks
 `http://127.0.0.1:${BACKEND_PORT:-8000}/health`.
 
 ```bash
-docker compose up --build
+docker compose -f docker-compose.local.yaml up --build
 ```
 
 Open the UI at `http://localhost:<FRONTEND_PORT>` (default
-[http://localhost:3030](http://localhost:3030)). With the default profile the API is only reached
-through the front-end `/api` proxy (not published on the host).
+[http://localhost:3030](http://localhost:3030)). The API is only reached through the front-end
+`/api` proxy (not published on the host).
 
 ### Development profile
 
@@ -142,14 +166,36 @@ Separate `backend` and `frontend` services with bind mounts and hot reload (`uvi
 `next dev`). The front-end proxies to the Compose service name `backend`.
 
 ```bash
-COMPOSE_PROFILES=dev docker compose up --build
+COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build
 ```
 
-Or set `COMPOSE_PROFILES=dev` in `.env` and run `docker compose up --build`.
+Or set `COMPOSE_PROFILES=dev` in `.env` and run `docker compose -f docker-compose.local.yaml up --build`.
 
 UI: [http://localhost:3030](http://localhost:3030). API docs (Swagger; `ENABLE_API_DOCS`
-forced on by the Compose `dev` profile):
+forced on by the `dev` profile):
 [http://localhost:8000/docs](http://localhost:8000/docs).
+
+## Releases
+
+A push to `main` runs [`.github/workflows/release.yml`](.github/workflows/release.yml). It creates a
+GitHub Release and publishes the production image (the Dockerfile’s final stage) to GHCR.
+
+The tag is `v<YYYY.MM.DD>-<short sha>` from the commit date (UTC). The release body is the commit
+subjects since the previous tag. The image is pushed as that tag and as `latest`:
+
+`ghcr.io/thenathanspace/llm-filtering-search-tool`
+
+```bash
+docker pull ghcr.io/thenathanspace/llm-filtering-search-tool:latest
+```
+
+The first push creates the package as private. Mark that package public once in its settings; later
+tags of the same image keep that visibility. Making it public is permanent.
+
+[`docker-compose.yaml`](docker-compose.yaml) pulls that image. Local builds use
+[`docker-compose.local.yaml`](docker-compose.local.yaml) and do not pull it.
+The workflow’s `contents: write` and `packages: write` permissions apply when the repository’s
+Actions workflow permissions allow read and write (the GitHub default).
 
 ## Development
 
@@ -167,12 +213,12 @@ to try the branch UI:
 
 ```bash
 # Ensure HOST_DATA_DIR points at the primary checkout's data/ (worktree setup sets this).
-COMPOSE_PROFILES=dev docker compose up --build -d
+COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build -d
 ```
 
-UI: [http://localhost:3030](http://localhost:3030) (or `FRONTEND_PORT`). Stop with `docker compose down`
-before landing or when done verifying. Agents start/stop preview only when asked; land cleanup always
-stops the preview stack first.
+UI: [http://localhost:3030](http://localhost:3030) (or `FRONTEND_PORT`). Stop with
+`docker compose -f docker-compose.local.yaml down` before landing or when done verifying. Agents
+start/stop preview only when asked; land cleanup always stops the preview stack first.
 
 ### Host tooling (optional)
 
@@ -195,8 +241,8 @@ installed so commits are checked automatically.
 (and about every hour while the API is up), the back-end starts a hard-capped refresh in the
 **background** (API serve is not blocked): if `DATA_DIR/database.db` is missing or the last
 successful refresh in `DATA_DIR/cache/last_refresh.json` is ≥24 hours old, it rebuilds via the
-normal OpenRouter → enrich → staging-SQLite → atomic swap pipeline (requires `.env` with
-`OR_API_KEY`). Within 24 hours, that automatic path is a no-op. While a refresh is in flight,
+normal OpenRouter → enrich → staging-SQLite → atomic swap pipeline (requires `OR_API_KEY`
+in the container environment or `.env`). Within 24 hours, that automatic path is a no-op. While a refresh is in flight,
 callers keep reading the previous live DB (up to ~24h old is expected). OpenRouter
 models/endpoints and models.dev responses are reused from `DATA_DIR/cache/` when still fresh; HF
 is cached permanently per repo id (new ids still fetch on miss).
@@ -205,8 +251,8 @@ There is no public HTTP refresh endpoint (avoids unauthenticated rebuilds on an 
 instance). Ops can refresh from the host (same 24h gate by default, or `--force` to bypass):
 
 ```bash
-# Prefer Docker when Compose is up (prod `llm-filtering` or dev `llm-filtering-backend-dev`).
-# The script passes `--env-file /app/.env` (prod images cannot discover `.env` via site-packages).
+# Prefer Docker when Compose is up (server/local prod `llm-filtering`, or dev `llm-filtering-backend-dev`).
+# Passes `--env-file /app/.env` when that mount exists; otherwise uses the container environment.
 ./bin/refresh-data.sh
 ./bin/refresh-data.sh --force
 ./bin/refresh-data.sh --force --source hf

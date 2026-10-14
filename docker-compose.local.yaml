@@ -1,0 +1,102 @@
+# Local source build. The server copy-paste file is docker-compose.yaml.
+#
+# Production-like image from this checkout:
+#   docker compose -f docker-compose.local.yaml up --build
+#
+# Hot reload:
+#   COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build
+#
+# Profiles are mutually exclusive — set exactly one of prod or dev.
+# Worktree previews: set HOST_DATA_DIR to the primary checkout's data/ (see .env.template).
+
+services:
+  llm-filtering:
+    profiles: ["prod"]
+    build:
+      context: .
+    pull_policy: build
+    image: llm-filtering:latest
+    container_name: llm-filtering
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Image must listen on all interfaces; host .env often uses 127.0.0.1 for tooling.
+      BACKEND_HOST: "0.0.0.0"
+    volumes:
+      # HOST_DATA_DIR: absolute path to primary checkout data/ for worktree previews.
+      - ${HOST_DATA_DIR:-./data}:/app/data
+      - ./.env:/app/.env
+    ports:
+      - "${FRONTEND_PORT:-3030}:${FRONTEND_PORT:-3030}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:$${BACKEND_PORT:-8000}/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+
+  backend:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: backend-dev
+    pull_policy: build
+    image: llm-filtering-backend-dev:latest
+    container_name: llm-filtering-backend-dev
+    env_file:
+      - .env
+    environment:
+      BACKEND_HOST: "0.0.0.0"
+      WATCHFILES_FORCE_POLLING: "true"
+      # Interactive Swagger/ReDoc; off by default in prod (see ENABLE_API_DOCS).
+      ENABLE_API_DOCS: "1"
+    volumes:
+      - ./backend:/app/backend
+      - ${HOST_DATA_DIR:-./data}:/app/data
+      - ./.env:/app/.env
+    ports:
+      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f http://127.0.0.1:$${BACKEND_PORT:-8000}/health",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+
+  frontend:
+    profiles: ["dev"]
+    build:
+      context: .
+      target: frontend-dev
+    pull_policy: build
+    image: llm-filtering-frontend-dev:latest
+    container_name: llm-filtering-frontend-dev
+    env_file:
+      - .env
+    environment:
+      # Reach the sibling Compose service (not loopback / bind-all).
+      BACKEND_HOST: backend
+      BACKEND_PORT: "${BACKEND_PORT:-8000}"
+      FRONTEND_PORT: "${FRONTEND_PORT:-3030}"
+    volumes:
+      - ./frontend:/app/frontend
+      - frontend_node_modules:/app/frontend/node_modules
+      - ${HOST_DATA_DIR:-./data}:/app/data
+      - ./.env:/app/.env
+    ports:
+      - "${FRONTEND_PORT:-3030}:${FRONTEND_PORT:-3030}"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  frontend_node_modules:

@@ -43,11 +43,15 @@ resolve_container() {
 
 if ! container="$(resolve_container)"; then
   echo "No running app container found (tried llm-filtering, llm-filtering-backend-dev)." >&2
-  echo "Start Compose (prod or dev profile), then retry." >&2
+  echo "Start the local Compose stack (docker-compose.local.yaml) or the server stack, then retry." >&2
   exit 1
 fi
 
-# Prod image installs the package under site-packages, so find_dotenv() cannot
-# walk to /app/.env — pass it explicitly (same path uvicorn uses under supervisord).
-echo "Refreshing via docker exec ${container} python -m llm_rankings.refresh --env-file /app/.env $*"
-exec docker exec -w /app "${container}" python -m llm_rankings.refresh --env-file /app/.env "$@"
+# Local stacks mount /app/.env. The server compose file does not; that container
+# already has its configuration in the process environment.
+env_args=()
+if docker exec -w /app "${container}" test -f /app/.env; then
+  env_args=(--env-file /app/.env)
+fi
+echo "Refreshing via docker exec ${container} python -m llm_rankings.refresh ${env_args[*]} $*"
+exec docker exec -w /app "${container}" python -m llm_rankings.refresh "${env_args[@]}" "$@"

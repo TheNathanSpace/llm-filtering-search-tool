@@ -77,13 +77,14 @@ Core five from the product motivation, plus filters already shipped beyond that 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
 | <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`) | must | done — `/meta` returns `{enrichment_cost_usd, last_refresh_at, database_ready, refresh_in_progress}`; data refresh is automatic / CLI (incl. ops `--force`); no public HTTP refresh ([SRC-02](#src-02), [SRC-11](#src-11)); interactive API docs off unless `ENABLE_API_DOCS`; 500 responses use a generic client message |
-| <a id="plt-02"></a>PLT-02 | Docker Compose run paths documented in README (`prod` default, `dev` hot-reload profile); worktree preview reuses primary `data/` via `HOST_DATA_DIR` | must | done |
-| <a id="plt-03"></a>PLT-03 | Shared **`.env` configuration** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT`, optional `ENABLE_API_DOCS`, `DATA_DIR`, optional `HOST_DATA_DIR` for worktree Compose mounts, logging, host/ports) | must | done |
+| <a id="plt-02"></a>PLT-02 | `docker-compose.yaml` is the server deploy file (published image, settings inline). `docker-compose.local.yaml` is the local source build (`prod` default, `dev` hot-reload); worktree preview reuses primary `data/` via `HOST_DATA_DIR` | must | done |
+| <a id="plt-03"></a>PLT-03 | Configuration via process environment (server Compose `environment:` block) or optional **`.env`** (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT`, optional `ENABLE_API_DOCS`, `DATA_DIR`, optional `HOST_DATA_DIR` for local Compose mounts, logging, host/ports). Already-set environment variables win over the file | must | done |
 | <a id="plt-04"></a>PLT-04 | **Logging** to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |
 | <a id="plt-05"></a>PLT-05 | Front-end **proxies** `/api/*` to the back-end using runtime `BACKEND_HOST` / `BACKEND_PORT` | must | done |
-| <a id="plt-06"></a>PLT-06 | **Docker** Compose: `prod` image runs API + Next via supervisord; `dev` profile runs separate reloadable backend/frontend services; UI port published; API health-checked | must | done |
+| <a id="plt-06"></a>PLT-06 | **Docker** Compose: server file runs the published image (API + Next via supervisord); local file builds that image or, with the `dev` profile, separate reloadable backend/frontend services; UI port published; API health-checked. The app starts from the process environment when no `.env` file is mounted | must | done |
 | <a id="plt-07"></a>PLT-07 | Regenerate this project's FastAPI OpenAPI → TypeScript client (`bin/install-frontend-api-client.sh`) | must | done |
 | <a id="plt-08"></a>PLT-08 | Vendor upstream OpenAPI specs under `api-docs/` and refresh via script | stretch | done |
+| <a id="plt-09"></a>PLT-09 | Push to `main` creates a GitHub Release (tag `v<commit-date>-<short sha>`, body = commit subjects since the previous tag) and publishes the production image to GHCR (`:<tag>` and `:latest`) | must | done |
 
 ---
 

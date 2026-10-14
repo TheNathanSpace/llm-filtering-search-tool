@@ -10,6 +10,7 @@ from dotenv import find_dotenv, load_dotenv
 logger = logging.getLogger(__name__)
 
 _ENV_FILE: Path | None = None
+_ENV_READY = False
 _LOGGING_CONFIGURED = False
 _LOG_FORMAT = "%(asctime)s.%(msecs)03d | %(name)-35s | %(funcName)-25s | %(levelname)-8s | %(message)s"
 _LOG_DATEFMT = "%Y-%m-%d %H:%M:%S"
@@ -70,52 +71,79 @@ def _discover_env_file() -> Path | None:
     return None
 
 
-def configure_env_file(path: str | Path | None = None) -> Path:
+def configure_env_file(path: str | Path | None = None) -> Path | None:
     """
-    Load environment variables from the given ``.env`` file (or discover one).
+    Load a ``.env`` file when one is available.
+
+    Variables already set in the process environment are kept, so a Compose
+    ``environment:`` block wins over a file. When no file is requested and none
+    is found, the process environment is used as-is.
 
     :param path: Explicit path to a ``.env`` file. When ``None``, uses
         ``LLM_RANKINGS_ENV_FILE`` if set, otherwise discovery (see
-        ``_discover_env_file``).
-    :return: Resolved path to the loaded ``.env`` file.
+        ``_discover_env_file``). An explicit path that is missing raises.
+    :return: Resolved path to the loaded file, or ``None`` when configuration
+        comes only from the process environment.
     """
-    global _ENV_FILE
+    global _ENV_FILE, _ENV_READY
 
     if path is not None:
-        env_file = Path(path).expanduser().resolve()
+        env_file: Path | None = Path(path).expanduser().resolve()
     else:
         from_env = os.environ.get("LLM_RANKINGS_ENV_FILE")
         if from_env:
             env_file = Path(from_env).expanduser().resolve()
         else:
-            discovered = _discover_env_file()
-            if discovered is None:
-                raise ValueError("No .env file found")
-            env_file = discovered
+            env_file = _discover_env_file()
+
+    if env_file is None:
+        _ENV_FILE = None
+        _ENV_READY = True
+        return None
 
     if not env_file.is_file():
         raise ValueError(f".env file not found: {env_file.as_posix()}")
 
-    load_dotenv(env_file, override=True)
+    load_dotenv(env_file, override=False)
     _ENV_FILE = env_file
+    _ENV_READY = True
     return env_file
 
 
-def get_env_file() -> Path:
-    """Return the configured ``.env`` path, loading one if needed."""
-    if _ENV_FILE is None:
+def get_env_file() -> Path | None:
+    """Return the configured ``.env`` path, or ``None`` when only the process environment is used."""
+    if not _ENV_READY:
         configure_env_file()
     return _ENV_FILE
 
 
-def bootstrap_env_from_argv() -> Path:
+def data_dir_from_env() -> Path:
+    """
+    Resolve ``DATA_DIR``.
+
+    Absolute paths are used as-is. Relative paths are resolved against the
+    ``.env`` file's directory when one was loaded, otherwise against the
+    process working directory.
+    """
+    get_env_file()
+    raw = os.environ.get("DATA_DIR")
+    if not raw:
+        raise ValueError("Environment variable is not set: DATA_DIR")
+    path = Path(raw).expanduser()
+    if path.is_absolute():
+        return path
+    anchor = _ENV_FILE.parent if _ENV_FILE is not None else Path.cwd()
+    return anchor / path
+
+
+def bootstrap_env_from_argv() -> Path | None:
     """
     Load ``.env`` before other back-end setup.
 
     Honors ``--env-file`` / ``-e`` on ``sys.argv`` (removed after parsing), then
     ``LLM_RANKINGS_ENV_FILE``, then env-file discovery.
     """
-    if _ENV_FILE is not None:
+    if _ENV_READY:
         return _ENV_FILE
 
     argv = sys.argv
@@ -130,7 +158,7 @@ def bootstrap_env_from_argv() -> Path:
 
 def setup_logging() -> Path:
     """
-    Configure the root logger from ``.env`` (inherited by named module loggers).
+    Configure the root logger from the environment (inherited by named module loggers).
 
     Writes to stdout and ``DATA_DIR/logs/{YYYY-MM-DD}-{HHMMSS}.log``, and updates
     ``DATA_DIR/logs/latest.log`` as a symlink to that file. After creating the new file,
@@ -142,7 +170,7 @@ def setup_logging() -> Path:
     if _LOGGING_CONFIGURED:
         raise RuntimeError("setup_logging() has already been called")
 
-    env_file = get_env_file()
+    get_env_file()
 
     level_name = os.environ.get("LOG_LEVEL")
     if not level_name:
@@ -159,10 +187,7 @@ def setup_logging() -> Path:
     if keep < 1:
         raise ValueError(f"LOG_FILE_COUNT must be >= 1: {keep}")
 
-    data_dir_rel = os.environ.get("DATA_DIR")
-    if not data_dir_rel:
-        raise ValueError("Environment variable is not set: DATA_DIR")
-    logs_dir = env_file.parent / data_dir_rel / "logs"
+    logs_dir = data_dir_from_env() / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
 
     stamp = datetime.datetime.now().strftime("%Y-%m-%d-%H%M%S")
@@ -192,11 +217,11 @@ def setup_logging() -> Path:
 ENV_VARS_LOGGED = False
 
 
-def validate_env_vars() -> Path:
+def validate_env_vars() -> Path | None:
     """
-    Validates the presence of an .env file and loads environment variables.
+    Load ``.env`` when one exists. The process environment is enough when it does not.
 
-    :return: The Path to the .env file.
+    :return: The path to the ``.env`` file, or ``None``.
     """
     global ENV_VARS_LOGGED
     if not ENV_VARS_LOGGED:
@@ -217,8 +242,8 @@ def get_data_dir():
     global DATA_DIR_LOGGED
     if not DATA_DIR_LOGGED:
         logger.debug("Getting data directory")
-    env_file = validate_env_vars()
-    data_dir = env_file.parent / get_env_var("DATA_DIR")
+    validate_env_vars()
+    data_dir = data_dir_from_env()
     data_dir.mkdir(parents=True, exist_ok=True)
     if not DATA_DIR_LOGGED:
         DATA_DIR_LOGGED = True

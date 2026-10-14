@@ -9,7 +9,7 @@
 
 On server start, [`instrumentation.ts`](instrumentation.ts) tees Node.js `console.*` output (and
 `onRequestError` events) to `DATA_DIR/logs/latest.log` — the symlink maintained by the back-end —
-using `DATA_DIR` and `LOG_LEVEL` from the repo-root `.env`. Lines are skipped until that symlink
+using `DATA_DIR` and `LOG_LEVEL` from the process environment (local dev also loads the repo-root `.env`). Lines are skipped until that symlink
 exists (start the API first, or restart the front-end after the API). Browser/client logs are not
 written to the file.
 
@@ -79,11 +79,14 @@ Usage cost does: pass the parsed token count into `useModelFilters`.
 Use Docker Compose from the repo root (see the root [README](../README.md)):
 
 ```bash
-# production-like (default)
-docker compose up --build
+# server deploy file (pulls the published image; edit environment: first)
+docker compose up -d
 
-# hot-reload frontend + backend
-COMPOSE_PROFILES=dev docker compose up --build
+# local production-like build
+docker compose -f docker-compose.local.yaml up --build
+
+# local hot-reload frontend + backend
+COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build
 ```
 
 Open `http://localhost:<FRONTEND_PORT>` (default [http://localhost:3030](http://localhost:3030)).

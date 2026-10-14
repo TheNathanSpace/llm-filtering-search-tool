@@ -5,8 +5,8 @@
 Back-end modules use named loggers via `logging.getLogger(__name__)`. Call `setup_logging()` from
 `llm_rankings.util` once at process start (API import or a script `__main__`).
 
-Configuration (from `.env`, or an explicit path via `--env-file` / `-e` or
-`LLM_RANKINGS_ENV_FILE`):
+Configuration (process environment, or a `.env` file via discovery / `--env-file` / `-e` /
+`LLM_RANKINGS_ENV_FILE`; values already set in the environment are kept):
 
 - `LOG_LEVEL` — root logger level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
 - `LOG_FILE_COUNT` — after creating the new file, delete oldest `DATA_DIR/logs/*.log` files until

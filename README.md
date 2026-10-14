@@ -2,6 +2,16 @@
 
 The goal is to consolidate multidimensional LLM metrics and benchmarks into a searchable platform.
 
+## Quick start
+
+Copy [`docker-compose.yaml`](docker-compose.yaml), set `OR_API_KEY`, then:
+
+```bash
+docker compose up -d
+```
+
+The UI is at [http://localhost:3030](http://localhost:3030).
+
 ## Motivation
 
 What are the things I value in a completion large language model? Do I care about intelligence, price, or throughput?
@@ -304,6 +314,4 @@ See [api-docs/README.md](api-docs/README.md).
 
 ## Generative AI Disclosure
 
-This project was developed with the assistance of an LLM coding agent. When work was off-loaded to the LLM, all aspects
-of its implementation were read, verified, tested, and then modified by me to ensure they were accurate and up to my
-standards.
+80% of this app was vibe coded.

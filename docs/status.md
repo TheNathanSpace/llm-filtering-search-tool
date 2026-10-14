@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-14 — Server compose file with inline settings
-**Latest change:** `docker-compose.yaml` pulls the GHCR image and takes configuration in `environment:`. Local source builds move to `docker-compose.local.yaml`. The app starts from the process environment when no `.env` is mounted. Push to `main` still opens a GitHub Release and publishes that image.
+**Last updated:** 2026-10-14 — README quick start and vibe-coded disclosure
+**Latest change:** README opens with a short deploy quick start that links to `docker-compose.yaml`. The generative AI disclosure now states that 80% of the app was vibe coded.
 
 ## Pickup
 

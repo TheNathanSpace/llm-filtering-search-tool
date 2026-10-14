@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator, Literal
 
-from llm_rankings.database import get_database_path, populate_with_models, wipe_database
+from llm_rankings.database import get_database_path, populate_with_models
 from llm_rankings.util import (
     REFRESH_MAX_AGE_SECONDS,
     bootstrap_env_from_argv,
@@ -59,9 +59,66 @@ def _lock_path() -> Path:
     return get_cache_dir() / "refresh.lock"
 
 
+def _status_path() -> Path:
+    return get_cache_dir() / "refresh_status.json"
+
+
+# Drop a stuck in_progress flag if a prior process died mid-refresh.
+_STALE_IN_PROGRESS_SECONDS = REFRESH_MAX_AGE_SECONDS + 3600
+
+
+def _write_refresh_status(*, in_progress: bool, reason: str | None = None) -> None:
+    path = _status_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload: dict[str, object] = {
+        "in_progress": in_progress,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    if reason is not None:
+        payload["reason"] = reason
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def is_refresh_in_progress() -> bool:
+    """True while a rebuild holds work after the freshness gate (status file)."""
+    path = _status_path()
+    if not path.is_file():
+        return False
+    try:
+        payload = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        logger.warning("Corrupt refresh status at %s; treating as idle", path.as_posix())
+        return False
+    if not payload.get("in_progress"):
+        return False
+    raw = payload.get("updated_at")
+    if isinstance(raw, str) and raw.strip():
+        try:
+            updated = datetime.fromisoformat(raw)
+        except ValueError:
+            updated = None
+        else:
+            if updated.tzinfo is None:
+                updated = updated.replace(tzinfo=timezone.utc)
+            age = (datetime.now(timezone.utc) - updated.astimezone(timezone.utc)).total_seconds()
+            if age >= _STALE_IN_PROGRESS_SECONDS:
+                logger.warning(
+                    "Stale refresh_status in_progress (age=%.0fs); clearing",
+                    age,
+                )
+                _write_refresh_status(in_progress=False, reason="stale-clear")
+                return False
+    return True
+
+
+def database_ready() -> bool:
+    """True when the live SQLite file exists (may still be an older snapshot)."""
+    return get_database_path().is_file()
+
+
 @contextmanager
 def _refresh_file_lock() -> Iterator[None]:
-    """Exclusive cross-process lock so API and CLI cannot wipe/rebuild concurrently."""
+    """Exclusive cross-process lock so API and CLI cannot rebuild concurrently."""
     path = _lock_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     fd = os.open(path, os.O_CREAT | os.O_RDWR)
@@ -190,7 +247,7 @@ def invalidate_sources(sources: frozenset[str]) -> None:
             )
             if is_truthy_env("OR_WEB_ENRICHMENT"):
                 logger.warning(
-                    "OR_WEB_ENRICHMENT is enabled: forcing enrichment may re-bill OpenRouter/Exa "
+                    "OR_WEB_ENRICHMENT is enabled: forcing enrichment may re-bill OpenRouter batch "
                     "for models that still have gaps"
                 )
 
@@ -202,15 +259,19 @@ def refresh_data(
     sources: frozenset[str] | None = None,
 ) -> RefreshResult:
     """
-    Wipe and rebuild the model DB.
+    Rebuild the model DB into a staging file, then atomically replace the live DB.
 
-    When ``force`` is False (API startup/scheduler/default CLI), skip if data is fresh
-    within 24h. When ``force`` is True (ops CLI), invalidate selected caches then rebuild
-    regardless of the gate. Concurrent callers serialize on a cross-process file lock and
-    re-check freshness after acquiring it (non-force path only).
+    The previous ``database.db`` stays readable until the swap, so API reads are not
+    interrupted by a long refresh (including batch web enrichment). When ``force`` is
+    False (API startup/scheduler/default CLI), skip if data is fresh within 24h. When
+    ``force`` is True (ops CLI), invalidate selected caches then rebuild regardless of
+    the gate. Concurrent callers serialize on a cross-process file lock and re-check
+    freshness after acquiring it (non-force path only).
     """
     with _refresh_file_lock():
         if not force and is_data_fresh():
+            # Clear a stuck in_progress flag from a crashed prior run.
+            _write_refresh_status(in_progress=False, reason=f"skip-{reason}")
             last = last_refresh_at_iso()
             detail = (
                 f"Data already refreshed within the last {REFRESH_MAX_AGE_SECONDS // 3600} hours "
@@ -235,9 +296,14 @@ def refresh_data(
         else:
             logger.info("Refreshing model data (reason=%s)...", reason)
 
-        wipe_database()
-        populate_with_models()
-        last = write_last_refresh_at()
+        _write_refresh_status(in_progress=True, reason=reason)
+        try:
+            populate_with_models()
+            last = write_last_refresh_at()
+        except Exception:
+            _write_refresh_status(in_progress=False, reason=f"failed-{reason}")
+            raise
+        _write_refresh_status(in_progress=False, reason=f"done-{reason}")
         detail = f"Data refreshed successfully (reason={reason}, force={force})"
         logger.info(detail)
         return RefreshResult(
@@ -249,7 +315,7 @@ def refresh_data(
 
 
 def refresh_if_stale(*, reason: str) -> RefreshResult:
-    """Wipe and rebuild when missing or older than 24h. No force bypass."""
+    """Rebuild when missing or older than 24h. No force bypass."""
     return refresh_data(reason=reason, force=False)
 
 
@@ -259,13 +325,14 @@ def _parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
         description=(
             "Refresh the model SQLite database. Default respects the 24h freshness gate. "
             "Pass --force to wipe caches for selected sources and rebuild immediately "
-            "(ops only; no public HTTP endpoint)."
+            "(ops only; no public HTTP endpoint). Rebuild writes a staging DB then "
+            "atomically replaces the live file so readers keep the previous snapshot."
         ),
     )
     parser.add_argument(
         "--force",
         action="store_true",
-        help="Bypass the 24h gate; invalidate selected caches and wipe-rebuild",
+        help="Bypass the 24h gate; invalidate selected caches and rebuild",
     )
     parser.add_argument(
         "--source",

@@ -1,6 +1,7 @@
 import importlib
 import json
 import logging
+import os
 from pathlib import Path
 
 from pydantic_sqlite import DataBase
@@ -18,10 +19,16 @@ def get_database_path() -> Path:
     return get_data_dir() / "database.db"
 
 
-def initialize_database() -> DataBase:
-    logger.debug(f"Initializing database at {get_database_path().as_posix()}")
-    already_exists = get_database_path().exists()
-    db = DataBase(filename_or_conn=get_database_path())
+def get_staging_database_path() -> Path:
+    """Temporary SQLite path used while a refresh rebuilds; live DB stays readable."""
+    return get_data_dir() / "database.db.staging"
+
+
+def initialize_database(path: Path | None = None) -> DataBase:
+    db_path = path if path is not None else get_database_path()
+    logger.debug(f"Initializing database at {db_path.as_posix()}")
+    already_exists = db_path.exists()
+    db = DataBase(filename_or_conn=db_path)
 
     if already_exists:
         # Annoying workarounds for https://github.com/Phil997/pydantic-sqlite/issues/36
@@ -52,33 +59,80 @@ def initialize_database() -> DataBase:
     return db
 
 
-def wipe_database():
+def _close_database(db: DataBase) -> None:
+    connection = getattr(db, "_db", None)
+    if connection is not None:
+        connection.close()
+
+
+def wipe_database() -> None:
+    """Remove the live database file (rarely needed; refresh uses staging + swap)."""
     logger.debug(f"Wiping database at {get_database_path().as_posix()}")
     Path.unlink(get_database_path(), missing_ok=True)
 
 
-def populate_with_models():
+def populate_with_models() -> None:
+    """
+    Fetch/combine models, write a staging SQLite file, then atomically replace
+    ``database.db`` so readers keep serving the previous snapshot until swap.
+    """
     models, provider_endpoints = get_and_clean_data()
-    db: DataBase = initialize_database()
-    logger.debug(f"Writing {len(models)} models to database")
-    for model in models:
-        model.add_to_database(db)
-    logger.debug(f"Wrote {len(models)} models to database")
-    logger.debug(f"Writing {len(provider_endpoints)} provider endpoints to database")
-    for row in provider_endpoints:
-        row.add_to_database(db)
-    logger.debug(f"Wrote {len(provider_endpoints)} provider endpoints to database")
+
+    live_path = get_database_path()
+    staging_path = get_staging_database_path()
+    live_path.parent.mkdir(parents=True, exist_ok=True)
+    staging_path.unlink(missing_ok=True)
+
+    db = initialize_database(staging_path)
+    try:
+        logger.debug(f"Writing {len(models)} models to staging database")
+        for model in models:
+            model.add_to_database(db)
+        logger.debug(f"Wrote {len(models)} models to staging database")
+        logger.debug(
+            f"Writing {len(provider_endpoints)} provider endpoints to staging database"
+        )
+        for row in provider_endpoints:
+            row.add_to_database(db)
+        logger.debug(
+            f"Wrote {len(provider_endpoints)} provider endpoints to staging database"
+        )
+    except Exception:
+        _close_database(db)
+        staging_path.unlink(missing_ok=True)
+        raise
+
+    _close_database(db)
+    os.replace(staging_path, live_path)
+    logger.info(
+        "Replaced live database with staging snapshot (%d models, %d provider rows)",
+        len(models),
+        len(provider_endpoints),
+    )
 
 
 def get_all_models() -> list[CombinedModel]:
-    db: DataBase = initialize_database()
-    models: list[CombinedModel] = list(db("models"))
-    return models
+    path = get_database_path()
+    if not path.is_file():
+        logger.warning("Model database missing at %s; returning empty list", path)
+        return []
+    db: DataBase = initialize_database(path)
+    try:
+        return list(db("models"))
+    finally:
+        _close_database(db)
 
 
 def get_all_provider_endpoints() -> list[ModelProviderEndpoint]:
-    db: DataBase = initialize_database()
-    return list(db("model_provider_endpoints"))
+    path = get_database_path()
+    if not path.is_file():
+        logger.warning("Model database missing at %s; returning empty list", path)
+        return []
+    db: DataBase = initialize_database(path)
+    try:
+        return list(db("model_provider_endpoints"))
+    finally:
+        _close_database(db)
 
 
 if __name__ == "__main__":

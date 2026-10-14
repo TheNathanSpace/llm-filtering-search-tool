@@ -39,7 +39,7 @@ class CombinedModel(CombinedModelBase):
     benchmark_or_coding_index: float | None = None
     benchmark_or_agentic_index: float | None = None
 
-    # models.dev + Hugging Face Hub (+ opt-in OpenRouter/Exa gap-fill for open/size/cutoff).
+    # models.dev + Hugging Face Hub (+ opt-in OpenRouter batch web gap-fill for open/size/cutoff).
     is_open_weights: bool | None = None
     parameters_b: float | None = None  # Parameter count in billions (e.g. 7.0)
 

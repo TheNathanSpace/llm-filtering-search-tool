@@ -62,11 +62,12 @@ Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; se
    modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
    plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows
    are not copied (list of objects, not a single score).
-7. Optional (`OR_WEB_ENRICHMENT=1` + `OR_ENRICHMENT_MODEL`): gap-fill remaining null
-   `is_open_weights` / `parameters_b` / `knowledge_cutoff` via OpenRouter
-   `POST /chat/completions` with the Exa `web` plugin (`llm_rankings/web_enrichment.py`).
-   Never overwrites OpenRouter / models.dev / HF values. Durable per-model cache (schema v2)
-   and cost ledger/summary under `DATA_DIR/cache/web_enrichment/`.
+7. Optional (`OR_WEB_ENRICHMENT=1`): gap-fill remaining null `is_open_weights` /
+   `parameters_b` / `knowledge_cutoff` via OpenRouter Batch
+   (`POST /batches`, Responses wire, hardcoded `openai/gpt-6-luna:batch`, OpenAI
+   native `web_search`). Refresh blocks until the batch completes. Never overwrites
+   OpenRouter / models.dev / HF values. Durable per-model cache (schema v2) and cost
+   ledger/summary under `DATA_DIR/cache/web_enrichment/` (`llm_rankings/web_enrichment.py`).
 8. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`):
    `$/1M` input/output price, optional discount, throughput/latency percentiles (p50–p99),
    status/uptime/quantization/context. Primary key is ``{model_id}|{tag}``.
@@ -81,14 +82,17 @@ or re-bill web enrichment for known model ids.
 
 ### Refresh cadence (hard 24h cap + ops force)
 
-Wipe-and-rebuild goes through `llm_rankings.refresh.refresh_data` (API uses `refresh_if_stale`):
+Rebuild goes through `llm_rankings.refresh.refresh_data` (API uses `refresh_if_stale`):
 
 - **Automatic / default CLI:** skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json`
-  is younger than 24h. Otherwise wipe SQLite, run the pipeline (OpenRouter models/endpoints and
-  models.dev may be served from disk cache), then write `last_refresh_at`.
+  is younger than 24h. Otherwise run the pipeline (OpenRouter models/endpoints and models.dev may
+  be served from disk cache), write a staging SQLite file, atomically replace `database.db`, then
+  write `last_refresh_at`. The previous live DB stays readable until that swap.
 - **Ops `--force`:** bypass the gate; invalidate selected caches (`models`, `providers`,
-  `models-dev`, `hf`, `enrichment`, or `all`), then wipe-rebuild. Selecting `models` also
-  invalidates `providers`. Concurrent API + CLI callers share `DATA_DIR/cache/refresh.lock`.
-- API lifespan calls the gated path on startup and about every hour.
+  `models-dev`, `hf`, `enrichment`, or `all`), then rebuild the same staging-swap way. Selecting
+  `models` also invalidates `providers`. Concurrent API + CLI callers share
+  `DATA_DIR/cache/refresh.lock`.
+- API lifespan starts a **background** gated refresh on startup and about every hour; it does not
+  block serving (callers may see up to ~24h-old rows while a refresh is in flight).
 - CLI: `python -m llm_rankings.refresh` (or `./bin/refresh-data.sh` via docker exec). No public
   HTTP refresh endpoint. `last_refresh_at` means last successful DB rebuild, not per-source fetch.

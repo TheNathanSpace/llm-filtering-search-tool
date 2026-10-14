@@ -33,8 +33,8 @@ Ship dedicated filters (and grid columns where missing) for the five dimensions 
 | Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Done.** Panel range on the chosen provider’s p50 tokens/s. Latency range ships with it. |
 | Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
 | Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
-| Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in Exa gap-fill [SRC-12](requirements.md#src-12)). |
-| Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column; opt-in Exa gap-fill when HF missing). |
+| Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in batch web gap-fill [SRC-12](requirements.md#src-12)). |
+| Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column; opt-in batch web gap-fill when HF missing). |
 | Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel search: names + slugs, punctuation ignored, comma OR, `-` exclude). |
 
 Related UX: always-visible range controls for shipped numeric filters (**done**), including price, throughput, and latency for the chosen provider.
@@ -59,7 +59,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 - Removed the provider multi-select. Price, throughput, and latency still use the chosen provider
 - Usage cost column and range (UI-11): filter-panel token count in millions; column left of input cost uses the 90/10 listed blend; a cost range under that field filters rows to the same calculated cost
-- OpenRouter Exa web gap-fill (SRC-12): open-weights, size, and knowledge cutoff; cache + cost ledger
+- OpenRouter batch web gap-fill (SRC-12): GPT-6 Luna + native web_search; open-weights, size, and knowledge cutoff; cache + cost ledger
 - OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
 - Agent private-worktree lifecycle: `.cursor/worktrees.json` setup (incl. `HOST_DATA_DIR` → primary `data/`); feature-branch rule isolates edits, Compose preview on ask, merges to primary `main` only with go-ahead, then stops preview + deletes worktree + branch; README pointer
 - Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section

@@ -9,13 +9,27 @@ import ModelFilters from "@/app/filters/model-filters";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 import { useMemo, useState } from "react";
 
-const noRowsOverlay = () => (
-    <div className={"flex-center-everything"}>
-        <p>No matching rows.</p>
-    </div>
-);
+const POPULATING_MESSAGE =
+    "The models database is still being populated. Check back in a little (or maybe a lot) while.";
 
-export default function ModelTable({ models }: { models: CombinedModel[] }) {
+function makeNoRowsOverlay(message: string) {
+    return function NoRowsOverlay() {
+        return (
+            <div className={"flex-center-everything"} style={{ padding: "1.5rem" }}>
+                <p style={{ textAlign: "center", maxWidth: "28rem" }}>{message}</p>
+            </div>
+        );
+    };
+}
+
+export default function ModelTable({
+    models,
+    populating = false,
+}: {
+    models: CombinedModel[];
+    /** True while the first (or an in-flight) DB rebuild has nothing to show yet. */
+    populating?: boolean;
+}) {
     const [tokenMillionsText, setTokenMillionsText] = useState("");
     const tokenMillions = parseTokenMillions(tokenMillionsText);
     const { bounds, filters, setFilters, filteredModels } = useModelFilters(
@@ -25,6 +39,21 @@ export default function ModelTable({ models }: { models: CombinedModel[] }) {
     const columns = useMemo(
         () => columnsForTokenMillions(tokenMillions),
         [tokenMillions],
+    );
+
+    const emptyMessage = useMemo(() => {
+        if (models.length === 0 && populating) {
+            return POPULATING_MESSAGE;
+        }
+        if (models.length === 0) {
+            return "No models loaded.";
+        }
+        return "No rows match your current filters.";
+    }, [models.length, populating]);
+
+    const noRowsOverlay = useMemo(
+        () => makeNoRowsOverlay(emptyMessage),
+        [emptyMessage],
     );
 
     return (

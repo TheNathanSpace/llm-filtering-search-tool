@@ -1,15 +1,15 @@
 # Status
 
-**Last updated:** 2026-10-14 — Richer name search
-**Latest change:** Name filter matches slugs as well as display names, ignores punctuation, ORs comma-separated terms, supports leading `-` exclusions, and documents the syntax via a help tooltip.
+**Last updated:** 2026-10-14 — Luna batch enrichment + non-blocking refresh
+**Latest change:** Opt-in web gap-fill uses OpenRouter Batch (`openai/gpt-6-luna:batch` + native web_search); refresh rebuilds via staging DB swap in the background; `/meta` adds `database_ready` / `refresh_in_progress`; empty table explains first populate and filter misses.
 
 ## Pickup
 
 | Area | State |
 | --- | --- |
-| Data fetch (OR + models.dev + HF + opt-in Exa) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
-| SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; `GET /meta` for enrichment cost + last refresh; gated + ops `--force` CLI / `bin/refresh-data.sh`; no public HTTP refresh; docs gated by `ENABLE_API_DOCS` |
-| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13) + [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-11](requirements.md#ui-11) |
+| Data fetch (OR + models.dev + HF + opt-in batch web) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
+| SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; staging-DB swap so refresh does not take the live file offline; background startup/hourly refresh; `GET /meta` for enrichment cost, last refresh, `database_ready`, `refresh_in_progress`; gated + ops `--force` CLI / `bin/refresh-data.sh`; no public HTTP refresh; docs gated by `ENABLE_API_DOCS` |
+| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13) + [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-11](requirements.md#ui-11); first-populate empty overlay + poll |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
 | Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06) — Compose `prod`/`dev`; worktree preview via `HOST_DATA_DIR` → primary `data/` |
 | External + project OpenAPI tooling | [PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08) |

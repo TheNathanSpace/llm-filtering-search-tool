@@ -10,7 +10,12 @@ from pydantic import BaseModel, Field
 
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models
-from llm_rankings.refresh import last_refresh_at_iso, refresh_if_stale
+from llm_rankings.refresh import (
+    database_ready,
+    is_refresh_in_progress,
+    last_refresh_at_iso,
+    refresh_if_stale,
+)
 from llm_rankings.util import (
     bootstrap_env_from_argv,
     get_env_var,
@@ -34,6 +39,15 @@ _REFRESH_CHECK_INTERVAL_SECONDS = 60 * 60
 _CLIENT_ERROR_DETAIL = "Internal server error"
 
 
+def _log_background_refresh(task: asyncio.Task[object], *, label: str) -> None:
+    try:
+        task.result()
+    except asyncio.CancelledError:
+        logger.info("%s cancelled", label)
+    except Exception:
+        logger.exception("%s failed", label)
+
+
 async def _periodic_refresh_loop() -> None:
     while True:
         await asyncio.sleep(_REFRESH_CHECK_INTERVAL_SECONDS)
@@ -45,21 +59,28 @@ async def _periodic_refresh_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    try:
-        await asyncio.to_thread(refresh_if_stale, reason="startup")
-    except Exception:
-        logger.exception("Startup refresh failed")
-        raise
+    # Never block serving on refresh (batch enrichment can take a long time). Keep
+    # the previous DB online until a staging rebuild atomically replaces it.
+    startup_refresh = asyncio.create_task(
+        asyncio.to_thread(refresh_if_stale, reason="startup"),
+        name="startup-refresh",
+    )
+    startup_refresh.add_done_callback(
+        lambda task: _log_background_refresh(task, label="Startup refresh")
+    )
 
     checker = asyncio.create_task(_periodic_refresh_loop(), name="refresh-checker")
     try:
         yield
     finally:
+        # Cancel without waiting on to_thread refresh work (batch enrichment can run
+        # for hours; process exit will stop the worker thread).
+        startup_refresh.cancel()
         checker.cancel()
-        try:
-            await checker
-        except asyncio.CancelledError:
-            pass
+        await asyncio.wait(
+            {startup_refresh, checker},
+            timeout=5.0,
+        )
 
 
 _api_docs_enabled = is_truthy_env("ENABLE_API_DOCS")
@@ -87,10 +108,16 @@ app.add_middleware(
 
 class AppMeta(BaseModel):
     enrichment_cost_usd: float = Field(
-        description="Lifetime USD spent on opt-in OpenRouter/Exa web enrichment"
+        description="Lifetime USD spent on opt-in OpenRouter batch web enrichment"
     )
     last_refresh_at: str | None = Field(
         description="ISO-8601 UTC timestamp of the last successful model data refresh"
+    )
+    database_ready: bool = Field(
+        description="True when the live model SQLite file exists"
+    )
+    refresh_in_progress: bool = Field(
+        description="True while a background or CLI refresh is rebuilding the database"
     )
 
 
@@ -105,6 +132,8 @@ def get_meta():
         return AppMeta(
             enrichment_cost_usd=read_lifetime_cost_usd(),
             last_refresh_at=last_refresh_at_iso(),
+            database_ready=database_ready(),
+            refresh_in_progress=is_refresh_in_progress(),
         )
     except Exception as e:
         logger.exception("Failed to read app metadata")

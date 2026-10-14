@@ -1,8 +1,12 @@
-"""Gap-fill open-weights / size / knowledge cutoff via OpenRouter chat + Exa.
+"""Gap-fill open-weights / size / knowledge cutoff via OpenRouter Batch + web search.
 
-Opt-in with ``OR_WEB_ENRICHMENT=1`` and ``OR_ENRICHMENT_MODEL``. Never overwrites
-non-null OpenRouter, models.dev, or Hugging Face values. Durable cache and cost
-ledger live under ``DATA_DIR/cache/web_enrichment/``.
+Opt-in with ``OR_WEB_ENRICHMENT=1``. Uses hardcoded OpenAI GPT-6 Luna batch
+(``openai/gpt-6-luna:batch``) on ``POST /batches`` with the Responses wire and
+provider-native ``web_search`` (Exa / OpenRouter-orchestrated search is not
+available in batch). The refresh job waits for the batch; the live DB keeps
+serving until staging swap. Never overwrites non-null OpenRouter, models.dev, or
+Hugging Face values. Durable cache and cost ledger live under
+``DATA_DIR/cache/web_enrichment/``.
 """
 
 from __future__ import annotations
@@ -13,7 +17,6 @@ import os
 import re
 import threading
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -28,13 +31,22 @@ from llm_rankings.util import get_cache_dir, get_env_var
 logger = logging.getLogger(__name__)
 
 USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/llm-filtering-search-tool)"
-MAX_WORKERS = 2
-MAX_RETRIES = 4
-INITIAL_BACKOFF_SECONDS = 1.0
-REQUEST_TIMEOUT_SECONDS = 120
-EXA_MAX_RESULTS = 10
+# Hardcoded: OpenRouter Batch + OpenAI native web search (see product decision).
+ENRICHMENT_MODEL = "openai/gpt-6-luna:batch"
+BATCH_API_ENDPOINT = "/v1/responses"
+BATCH_PROVIDER_ONLY = ["openai"]
+CREATE_TIMEOUT_SECONDS = 300
+POLL_TIMEOUT_SECONDS = 60
+POLL_INITIAL_INTERVAL_SECONDS = 10.0
+POLL_MAX_INTERVAL_SECONDS = 60.0
+# OpenRouter may 404 briefly after a 202 while the batch becomes readable.
+POLL_NOT_FOUND_GRACE_SECONDS = 120.0
+# Matches OpenRouter's only supported completion_window.
+POLL_MAX_WAIT_SECONDS = 24 * 60 * 60
 # Bump when cache payload fields change so older entries are re-fetched when needed.
 CACHE_SCHEMA_VERSION = 2
+
+TERMINAL_BATCH_STATUSES = frozenset({"completed", "failed", "expired", "cancelled"})
 
 SYSTEM_PROMPT = (
     "Extract facts about one LLM from the web results. Definitions: "
@@ -146,7 +158,7 @@ class WebEnrichmentResult(BaseModel):
 
 
 class _CostTracker:
-    """Accumulate billed chat+web usage for one enrichment run and durable ledger."""
+    """Accumulate billed batch+web usage for one enrichment run and durable ledger."""
 
     def __init__(self) -> None:
         self._lock = threading.Lock()
@@ -206,8 +218,10 @@ class _CostTracker:
             "generation_id": generation_id,
             "cost_usd": cost_f,
             "cost_details": details,
-            "prompt_tokens": usage.get("prompt_tokens"),
-            "completion_tokens": usage.get("completion_tokens"),
+            "prompt_tokens": usage.get("prompt_tokens", usage.get("input_tokens")),
+            "completion_tokens": usage.get(
+                "completion_tokens", usage.get("output_tokens")
+            ),
             "total_tokens": usage.get("total_tokens"),
         }
 
@@ -228,7 +242,7 @@ class _CostTracker:
                 add_lifetime_calls=self.network_calls,
             )
             logger.info(
-                "Web enrichment cost: $%.4f (%d network calls, %d cache hits; "
+                "Web enrichment cost: $%.4f (%d billed items, %d cache hits; "
                 "inference=$%.4f search/tools=$%.4f)",
                 self.run_usd,
                 self.network_calls,
@@ -306,7 +320,7 @@ def _update_cost_summary(
 
 
 def read_lifetime_cost_usd() -> float:
-    """Return durable lifetime Exa/OpenRouter enrichment spend, or 0 if missing."""
+    """Return durable lifetime OpenRouter enrichment spend, or 0 if missing."""
     path = _summary_path()
     if not path.is_file():
         return 0.0
@@ -474,116 +488,78 @@ def _cache_usable_for_model(model: CombinedModel, cached: dict[str, Any]) -> boo
     return True
 
 
-def _chat_completion(
-    *,
-    model_id: str,
-    api_key: str,
-    enrichment_model: str,
-    user_content: str,
-) -> dict[str, Any]:
-    url = form_endpoint(OR_API_ROOT, "/chat/completions")
-    headers = {
+def _auth_headers(api_key: str) -> dict[str, str]:
+    return {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT,
         "HTTP-Referer": "https://github.com/TheNathanSpace/llm-filtering-search-tool",
         "X-Title": "llm-filtering-search-tool",
     }
-    body = {
-        "model": enrichment_model,
+
+
+def _responses_request_body(user_content: str) -> dict[str, Any]:
+    """Per-request body for OpenRouter Batch ``/v1/responses`` + native web search."""
+    return {
+        "instructions": SYSTEM_PROMPT,
+        "input": user_content,
         "temperature": 0,
-        "plugins": [
-            {
-                "id": "web",
-                "engine": "exa",
-                "max_results": EXA_MAX_RESULTS,
-                "exclude_domains": ["reddit.com"],
+        "tools": [{"type": "web_search"}],
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": RESPONSE_JSON_SCHEMA["name"],
+                "strict": RESPONSE_JSON_SCHEMA["strict"],
+                "schema": RESPONSE_JSON_SCHEMA["schema"],
             }
-        ],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": RESPONSE_JSON_SCHEMA,
         },
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": user_content},
-        ],
     }
 
-    backoff = INITIAL_BACKOFF_SECONDS
-    last_error: str | None = None
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            response = requests.post(
-                url, headers=headers, json=body, timeout=REQUEST_TIMEOUT_SECONDS
-            )
-        except requests.RequestException as exc:
-            last_error = str(exc)
-            logger.warning(
-                "Web enrichment [%s]: request error (attempt %d/%d): %s",
-                model_id,
-                attempt,
-                MAX_RETRIES,
-                exc,
-            )
-            time.sleep(backoff)
-            backoff *= 2
-            continue
 
-        if response.status_code == 200:
-            return response.json()
-
-        if response.status_code == 429:
-            retry_after = response.headers.get("Retry-After")
-            wait = float(retry_after) if retry_after and retry_after.isdigit() else backoff
-            logger.warning(
-                "Web enrichment [%s]: rate-limited; sleeping %.1fs (attempt %d/%d)",
-                model_id,
-                wait,
-                attempt,
-                MAX_RETRIES,
-            )
-            time.sleep(wait)
-            backoff *= 2
-            continue
-
-        if response.status_code in (500, 502, 503, 504):
-            last_error = f"{response.status_code}: {response.text[:200]}"
-            logger.warning(
-                "Web enrichment [%s]: server error %s (attempt %d/%d)",
-                model_id,
-                response.status_code,
-                attempt,
-                MAX_RETRIES,
-            )
-            time.sleep(backoff)
-            backoff *= 2
-            continue
-
-        last_error = f"{response.status_code}: {response.text[:300]}"
-        logger.warning(
-            "Web enrichment [%s]: unexpected status: %s",
-            model_id,
-            last_error,
-        )
-        break
-
-    raise RuntimeError(
-        f"Web enrichment [{model_id}]: chat failed after retries: {last_error}"
-    )
-
-
-def _extract_message_content(payload: dict[str, Any]) -> str | None:
-    choices = payload.get("choices")
-    if not isinstance(choices, list) or not choices:
+def _extract_response_text(payload: dict[str, Any]) -> str | None:
+    """Pull assistant text from a Responses API body (``output`` / ``output_text``)."""
+    output = payload.get("output")
+    if not isinstance(output, list):
+        # Some adapters may still return chat.completion-shaped bodies.
+        choices = payload.get("choices")
+        if isinstance(choices, list) and choices:
+            message = choices[0].get("message") if isinstance(choices[0], dict) else None
+            if isinstance(message, dict) and isinstance(message.get("content"), str):
+                return message["content"]
         return None
-    message = choices[0].get("message") if isinstance(choices[0], dict) else None
-    if not isinstance(message, dict):
+
+    texts: list[str] = []
+    for item in output:
+        if not isinstance(item, dict):
+            continue
+        if item.get("type") != "message":
+            continue
+        content = item.get("content")
+        if not isinstance(content, list):
+            continue
+        for part in content:
+            if not isinstance(part, dict):
+                continue
+            if part.get("type") == "output_text" and isinstance(part.get("text"), str):
+                texts.append(part["text"])
+    if not texts:
         return None
-    content = message.get("content")
-    if isinstance(content, str):
-        return content
-    return None
+    return "\n".join(texts)
+
+
+def _normalize_usage(usage: dict[str, Any]) -> dict[str, Any]:
+    """Map Responses ``input_tokens`` / ``output_tokens`` onto chat-style keys."""
+    normalized = dict(usage)
+    if "prompt_tokens" not in normalized and "input_tokens" in normalized:
+        normalized["prompt_tokens"] = normalized.get("input_tokens")
+    if "completion_tokens" not in normalized and "output_tokens" in normalized:
+        normalized["completion_tokens"] = normalized.get("output_tokens")
+    if normalized.get("total_tokens") is None:
+        prompt = normalized.get("prompt_tokens")
+        completion = normalized.get("completion_tokens")
+        if isinstance(prompt, (int, float)) or isinstance(completion, (int, float)):
+            normalized["total_tokens"] = int(prompt or 0) + int(completion or 0)
+    return normalized
 
 
 def _merge_parsed_passes(
@@ -607,139 +583,343 @@ def _merge_parsed_passes(
     )
 
 
-def _fetch_for_model(
-    model: CombinedModel,
+def _submit_batch(
     *,
     api_key: str,
-    enrichment_model: str,
-    costs: _CostTracker,
-) -> WebEnrichmentResult:
-    logger.info(
-        "Web enrichment [%s]: starting fetch (chat_model=%s)",
-        model.id,
-        enrichment_model,
-    )
-    user_content = USER_PROMPT_TEMPLATE.format(
-        id=model.id,
-        name=model.name or model.id,
-        creator=model.creator or "",
-    )
-    payload = _chat_completion(
-        model_id=model.id,
-        api_key=api_key,
-        enrichment_model=enrichment_model,
-        user_content=user_content,
-    )
-    usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
-    cost_entry = costs.record_usage(
-        model_id=model.id,
-        enrichment_model=enrichment_model,
-        generation_id=payload.get("id") if isinstance(payload.get("id"), str) else None,
-        usage=usage,
-    )
-    parsed = _parse_content(_extract_message_content(payload), model_id=model.id)
-    attempts = [
-        {
-            "pass": 1,
-            "generation_id": cost_entry.get("generation_id"),
-            "cost_usd": cost_entry.get("cost_usd"),
-            "result": parsed.model_dump(),
-        }
-    ]
+    requests_payload: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Create a batch. OpenRouter returns 202 with ``status: validating``."""
+    url = form_endpoint(OR_API_ROOT, "/batches")
+    # Field order: endpoint / model / provider before requests (stream-parsed body).
+    body = {
+        "endpoint": BATCH_API_ENDPOINT,
+        "model": ENRICHMENT_MODEL,
+        "provider": {
+            "only": BATCH_PROVIDER_ONLY,
+            "allow_fallbacks": False,
+        },
+        "completion_window": "24h",
+        "requests": requests_payload,
+    }
+    try:
+        response = requests.post(
+            url,
+            headers=_auth_headers(api_key),
+            json=body,
+            timeout=CREATE_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as exc:
+        raise RuntimeError(f"Web enrichment batch submit failed: {exc}") from exc
 
-    if _gaps_remain(model, parsed):
-        retry_content = RETRY_USER_PROMPT_TEMPLATE.format(
+    if response.status_code not in (200, 202):
+        raise RuntimeError(
+            f"Web enrichment batch submit unexpected status: "
+            f"{response.status_code}: {response.text[:500]}"
+        )
+    payload = response.json()
+    batch_id = payload.get("id")
+    if not isinstance(batch_id, str) or not batch_id:
+        raise RuntimeError(
+            f"Web enrichment batch submit missing id: {json.dumps(payload)[:500]}"
+        )
+    logger.info(
+        "Web enrichment: submitted batch %s (%d request(s), model=%s, endpoint=%s)",
+        batch_id,
+        len(requests_payload),
+        ENRICHMENT_MODEL,
+        BATCH_API_ENDPOINT,
+    )
+    return payload
+
+
+def _get_batch(*, api_key: str, batch_id: str) -> tuple[int, dict[str, Any] | None, str]:
+    """Return ``(status_code, json_or_none, raw_text)`` for one poll attempt."""
+    url = form_endpoint(OR_API_ROOT, f"/batches/{batch_id}")
+    try:
+        response = requests.get(
+            url,
+            headers=_auth_headers(api_key),
+            timeout=POLL_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException as exc:
+        raise RuntimeError(
+            f"Web enrichment batch poll failed ({batch_id}): {exc}"
+        ) from exc
+
+    text = response.text
+    if response.status_code == 200:
+        try:
+            return 200, response.json(), text
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                f"Web enrichment batch poll invalid JSON ({batch_id}): {text[:300]}"
+            ) from exc
+    return response.status_code, None, text
+
+
+def _wait_for_batch(*, api_key: str, batch_id: str) -> dict[str, Any]:
+    """Block until the batch reaches a terminal status (up to 24h)."""
+    started = time.monotonic()
+    interval = POLL_INITIAL_INTERVAL_SECONDS
+    last_status: str | None = None
+
+    while True:
+        elapsed = time.monotonic() - started
+        status_code, payload, raw_text = _get_batch(api_key=api_key, batch_id=batch_id)
+
+        if status_code == 404:
+            if elapsed < POLL_NOT_FOUND_GRACE_SECONDS:
+                logger.info(
+                    "Web enrichment: batch %s not readable yet (404); retrying",
+                    batch_id,
+                )
+                time.sleep(min(interval, 5.0))
+                continue
+            raise RuntimeError(
+                f"Web enrichment batch poll unexpected status ({batch_id}): "
+                f"404: {raw_text[:500]}"
+            )
+
+        if status_code != 200 or payload is None:
+            raise RuntimeError(
+                f"Web enrichment batch poll unexpected status ({batch_id}): "
+                f"{status_code}: {raw_text[:500]}"
+            )
+
+        status = payload.get("status")
+        if not isinstance(status, str):
+            raise RuntimeError(
+                f"Web enrichment batch {batch_id}: missing status in "
+                f"{json.dumps(payload)[:300]}"
+            )
+
+        counts = payload.get("request_counts")
+        counts_note = ""
+        if isinstance(counts, dict):
+            counts_note = (
+                f" completed={counts.get('completed')} failed={counts.get('failed')} "
+                f"total={counts.get('total')}"
+            )
+        if status != last_status:
+            logger.info(
+                "Web enrichment: batch %s status=%s%s",
+                batch_id,
+                status,
+                counts_note,
+            )
+            last_status = status
+
+        if status in TERMINAL_BATCH_STATUSES:
+            if status != "completed":
+                error = payload.get("error")
+                raise RuntimeError(
+                    f"Web enrichment batch {batch_id} ended with status={status}: "
+                    f"{error!r}"
+                )
+            return payload
+
+        if elapsed >= POLL_MAX_WAIT_SECONDS:
+            raise RuntimeError(
+                f"Web enrichment batch {batch_id} still {status} after "
+                f"{int(elapsed)}s (limit {POLL_MAX_WAIT_SECONDS}s)"
+            )
+
+        time.sleep(interval)
+        interval = min(interval * 1.5, POLL_MAX_INTERVAL_SECONDS)
+
+
+def _record_batch_costs(
+    *,
+    batch: dict[str, Any],
+    custom_id_to_model: dict[str, str],
+    costs: _CostTracker,
+) -> None:
+    """Prefer per-request usage costs; fall back to batch-level ``usage.cost``."""
+    results = batch.get("results")
+    saw_per_request_cost = False
+    if isinstance(results, list):
+        for item in results:
+            if not isinstance(item, dict):
+                continue
+            custom_id = item.get("custom_id")
+            model_id = (
+                custom_id_to_model.get(custom_id)
+                if isinstance(custom_id, str)
+                else None
+            )
+            if model_id is None:
+                continue
+            response = item.get("response")
+            if not isinstance(response, dict):
+                continue
+            body = response.get("body")
+            if not isinstance(body, dict):
+                continue
+            raw_usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
+            usage = _normalize_usage(raw_usage)
+            if usage.get("cost") is None:
+                continue
+            saw_per_request_cost = True
+            generation_id = body.get("id") if isinstance(body.get("id"), str) else None
+            costs.record_usage(
+                model_id=model_id,
+                enrichment_model=ENRICHMENT_MODEL,
+                generation_id=generation_id,
+                usage=usage,
+            )
+
+    if saw_per_request_cost:
+        return
+
+    batch_usage = batch.get("usage") if isinstance(batch.get("usage"), dict) else {}
+    if batch_usage.get("cost") is None:
+        return
+    batch_id = batch.get("id") if isinstance(batch.get("id"), str) else "unknown"
+    costs.record_usage(
+        model_id=f"_batch:{batch_id}",
+        enrichment_model=ENRICHMENT_MODEL,
+        generation_id=batch_id,
+        usage=_normalize_usage(batch_usage),
+    )
+
+
+def _parse_batch_results(
+    batch: dict[str, Any],
+    *,
+    custom_id_to_model: dict[str, str],
+) -> dict[str, tuple[WebEnrichmentResult, dict[str, Any]]]:
+    """Map custom_id → (parsed result, attempt metadata) for successful responses."""
+    parsed: dict[str, tuple[WebEnrichmentResult, dict[str, Any]]] = {}
+    results = batch.get("results")
+    if not isinstance(results, list):
+        return parsed
+
+    for item in results:
+        if not isinstance(item, dict):
+            continue
+        custom_id = item.get("custom_id")
+        if not isinstance(custom_id, str):
+            continue
+        model_id = custom_id_to_model.get(custom_id)
+        if model_id is None:
+            continue
+
+        error = item.get("error")
+        if error is not None:
+            logger.warning(
+                "Web enrichment [%s]: batch item error: %s",
+                model_id,
+                error,
+            )
+            parsed[model_id] = (
+                WebEnrichmentResult(),
+                {"custom_id": custom_id, "error": error},
+            )
+            continue
+
+        response = item.get("response")
+        if not isinstance(response, dict):
+            logger.warning(
+                "Web enrichment [%s]: batch item missing response",
+                model_id,
+            )
+            parsed[model_id] = (
+                WebEnrichmentResult(),
+                {"custom_id": custom_id, "error": "missing response"},
+            )
+            continue
+
+        status_code = response.get("status_code")
+        body = response.get("body")
+        if status_code != 200 or not isinstance(body, dict):
+            logger.warning(
+                "Web enrichment [%s]: batch item status=%s body_type=%s",
+                model_id,
+                status_code,
+                type(body).__name__,
+            )
+            parsed[model_id] = (
+                WebEnrichmentResult(),
+                {
+                    "custom_id": custom_id,
+                    "status_code": status_code,
+                    "error": "non-200 or empty body",
+                },
+            )
+            continue
+
+        result = _parse_content(_extract_response_text(body), model_id=model_id)
+        usage = body.get("usage") if isinstance(body.get("usage"), dict) else {}
+        meta = {
+            "custom_id": custom_id,
+            "generation_id": body.get("id") if isinstance(body.get("id"), str) else None,
+            "cost_usd": usage.get("cost"),
+            "result": result.model_dump(),
+        }
+        parsed[model_id] = (result, meta)
+
+    return parsed
+
+
+def _run_enrichment_batch(
+    models: list[CombinedModel],
+    *,
+    api_key: str,
+    costs: _CostTracker,
+    pass_number: int,
+    prompt_template: str,
+) -> dict[str, tuple[WebEnrichmentResult, dict[str, Any]]]:
+    """Submit one batch for ``models``, block until complete, return per-model results."""
+    if not models:
+        return {}
+
+    custom_id_to_model: dict[str, str] = {}
+    requests_payload: list[dict[str, Any]] = []
+    for index, model in enumerate(models):
+        custom_id = f"p{pass_number}-{index:04d}"
+        custom_id_to_model[custom_id] = model.id
+        user_content = prompt_template.format(
             id=model.id,
             name=model.name or model.id,
             creator=model.creator or "",
         )
-        logger.info(
-            "Web enrichment [%s]: retrying (gaps remain after first pass)",
-            model.id,
+        requests_payload.append(
+            {
+                "custom_id": custom_id,
+                "body": _responses_request_body(user_content),
+            }
         )
-        try:
-            retry_payload = _chat_completion(
-                model_id=model.id,
-                api_key=api_key,
-                enrichment_model=enrichment_model,
-                user_content=retry_content,
-            )
-        except RuntimeError as exc:
-            logger.warning(
-                "Web enrichment [%s]: retry failed: %s",
-                model.id,
-                exc,
-            )
-            retry_payload = None
 
-        if retry_payload is not None:
-            retry_usage = (
-                retry_payload.get("usage")
-                if isinstance(retry_payload.get("usage"), dict)
-                else {}
-            )
-            retry_cost = costs.record_usage(
-                model_id=model.id,
-                enrichment_model=enrichment_model,
-                generation_id=(
-                    retry_payload.get("id")
-                    if isinstance(retry_payload.get("id"), str)
-                    else None
-                ),
-                usage=retry_usage,
-            )
-            retry_parsed = _parse_content(
-                _extract_message_content(retry_payload),
-                model_id=model.id,
-            )
-            attempts.append(
-                {
-                    "pass": 2,
-                    "generation_id": retry_cost.get("generation_id"),
-                    "cost_usd": retry_cost.get("cost_usd"),
-                    "result": retry_parsed.model_dump(),
-                }
-            )
-            parsed = _merge_parsed_passes(parsed, retry_parsed)
-
-    cache_payload = {
-        "model_id": model.id,
-        "is_open_weights": parsed.is_open_weights,
-        "parameters_b": parsed.parameters_b,
-        "knowledge_cutoff": parsed.knowledge_cutoff,
-        "notes": parsed.notes,
-        "enrichment_model": enrichment_model,
-        "attempts": attempts,
-        "cached_at": datetime.now(timezone.utc).isoformat(),
-        "_cache_miss": (
-            parsed.is_open_weights is None
-            and parsed.parameters_b is None
-            and parsed.knowledge_cutoff is None
-        ),
-    }
-    _write_cache(model.id, cache_payload)
-    return parsed
+    logger.info(
+        "Web enrichment: pass %d submitting %d model(s) (blocking until batch completes)",
+        pass_number,
+        len(models),
+    )
+    submitted = _submit_batch(api_key=api_key, requests_payload=requests_payload)
+    batch_id = submitted["id"]
+    completed = _wait_for_batch(api_key=api_key, batch_id=batch_id)
+    _record_batch_costs(
+        batch=completed,
+        custom_id_to_model=custom_id_to_model,
+        costs=costs,
+    )
+    return _parse_batch_results(completed, custom_id_to_model=custom_id_to_model)
 
 
 def enrich_combined_models(models: list[CombinedModel]) -> None:
     """
     Fill null ``is_open_weights`` / ``parameters_b`` / ``knowledge_cutoff`` via
-    OpenRouter + Exa when enabled.
+    OpenRouter Batch (GPT-6 Luna + native web search) when enabled.
 
-    No-op unless ``OR_WEB_ENRICHMENT`` is truthy. Requires ``OR_ENRICHMENT_MODEL``
-    and ``OR_API_KEY`` when enabled. Mutates ``models`` in place; never overwrites
+    No-op unless ``OR_WEB_ENRICHMENT`` is truthy. Requires ``OR_API_KEY`` when
+    enabled. Waits for batch results inside the refresh job (the live DB stays
+    readable until staging swap). Mutates ``models`` in place; never overwrites
     non-null upstream values.
     """
     if not web_enrichment_enabled():
         logger.info("Web enrichment skipped (OR_WEB_ENRICHMENT not enabled)")
         return
 
-    enrichment_model = get_env_var("OR_ENRICHMENT_MODEL").strip()
-    if not enrichment_model or enrichment_model.startswith("<"):
-        raise ValueError(
-            "OR_ENRICHMENT_MODEL must be set to an OpenRouter model id when "
-            "OR_WEB_ENRICHMENT is enabled"
-        )
     api_key = get_env_var("OR_API_KEY")
 
     candidates = [m for m in models if _needs_enrichment(m)]
@@ -748,75 +928,107 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
         return
 
     logger.info(
-        "Web enrichment: %d candidate model(s) (chat_model=%s, workers=%d, "
-        "exa max_results=%d)",
+        "Web enrichment: %d candidate model(s) (batch_model=%s, endpoint=%s, "
+        "provider=%s)",
         len(candidates),
-        enrichment_model,
-        MAX_WORKERS,
-        EXA_MAX_RESULTS,
+        ENRICHMENT_MODEL,
+        BATCH_API_ENDPOINT,
+        ",".join(BATCH_PROVIDER_ONLY),
     )
     costs = _CostTracker()
     filled_open = 0
     filled_params = 0
     filled_cutoff = 0
 
-    def _process(model: CombinedModel) -> tuple[str, WebEnrichmentResult, bool]:
+    results_by_id: dict[str, WebEnrichmentResult] = {}
+    attempts_by_id: dict[str, list[dict[str, Any]]] = {}
+    to_fetch: list[CombinedModel] = []
+
+    for model in candidates:
         cached = _load_cached(model.id)
         if cached is not None and _cache_usable_for_model(model, cached):
             costs.record_cache_hit()
-            return model.id, _result_from_cache(cached), True
+            results_by_id[model.id] = _result_from_cache(cached)
+            continue
         if cached is not None:
             logger.info(
                 "Web enrichment [%s]: cache stale (schema); re-fetching",
                 model.id,
             )
-        try:
-            result = _fetch_for_model(
-                model,
-                api_key=api_key,
-                enrichment_model=enrichment_model,
-                costs=costs,
-            )
-        except RuntimeError as exc:
-            logger.warning("Web enrichment [%s]: failed: %s", model.id, exc)
-            stub = {
-                "model_id": model.id,
-                "is_open_weights": None,
-                "parameters_b": None,
-                "knowledge_cutoff": None,
-                "notes": f"error: {exc}",
-                "enrichment_model": enrichment_model,
-                "cached_at": datetime.now(timezone.utc).isoformat(),
-                "_cache_miss": True,
-            }
-            _write_cache(model.id, stub)
-            return model.id, WebEnrichmentResult(), False
-        return model.id, result, False
+        to_fetch.append(model)
 
-    by_id = {m.id: m for m in candidates}
-    total = len(candidates)
-    done = 0
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as pool:
-        futures = [pool.submit(_process, m) for m in candidates]
-        for future in as_completed(futures):
-            model_id, parsed, from_cache = future.result()
-            done += 1
-            cache_note = " [cached]" if from_cache else ""
-            logger.info(
-                "Web enrichment [%s]: finished (%d/%d)%s",
-                model_id,
-                done,
-                total,
-                cache_note,
+    if to_fetch:
+        first_pass = _run_enrichment_batch(
+            to_fetch,
+            api_key=api_key,
+            costs=costs,
+            pass_number=1,
+            prompt_template=USER_PROMPT_TEMPLATE,
+        )
+        for model in to_fetch:
+            result, meta = first_pass.get(
+                model.id, (WebEnrichmentResult(), {"error": "missing from batch"})
             )
-            model = by_id[model_id]
-            open_filled, params_filled, cutoff_filled = _merge_into_model(model, parsed)
-            if open_filled:
-                filled_open += 1
-            if params_filled:
-                filled_params += 1
-            if cutoff_filled:
-                filled_cutoff += 1
+            results_by_id[model.id] = result
+            attempts_by_id[model.id] = [{"pass": 1, **meta}]
+
+        retry_models = [
+            model
+            for model in to_fetch
+            if _gaps_remain(model, results_by_id[model.id])
+        ]
+        if retry_models:
+            logger.info(
+                "Web enrichment: %d model(s) still have gaps; submitting retry batch",
+                len(retry_models),
+            )
+            second_pass = _run_enrichment_batch(
+                retry_models,
+                api_key=api_key,
+                costs=costs,
+                pass_number=2,
+                prompt_template=RETRY_USER_PROMPT_TEMPLATE,
+            )
+            for model in retry_models:
+                retry_result, retry_meta = second_pass.get(
+                    model.id,
+                    (WebEnrichmentResult(), {"error": "missing from retry batch"}),
+                )
+                attempts_by_id.setdefault(model.id, []).append(
+                    {"pass": 2, **retry_meta}
+                )
+                results_by_id[model.id] = _merge_parsed_passes(
+                    results_by_id[model.id], retry_result
+                )
+
+        for model in to_fetch:
+            parsed = results_by_id[model.id]
+            cache_payload = {
+                "model_id": model.id,
+                "is_open_weights": parsed.is_open_weights,
+                "parameters_b": parsed.parameters_b,
+                "knowledge_cutoff": parsed.knowledge_cutoff,
+                "notes": parsed.notes,
+                "enrichment_model": ENRICHMENT_MODEL,
+                "attempts": attempts_by_id.get(model.id, []),
+                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "_cache_miss": (
+                    parsed.is_open_weights is None
+                    and parsed.parameters_b is None
+                    and parsed.knowledge_cutoff is None
+                ),
+            }
+            _write_cache(model.id, cache_payload)
+
+    for model in candidates:
+        parsed = results_by_id.get(model.id, WebEnrichmentResult())
+        open_filled, params_filled, cutoff_filled = _merge_into_model(model, parsed)
+        if open_filled:
+            filled_open += 1
+        if params_filled:
+            filled_params += 1
+        if cutoff_filled:
+            filled_cutoff += 1
 
     costs.finalize()
     logger.info(

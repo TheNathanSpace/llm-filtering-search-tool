@@ -11,7 +11,7 @@ export type AppMeta = {
     /**
      * Enrichment Cost Usd
      *
-     * Lifetime USD spent on opt-in OpenRouter/Exa web enrichment
+     * Lifetime USD spent on opt-in OpenRouter batch web enrichment
      */
     enrichment_cost_usd: number;
     /**
@@ -20,6 +20,18 @@ export type AppMeta = {
      * ISO-8601 UTC timestamp of the last successful model data refresh
      */
     last_refresh_at: string | null;
+    /**
+     * Database Ready
+     *
+     * True when the live model SQLite file exists
+     */
+    database_ready: boolean;
+    /**
+     * Refresh In Progress
+     *
+     * True while a background or CLI refresh is rebuilding the database
+     */
+    refresh_in_progress: boolean;
 };
 
 /**

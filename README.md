@@ -61,8 +61,9 @@ See [`docs/todo.md`](docs/todo.md).
 2. For each catalog model, fetch per-provider endpoints (pricing + throughput/latency).
 3. Enrich with open-weights flags from [models.dev](https://models.dev) and parameter counts from the
    Hugging Face Hub (when OpenRouter provides a `hugging_face_id`). Optionally gap-fill remaining
-   nulls for open-weights, size, and knowledge cutoff via OpenRouter chat + Exa web search
-   (`OR_WEB_ENRICHMENT=1`).
+   nulls for open-weights, size, and knowledge cutoff via OpenRouter Batch (GPT-6 Luna +
+   OpenAI native web search; `OR_WEB_ENRICHMENT=1`; refresh waits on the batch in the
+   background while the live DB keeps serving).
 4. Drop non-comparable OpenRouter listings (`~` providers, `:free` / `:batch`, `openrouter/*` meta, `*-router`, floating `*-latest` aliases), then map
    each remaining model into a `CombinedModel` (embedded AA indices become `benchmark_or_*`).
    Listed price and median throughput/latency are copied from the chosen provider endpoint.
@@ -94,8 +95,7 @@ Optional (lint hooks, OpenAPI client regen, agent worktrees): Python 3.12+ and N
 
 2. Set the variables documented in [`.env.template`](.env.template):
    - `OR_API_KEY` — OpenRouter API key for models, per-provider endpoints, and embedded benchmarks
-   - `OR_WEB_ENRICHMENT` — optional; set to `1` to gap-fill missing open-weights / size / knowledge cutoff via chat + Exa
-   - `OR_ENRICHMENT_MODEL` — required when web enrichment is on (OpenRouter chat model id)
+   - `OR_WEB_ENRICHMENT` — optional; set to `1` to gap-fill missing open-weights / size / knowledge cutoff via OpenRouter Batch (hardcoded GPT-6 Luna + native web search; refresh job waits for the batch while the live DB keeps serving)
    - `HF_TOKEN` — optional Hugging Face Hub token (higher rate limits for size enrichment)
    - `DATA_DIR` — path for SQLite DB, logs, caches, and related files (default `./data`, relative to the `.env` location)
    - `HOST_DATA_DIR` — optional host path Compose bind-mounts to `/app/data` (default `./data`); worktree setup points this at the primary checkout’s `data/`
@@ -192,14 +192,16 @@ installed so commits are checked automatically.
 ### Seed or refresh model data
 
 `DATA_DIR` is gitignored, so a fresh clone has no database until it is populated. On API startup
-(and about every hour while the API is up), the back-end runs a hard-capped refresh: if
-`DATA_DIR/database.db` is missing or the last successful refresh in `DATA_DIR/cache/last_refresh.json`
-is ≥24 hours old, it wipe-rebuilds SQLite via the normal OpenRouter → enrich → write pipeline
-(requires `.env` with `OR_API_KEY`). Within 24 hours, that automatic path is a no-op.
-OpenRouter models/endpoints and models.dev responses are reused from `DATA_DIR/cache/` when still
-fresh; HF is cached permanently per repo id (new ids still fetch on miss).
+(and about every hour while the API is up), the back-end starts a hard-capped refresh in the
+**background** (API serve is not blocked): if `DATA_DIR/database.db` is missing or the last
+successful refresh in `DATA_DIR/cache/last_refresh.json` is ≥24 hours old, it rebuilds via the
+normal OpenRouter → enrich → staging-SQLite → atomic swap pipeline (requires `.env` with
+`OR_API_KEY`). Within 24 hours, that automatic path is a no-op. While a refresh is in flight,
+callers keep reading the previous live DB (up to ~24h old is expected). OpenRouter
+models/endpoints and models.dev responses are reused from `DATA_DIR/cache/` when still fresh; HF
+is cached permanently per repo id (new ids still fetch on miss).
 
-There is no public HTTP refresh endpoint (avoids unauthenticated wipe/rebuilds on an exposed
+There is no public HTTP refresh endpoint (avoids unauthenticated rebuilds on an exposed
 instance). Ops can refresh from the host (same 24h gate by default, or `--force` to bypass):
 
 ```bash
@@ -216,17 +218,20 @@ python -m llm_rankings.refresh
 python -m llm_rankings.refresh --force --source providers
 ```
 
-`--force` invalidates selected disk caches then wipe-rebuilds SQLite. Sources: `models`,
-`providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force` has no `--source`).
-Selecting `models` also busts `providers` (endpoints cache is one blob). `last_refresh_at` is the
-last successful **DB rebuild** (not per-source freshness) and resets the auto 24h gate.
-`python -m llm_rankings.database` is an alias for the same CLI.
+`--force` invalidates selected disk caches then rebuilds SQLite the same staging-swap way.
+Sources: `models`, `providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force`
+has no `--source`). Selecting `models` also busts `providers` (endpoints cache is one blob).
+`last_refresh_at` is the last successful **DB rebuild** (not per-source freshness) and resets the
+auto 24h gate. `python -m llm_rankings.database` is an alias for the same CLI.
 
-A successful rebuild wipes `DATA_DIR/database.db` (if present) and rewrites it; a gated skip leaves
-the DB untouched and logs that data is already fresh.
+A successful rebuild writes `DATA_DIR/database.db.staging` then atomically replaces
+`DATA_DIR/database.db`; a gated skip leaves the live DB untouched and logs that data is already
+fresh.
 
 Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
-`GET /meta` (`enrichment_cost_usd`, `last_refresh_at`).
+`GET /meta` (`enrichment_cost_usd`, `last_refresh_at`, `database_ready`,
+`refresh_in_progress`). When the live DB is missing or still being built, the table empty
+state explains that population is in progress and the page polls until models appear.
 
 ### Regenerate the front-end API client
 

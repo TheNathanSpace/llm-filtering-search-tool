@@ -57,6 +57,7 @@ Related UX: always-visible range controls for shipped numeric filters (**done**)
 
 ## Done (recently consolidated away)
 
+- Shareable page URL: filter panel, token count, and table sort stay in the query string so a copied link restores that setup ([UI-12](requirements.md#ui-12))
 - `docker-compose.yaml` is the server deploy file (GHCR image, settings inline). Local builds are `docker-compose.local.yaml`. The app runs from the process environment when no `.env` is mounted ([PLT-02](requirements.md#plt-02), [PLT-03](requirements.md#plt-03), [PLT-06](requirements.md#plt-06))
 - Push to `main` creates a GitHub Release (commits since the previous tag) and publishes the production image to GHCR (`:<tag>` and `:latest`) ([PLT-09](requirements.md#plt-09))
 - Removed the provider multi-select. Price, throughput, and latency still use the chosen provider

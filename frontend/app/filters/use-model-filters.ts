@@ -29,32 +29,48 @@ function sameRange(
     );
 }
 
+function choiceRange(
+    choice: NumberRange | undefined,
+    bounds: NumberRange | undefined,
+): NumberRange | undefined {
+    // A span that still covers the whole dataset is not a user choice.
+    // Keeping it would freeze stale bounds into a shared URL.
+    return sameRange(choice, bounds) ? undefined : choice;
+}
+
 function toUserChoices(
     filters: ModelFiltersState,
     bounds: FilterBounds,
 ): UserFilterChoices {
-    // A span that still covers every calculated cost is not a user choice.
-    // Keeping it would freeze stale dollar bounds after the token count changes.
-    const usageCost = sameRange(filters.usageCost, bounds.usageCost)
-        ? undefined
-        : filters.usageCost;
     return {
         includeMissing: filters.includeMissing,
         openWeightsOnly: filters.openWeightsOnly,
         nameQuery: filters.nameQuery,
         creators: filters.creators,
-        intelligenceIndex: filters.intelligenceIndex,
-        codingIndex: filters.codingIndex,
-        agenticIndex: filters.agenticIndex,
-        pricingInput: filters.pricingInput,
-        pricingOutput: filters.pricingOutput,
-        throughput: filters.throughput,
-        latencyMs: filters.latencyMs,
-        creationDate: filters.creationDate,
-        knowledgeCutoff: filters.knowledgeCutoff,
-        contextLength: filters.contextLength,
-        parametersB: filters.parametersB,
-        usageCost,
+        intelligenceIndex: choiceRange(
+            filters.intelligenceIndex,
+            bounds.intelligenceIndex,
+        ),
+        codingIndex: choiceRange(filters.codingIndex, bounds.codingIndex),
+        agenticIndex: choiceRange(filters.agenticIndex, bounds.agenticIndex),
+        pricingInput: choiceRange(filters.pricingInput, bounds.pricingInput),
+        pricingOutput: choiceRange(
+            filters.pricingOutput,
+            bounds.pricingOutput,
+        ),
+        throughput: choiceRange(filters.throughput, bounds.throughput),
+        latencyMs: choiceRange(filters.latencyMs, bounds.latencyMs),
+        creationDate: choiceRange(filters.creationDate, bounds.creationDate),
+        knowledgeCutoff: choiceRange(
+            filters.knowledgeCutoff,
+            bounds.knowledgeCutoff,
+        ),
+        contextLength: choiceRange(
+            filters.contextLength,
+            bounds.contextLength,
+        ),
+        parametersB: choiceRange(filters.parametersB, bounds.parametersB),
+        usageCost: choiceRange(filters.usageCost, bounds.usageCost),
         inputModalities: filters.inputModalities,
         outputModalities: filters.outputModalities,
     };
@@ -63,13 +79,14 @@ function toUserChoices(
 export function useModelFilters(
     models: CombinedModel[],
     tokenMillions: number | undefined,
+    initialChoices?: UserFilterChoices,
 ) {
     const bounds = useMemo(
         () => getFilterBounds(models, tokenMillions),
         [models, tokenMillions],
     );
     const [userChoices, setUserChoices] = useState<UserFilterChoices>(
-        createInitialUserChoices,
+        initialChoices ?? createInitialUserChoices,
     );
 
     const filters = useMemo(
@@ -96,5 +113,5 @@ export function useModelFilters(
         [models, filters, tokenMillions],
     );
 
-    return { bounds, filters, setFilters, filteredModels };
+    return { bounds, filters, setFilters, filteredModels, userChoices };
 }

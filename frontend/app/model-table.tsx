@@ -1,4 +1,4 @@
-import { DataGrid } from "@mui/x-data-grid";
+import { DataGrid, GridSortModel } from "@mui/x-data-grid";
 import { CombinedModel } from "./client";
 import { MuiFontSans } from "@/app/mui-font";
 import { columnsForTokenMillions } from "@/app/columns";
@@ -6,7 +6,14 @@ import { parseTokenMillions } from "@/app/usage-cost";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ModelFilters from "@/app/filters/model-filters";
+import {
+    PageSearchQuery,
+    parseTableQuery,
+    sortModelForTokenCount,
+    TableSortItem,
+} from "@/app/filters/filter-query";
 import { useModelFilters } from "@/app/filters/use-model-filters";
+import { useSyncTableQuery } from "@/app/filters/use-sync-table-query";
 import { useMemo, useState } from "react";
 
 const POPULATING_MESSAGE =
@@ -15,27 +22,60 @@ const POPULATING_MESSAGE =
 function makeNoRowsOverlay(message: string) {
     return function NoRowsOverlay() {
         return (
-            <div className={"flex-center-everything"} style={{ padding: "1.5rem" }}>
-                <p style={{ textAlign: "center", maxWidth: "28rem" }}>{message}</p>
+            <div
+                className={"flex-center-everything"}
+                style={{ padding: "1.5rem" }}
+            >
+                <p style={{ textAlign: "center", maxWidth: "28rem" }}>
+                    {message}
+                </p>
             </div>
         );
     };
 }
 
+function toTableSort(model: GridSortModel): TableSortItem[] {
+    return model.flatMap((item) => {
+        if (item.sort === "asc" || item.sort === "desc") {
+            return [{ field: item.field, sort: item.sort }];
+        }
+        return [];
+    });
+}
+
 export default function ModelTable({
     models,
     populating = false,
+    initialQuery,
 }: {
     models: CombinedModel[];
     /** True while the first (or an in-flight) DB rebuild has nothing to show yet. */
     populating?: boolean;
+    /** Query string from the first request, used to restore a shared setup. */
+    initialQuery: PageSearchQuery;
 }) {
-    const [tokenMillionsText, setTokenMillionsText] = useState("");
-    const tokenMillions = parseTokenMillions(tokenMillionsText);
-    const { bounds, filters, setFilters, filteredModels } = useModelFilters(
-        models,
-        tokenMillions,
+    const [initialSetup] = useState(() => {
+        const parsed = parseTableQuery(initialQuery);
+        return {
+            ...parsed,
+            sortModel: sortModelForTokenCount(
+                parsed.sortModel,
+                parseTokenMillions(parsed.tokenMillionsText),
+            ),
+        };
+    });
+    const [tokenMillionsText, setTokenMillionsText] = useState(
+        initialSetup.tokenMillionsText,
     );
+    const [sortModel, setSortModel] = useState(initialSetup.sortModel);
+    const tokenMillions = parseTokenMillions(tokenMillionsText);
+    const { bounds, filters, setFilters, filteredModels, userChoices } =
+        useModelFilters(models, tokenMillions, initialSetup.choices);
+    useSyncTableQuery({
+        choices: userChoices,
+        tokenMillionsText,
+        sortModel,
+    });
     const columns = useMemo(
         () => columnsForTokenMillions(tokenMillions),
         [tokenMillions],
@@ -65,7 +105,15 @@ export default function ModelTable({
                         filters={filters}
                         setFilters={setFilters}
                         tokenMillions={tokenMillionsText}
-                        onTokenMillionsChange={setTokenMillionsText}
+                        onTokenMillionsChange={(value) => {
+                            setTokenMillionsText(value);
+                            setSortModel((previous) =>
+                                sortModelForTokenCount(
+                                    previous,
+                                    parseTokenMillions(value),
+                                ),
+                            );
+                        }}
                     />
                 </div>
                 <MuiFontSans style={{ height: "50%", width: "100%" }}>
@@ -75,15 +123,9 @@ export default function ModelTable({
                         getRowId={(row) => row.id}
                         autoHeight={false}
                         disableVirtualization
-                        initialState={{
-                            sorting: {
-                                sortModel: [
-                                    {
-                                        field: "benchmark_or_intelligence_index",
-                                        sort: "desc",
-                                    },
-                                ],
-                            },
+                        sortModel={sortModel}
+                        onSortModelChange={(model) => {
+                            setSortModel(toTableSort(model));
                         }}
                         slots={{
                             noRowsOverlay: noRowsOverlay,

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-16 — models table renders the full page
-**Latest change:** The models Data Grid still paginates. Virtualization is off so every row on the current page is in the DOM for browser find.
+**Last updated:** 2026-10-16 — shareable filter URL
+**Latest change:** The page URL mirrors the filter panel, token count, and table sort. Opening that link restores the same setup ([UI-12](requirements.md#ui-12)).
 
 ## Pickup
 
@@ -9,7 +9,7 @@
 | --- | --- |
 | Data fetch (OR + models.dev + HF + opt-in batch web) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)); tables `models` + `model_provider_endpoints`; staging-DB swap so refresh does not take the live file offline; background startup/hourly refresh; `GET /meta` for enrichment cost, last refresh, `database_ready`, `refresh_in_progress`; gated + ops `--force` CLI / `bin/refresh-data.sh`; no public HTTP refresh; docs gated by `ENABLE_API_DOCS` |
-| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13) + [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-11](requirements.md#ui-11); first-populate empty overlay + poll |
+| Next.js table + filters | [QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13) + [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-12](requirements.md#ui-12); first-populate empty overlay + poll; filter panel, token count, and table sort are mirrored in the page URL |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
 | Docker / env / logging / proxy | [PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06), [PLT-09](requirements.md#plt-09) — `docker-compose.yaml` deploys the GHCR image with inline settings; `docker-compose.local.yaml` builds locally (`prod`/`dev`); worktree preview via `HOST_DATA_DIR`; push to `main` releases and publishes the prod image |
 | External + project OpenAPI tooling | [PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08) |

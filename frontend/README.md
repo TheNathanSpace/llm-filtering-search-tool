@@ -32,6 +32,8 @@ Filter UI and logic live under `app/filters/`:
 | `apply-filters.ts`                                                              | Pure `filterModels()`                          |
 | `name-query.ts`                                                                 | Name/slug search matching (punct, comma OR, `-` exclude) |
 | `use-model-filters.ts`                                                          | State + filtered rows for the table            |
+| `filter-query.ts`                                                               | Read and write the shareable page query string |
+| `use-sync-table-query.ts`                                                       | Keep the address bar aligned with that setup   |
 
 The panel lays those controls out in two columns and balances them so each column is about the same height. A control stays in one column (it is not split across the break).
 
@@ -59,6 +61,24 @@ Click either number to type a value; Enter or leaving the field applies it, and 
 The value is kept inside the data bounds. If it crosses the other end, that end moves with it so the range stays ordered.
 Date range filters stay slider-only.
 
+### Shareable URL
+
+The address bar tracks the current setup: filter choices that differ from the defaults, the token-count text, and the table sort. Copy it and open it to restore that setup. Defaults are left off the query string (missing values included, open-weights off, full ranges, intelligence descending). `sort=none` means the table is unsorted. Changing the setup replaces the current history entry, so the back button leaves the page instead of stepping through each slider move.
+
+| Parameter | Value |
+| --- | --- |
+| `missing=0` | Do not treat missing values as included |
+| `openWeights=1` | Open weights only |
+| `name` | Name and slug search text |
+| `creator` | One parameter per selected creator |
+| `size`, `intelligence`, `coding`, `agentic`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency` | `min,max` |
+| `created`, `cutoff` | `startTimestamp,endTimestamp` (milliseconds) |
+| `tokens` | Token-count text |
+| `input`, `output` | One parameter per modality |
+| `sort` | `alias:asc` or `alias:desc`, comma-separated for several columns. Aliases: `name`, `openWeights`, `size`, `intelligence`, `coding`, `agentic`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency`, `created`, `cutoff`, `creator` |
+
+Example: `/?name=gpt+5&openWeights=1&intelligence=40,80&creator=OpenAI&sort=throughput:desc`
+
 ### Adding a new filter
 
 Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`, or `CheckboxRowFilter`) when
@@ -71,7 +91,8 @@ possible. Only add a new control component if the interaction pattern is new.
    `getFilterBounds`.
 3. **`apply-filters.ts`** — Teach `filterModels` how to apply the new field. Respect `includeMissing` for nullable model
    properties.
-4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`.
+4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`. Pass `defaultStart` / `defaultEnd` from the resolved filter when the control keeps its own state, so a shared URL shows the restored range.
+5. **`filter-query.ts`** — Parse and serialize the field. Omit it when it still matches `createInitialUserChoices`.
 
 `model-table.tsx` only needs a change when the filter depends on something outside the model list.
 Usage cost does: pass the parsed token count into `useModelFilters`.

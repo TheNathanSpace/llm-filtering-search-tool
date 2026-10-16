@@ -1,6 +1,10 @@
 import CheckboxRowFilter from "@/app/filters/checkbox-row-filter";
 import DateRangeFilter from "@/app/filters/date-range-filter";
-import { FilterBounds, ModelFiltersState } from "@/app/filters/filter-types";
+import {
+    FilterBounds,
+    ModelFiltersState,
+    NumberRange,
+} from "@/app/filters/filter-types";
 import {
     INPUT_MODALITY_OPTIONS,
     OUTPUT_MODALITY_OPTIONS,
@@ -14,6 +18,29 @@ import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
 import { FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
 import { Dispatch, SetStateAction } from "react";
+
+/** Keep a shared range inside the slider's min/max so a restored URL cannot break it. */
+function rangeDefaults(
+    range: NumberRange | undefined,
+    bounds: NumberRange,
+): { defaultStart: number; defaultEnd: number } {
+    const clamp = (value: number) =>
+        Math.min(bounds[1], Math.max(bounds[0], value));
+    const start = clamp(range?.[0] ?? bounds[0]);
+    const end = clamp(range?.[1] ?? bounds[1]);
+    return {
+        defaultStart: Math.min(start, end),
+        defaultEnd: Math.max(start, end),
+    };
+}
+
+function dateDefaults(range: NumberRange | undefined, bounds: NumberRange) {
+    const defaults = rangeDefaults(range, bounds);
+    return {
+        defaultStart: dayjs(defaults.defaultStart),
+        defaultEnd: dayjs(defaults.defaultEnd),
+    };
+}
 
 interface ModelFiltersProperties {
     bounds: FilterBounds;
@@ -110,6 +137,7 @@ export default function ModelFilters(
                     name="Size (B params)"
                     minValue={bounds.parametersB[0]}
                     maxValue={bounds.parametersB[1]}
+                    {...rangeDefaults(filters.parametersB, bounds.parametersB)}
                     step={0.1}
                     onChange={(parametersB) => {
                         setFilters((previous) => ({
@@ -124,6 +152,10 @@ export default function ModelFilters(
                     name="Intelligence"
                     minValue={bounds.intelligenceIndex[0]}
                     maxValue={bounds.intelligenceIndex[1]}
+                    {...rangeDefaults(
+                        filters.intelligenceIndex,
+                        bounds.intelligenceIndex,
+                    )}
                     step={0.1}
                     onChange={(intelligenceIndex) => {
                         setFilters((previous) => ({
@@ -138,6 +170,7 @@ export default function ModelFilters(
                     name="Coding"
                     minValue={bounds.codingIndex[0]}
                     maxValue={bounds.codingIndex[1]}
+                    {...rangeDefaults(filters.codingIndex, bounds.codingIndex)}
                     step={0.1}
                     onChange={(codingIndex) => {
                         setFilters((previous) => ({
@@ -152,6 +185,10 @@ export default function ModelFilters(
                     name="Agentic"
                     minValue={bounds.agenticIndex[0]}
                     maxValue={bounds.agenticIndex[1]}
+                    {...rangeDefaults(
+                        filters.agenticIndex,
+                        bounds.agenticIndex,
+                    )}
                     step={0.1}
                     onChange={(agenticIndex) => {
                         setFilters((previous) => ({
@@ -166,6 +203,10 @@ export default function ModelFilters(
                     name="Context length"
                     minValue={bounds.contextLength[0]}
                     maxValue={bounds.contextLength[1]}
+                    {...rangeDefaults(
+                        filters.contextLength,
+                        bounds.contextLength,
+                    )}
                     onChange={(contextLength) => {
                         setFilters((previous) => ({
                             ...previous,
@@ -194,6 +235,7 @@ export default function ModelFilters(
                         name="Cost"
                         minValue={usageCostBounds[0]}
                         maxValue={usageCostBounds[1]}
+                        {...rangeDefaults(filters.usageCost, usageCostBounds)}
                         step={usageCostStep(
                             usageCostBounds[0],
                             usageCostBounds[1],
@@ -213,6 +255,10 @@ export default function ModelFilters(
                     name="Pricing input ($/1M)"
                     minValue={bounds.pricingInput[0]}
                     maxValue={bounds.pricingInput[1]}
+                    {...rangeDefaults(
+                        filters.pricingInput,
+                        bounds.pricingInput,
+                    )}
                     step={0.01}
                     formatValue={formatPrice}
                     onChange={(pricingInput) => {
@@ -228,6 +274,10 @@ export default function ModelFilters(
                     name="Pricing output ($/1M)"
                     minValue={bounds.pricingOutput[0]}
                     maxValue={bounds.pricingOutput[1]}
+                    {...rangeDefaults(
+                        filters.pricingOutput,
+                        bounds.pricingOutput,
+                    )}
                     step={0.01}
                     formatValue={formatPrice}
                     onChange={(pricingOutput) => {
@@ -243,6 +293,7 @@ export default function ModelFilters(
                     name="Throughput (tok/s)"
                     minValue={bounds.throughput[0]}
                     maxValue={bounds.throughput[1]}
+                    {...rangeDefaults(filters.throughput, bounds.throughput)}
                     step={1}
                     formatValue={formatThroughput}
                     onChange={(throughput) => {
@@ -258,6 +309,7 @@ export default function ModelFilters(
                     name="Latency (ms)"
                     minValue={bounds.latencyMs[0]}
                     maxValue={bounds.latencyMs[1]}
+                    {...rangeDefaults(filters.latencyMs, bounds.latencyMs)}
                     step={1}
                     formatValue={formatLatencyMs}
                     onChange={(latencyMs) => {
@@ -273,6 +325,7 @@ export default function ModelFilters(
                     name="Created"
                     minDate={dayjs(bounds.creationDate[0])}
                     maxDate={dayjs(bounds.creationDate[1])}
+                    {...dateDefaults(filters.creationDate, bounds.creationDate)}
                     onChange={([start, end]) => {
                         setFilters((previous) => ({
                             ...previous,
@@ -286,6 +339,10 @@ export default function ModelFilters(
                     name="Knowledge cutoff"
                     minDate={dayjs(bounds.knowledgeCutoff[0])}
                     maxDate={dayjs(bounds.knowledgeCutoff[1])}
+                    {...dateDefaults(
+                        filters.knowledgeCutoff,
+                        bounds.knowledgeCutoff,
+                    )}
                     onChange={([start, end]) => {
                         setFilters((previous) => ({
                             ...previous,

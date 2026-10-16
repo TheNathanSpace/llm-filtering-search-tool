@@ -61,6 +61,8 @@ unless the next host is much faster on both. The panel can filter throughput and
 latency, and column-backed filters follow the table column order. Entering a token count in
 millions adds a cost column left of input cost, using that same 90/10 blend, and a cost
 range under the token field filters the table to that calculated cost.
+The address bar mirrors that setup (filters, token count, and table sort), so a copied
+link opens the same view.
 See [`docs/todo.md`](docs/todo.md).
 
 ## Technical Overview

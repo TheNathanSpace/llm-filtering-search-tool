@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-14 — README quick start and vibe-coded disclosure
-**Latest change:** README opens with a short deploy quick start that links to `docker-compose.yaml`. The generative AI disclosure now states that 80% of the app was vibe coded.
+**Last updated:** 2026-10-16 — models table renders the full page
+**Latest change:** The models Data Grid still paginates. Virtualization is off so every row on the current page is in the DOM for browser find.
 
 ## Pickup
 

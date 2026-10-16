@@ -74,6 +74,7 @@ export default function ModelTable({
                         columns={columns}
                         getRowId={(row) => row.id}
                         autoHeight={false}
+                        disableVirtualization
                         initialState={{
                             sorting: {
                                 sortModel: [

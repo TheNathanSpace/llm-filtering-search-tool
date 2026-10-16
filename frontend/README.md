@@ -35,7 +35,9 @@ Filter UI and logic live under `app/filters/`:
 
 The panel lays those controls out in two columns and balances them so each column is about the same height. A control stays in one column (it is not split across the break).
 
-`model-table.tsx` only composes the filter panel and Data Grid. Column definitions live in
+`model-table.tsx` only composes the filter panel and Data Grid. Pagination stays on.
+Virtualization is off, so every row and column on the current page is in the page
+and browser find can reach them. Column definitions live in
 `app/columns.tsx`. Column-backed filters follow that column order. The missing-values switch stays
 first. Modality filters have no column, so they come after the column-aligned controls.
 A **Millions of tokens** box sits just before the price ranges. A positive count

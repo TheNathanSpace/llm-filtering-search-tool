@@ -58,7 +58,7 @@ Core five from the product motivation, plus filters already shipped beyond that 
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid); when the live DB is missing / still populating, show an empty-state note instead of a bare “no rows” | must | done |
+| <a id="ui-01"></a>UI-01 | Browse models in a filterable, sortable table (MUI Data Grid); the current page is fully rendered so in-browser find works; when the live DB is missing / still populating, show an empty-state note instead of a bare “no rows” | must | done |
 | <a id="ui-02"></a>UI-02 | Generate plots from user-selected metrics/models | stretch | not started |
 | <a id="ui-03"></a>UI-03 | Dedicated **filter panel** with shared range/multi/checkbox/text controls (not only grid column menus) | must | done — covers QRY-01–QRY-13 plus throughput, latency, and (once a token count is set) usage-cost ranges; numeric endpoints can be typed; date ranges stay sliders; controls flow into two columns of similar height; column-backed filters follow the table column order |
 | <a id="ui-04"></a>UI-04 | Show **identity/metadata** columns: name, open weights, size, context length, created, knowledge cutoff, creator | must | done — description and modality columns are omitted; modalities stay as panel filters |

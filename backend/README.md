@@ -2,106 +2,82 @@
 
 ## Logging
 
-Back-end modules use named loggers via `logging.getLogger(__name__)`. Call `setup_logging()` from
-`llm_rankings.util` once at process start (API import or a script `__main__`).
+Named loggers via `logging.getLogger(__name__)`. Call `setup_logging()` from `llm_rankings.util` once at process start (API import or a script `__main__`).
 
-Configuration (process environment, or a `.env` file via discovery / `--env-file` / `-e` /
-`LLM_RANKINGS_ENV_FILE`; values already set in the environment are kept):
+Process environment, or a `.env` file via discovery / `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`. Values already set in the environment are kept.
 
-- `LOG_LEVEL` — root logger level (`DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL`)
-- `LOG_FILE_COUNT` — after creating the new file, delete oldest `DATA_DIR/logs/*.log` files until
-  at most this many remain (`latest.log` is a symlink and is not counted/deleted)
+| Variable | Value |
+| --- | --- |
+| `LOG_LEVEL` | Root logger: `DEBUG`, `INFO`, `WARNING`, `ERROR`, or `CRITICAL` |
+| `LOG_FILE_COUNT` | After the new file is created, delete oldest `DATA_DIR/logs/*.log` until at most this many remain. `latest.log` is a symlink and is not counted or deleted. |
 
-Output goes to both stdout and `DATA_DIR/logs/{YYYY-MM-DD}-{HHMMSS}.log`. `DATA_DIR/logs/latest.log`
-is a relative symlink to the current run's file. The Next.js server also appends its `console.*` /
-request-error logs to `latest.log` (same `LOG_LEVEL` filter). Log lines include the logger name
-(module path, or `frontend` for Next.js).
+| Output | Where |
+| --- | --- |
+| stdout and file | `DATA_DIR/logs/{YYYY-MM-DD}-{HHMMSS}.log` |
+| Current run | `DATA_DIR/logs/latest.log` (relative symlink) |
 
-## API Details
+The Next.js server appends `console.*` and request-error logs to `latest.log` (same `LOG_LEVEL`). Each line includes the logger name (module path, or `frontend` for Next.js).
 
-Vendored upstream OpenAPI (refresh with `../bin/update-external-api-docs.sh`; see
-[`../api-docs/README.md`](../api-docs/README.md)):
+## API
 
-- OpenRouter: [`../api-docs/openapi-openrouter.json`](../api-docs/openapi-openrouter.json)
-  (from https://openrouter.ai/openapi.json)
+Vendored upstream OpenAPI: [`../api-docs/README.md`](../api-docs/README.md). Refresh with `../bin/update-external-api-docs.sh`.
 
-- OpenRouter:
-  - API reference: <https://openrouter.ai/docs/api/api-reference/models/get-models>
-  - Key endpoints: `GET /models`, `GET /models/{author}/{slug}/endpoints`
-  - Authentication: `Authorization: Bearer <api-key>` header
-  - Response shapes: `llm_rankings/or_models.py` (Models list) and
-    `llm_rankings/or_endpoints.py` (per-provider endpoints), aligned with
-    `api-docs/openapi-openrouter.json`. Architecture `input_modalities` /
-    `output_modalities` use the `InputModality` / `OutputModality` enums.
-    Embedded `benchmarks.artificial_analysis` indices become `benchmark_or_*` on
-    `CombinedModel`. Per-provider pricing and throughput/latency go to
-    `model_provider_endpoints` ([SRC-10](../docs/requirements.md#src-10)).
-  - This project's FastAPI OpenAPI export (for the front-end client) is written to
-    `DATA_DIR/openapi.json` by `bin/generate-openapi-docs.sh` (default `./data/openapi.json`).
+| Item | Detail |
+| --- | --- |
+| Spec | [`../api-docs/openapi-openrouter.json`](../api-docs/openapi-openrouter.json) from https://openrouter.ai/openapi.json |
+| Reference | <https://openrouter.ai/docs/api/api-reference/models/get-models> |
+| Endpoints | `GET /models`, `GET /models/{author}/{slug}/endpoints` |
+| Auth | `Authorization: Bearer <api-key>` |
+| List shapes | `llm_rankings/or_models.py` |
+| Endpoint shapes | `llm_rankings/or_endpoints.py` |
+| Modalities | `input_modalities` / `output_modalities` use `InputModality` / `OutputModality` |
+| Benchmarks | Embedded `benchmarks.artificial_analysis` → `benchmark_or_*` on `CombinedModel` |
+| Provider rows | `model_provider_endpoints` ([SRC-10](../docs/requirements.md#src-10)) |
+| This project's OpenAPI | `DATA_DIR/openapi.json` from `bin/generate-openapi-docs.sh` (default `./data/openapi.json`) |
 
-## Building the model table (OpenRouter + enrichment)
+Shapes match `api-docs/openapi-openrouter.json`.
 
-1. Load OpenRouter `GET /models` from a ≤24h cache under `DATA_DIR/cache/openrouter/models.json`,
-   or fetch and write that cache; always mirror under `DATA_DIR/intermediate/raw/raw_or_models.json`
-   (debug only; not a rebuild source).
-2. Drop non-comparable OpenRouter listings: provider ids starting with ``~``; ids ending in
-   ``:free``, ``:batch``, ``-router``, or ``-latest``; and provider ``openrouter`` (Auto/Fusion/etc.).
-3. For each remaining model, load `GET /models/{author}/{slug}/endpoints` from a ≤24h cache under
-   `DATA_DIR/cache/openrouter/endpoints.json`, or fetch with a bounded thread pool (default 8
-   workers) and 429/5xx retries with backoff. Mirror raw payloads to
-   `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
-4. Fetch [models.dev](https://models.dev) `api.json` (or reuse a ≤24h cache under
-   `DATA_DIR/cache/models_dev/`) and map the `openrouter` provider’s `open_weights` flags by
-   OpenRouter model id. Mirror the payload to `DATA_DIR/intermediate/raw/raw_models_dev.json`.
-5. For each distinct non-empty OpenRouter `hugging_face_id`, resolve parameter count from the
-   Hugging Face Hub model API (`safetensors.total` → billions as `parameters_b`). Responses are
-   cached under `DATA_DIR/cache/hf/` (permanent per repo id; new ids still fetch on cache miss);
-   network calls use a project User-Agent, ~1s pacing, and 429 backoff. Optional `HF_TOKEN` raises
-   Hub rate limits.
-6. Map each remaining model to a `CombinedModel` (`llm_rankings/combined_models.py`): identity,
-   modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`,
-   plus `is_open_weights` / `parameters_b` when enrichment succeeds. Nested Design Arena rows
-   are not copied (list of objects, not a single score).
-7. Optional (`OR_WEB_ENRICHMENT=1`): gap-fill remaining null `is_open_weights` /
-   `parameters_b` / `knowledge_cutoff` via OpenRouter Batch
-   (`POST /batches`, Responses wire, hardcoded `openai/gpt-6-luna:batch`, OpenAI
-   native `web_search`). Refresh blocks until the batch completes. Never overwrites
-   OpenRouter / models.dev / HF values. Durable per-model cache (schema v2) and cost
-   ledger/summary under `DATA_DIR/cache/web_enrichment/` (`llm_rankings/web_enrichment.py`).
-8. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`):
-   `$/1M` input/output price, optional discount, throughput/latency percentiles (p50–p99),
-   status/uptime/quantization/context. Primary key is ``{model_id}|{tag}``.
-9. Choose one endpoint per model (`llm_rankings/provider_choice.py`): cheapest listed blend
-   ``0.90 * input + 0.10 * output``. If the next endpoint is much faster — latency p50 more
-   than 2× and throughput p50 less than half — use that one instead. Copy its list prices,
-   provider name, throughput p50, and latency p50 onto the model.
-10. Store both tables in SQLite (`models`, `model_provider_endpoints`).
+## Pipeline
 
-`DATA_DIR/cache/` survives `erase_data_dir()` so wipe/refresh does not re-hammer upstreams
-or re-bill web enrichment for known model ids.
+1. Load OpenRouter `GET /models` from a ≤24h cache at `DATA_DIR/cache/openrouter/models.json`, or fetch and write that cache. Always mirror `DATA_DIR/intermediate/raw/raw_or_models.json` (debug only; not a rebuild source).
+2. Drop listings whose provider id starts with ``~``; whose id ends in ``:free``, ``:batch``, or ``-latest``; whose provider is ``openrouter`` (Auto, Fusion, and the other `openrouter` listings); or whose slug is ``router`` or ends with ``-router``.
+3. For each remaining model, load `GET /models/{author}/{slug}/endpoints` from a ≤24h cache at `DATA_DIR/cache/openrouter/endpoints.json`, or fetch with a thread pool (default 8) and 429/5xx retries with backoff. Mirror `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
+4. Fetch [models.dev](https://models.dev) `api.json`, or reuse a ≤24h cache under `DATA_DIR/cache/models_dev/`. Map that file’s `openrouter` provider `open_weights` flags by OpenRouter model id. Mirror `DATA_DIR/intermediate/raw/raw_models_dev.json`.
+5. For each distinct non-empty OpenRouter `hugging_face_id`, read `safetensors.total` and store billions as `parameters_b`. Cache under `DATA_DIR/cache/hf/` (permanent per repo id; a new id fetches on miss). Use a project User-Agent, ~1s pacing, and 429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
+6. Map each remaining model to `CombinedModel` (`llm_rankings/combined_models.py`): identity, modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`, and `is_open_weights` / `parameters_b` when enrichment succeeds. Do not copy nested Design Arena rows.
+7. Optional (`OR_WEB_ENRICHMENT=1`): gap-fill null `is_open_weights` and `knowledge_cutoff`, and null `parameters_b` only when the model is open weights, via OpenRouter Batch (`POST /batches`, Responses endpoint `/v1/responses`, hardcoded `openai/gpt-6-luna:batch`, OpenAI-only `web_search`). The refresh job waits until the batch completes. Never overwrite a non-null OpenRouter, models.dev, or Hugging Face value. Per-model cache (schema v2) and cost ledger/summary: `DATA_DIR/cache/web_enrichment/` (`llm_rankings/web_enrichment.py`).
+8. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`): $/1M input and output price, optional discount, throughput and latency percentiles for the last 30 minutes (p50, p75, p90, p99), status, uptime for the last 30 minutes, quantization, and context. Primary key ``{model_id}|{tag}``.
+9. Choose one endpoint per model (`llm_rankings/provider_choice.py`): cheapest listed blend ``0.90 * input + 0.10 * output``. If the next endpoint’s latency p50 is more than 2× lower and its throughput p50 is more than 2× higher, use that endpoint. Copy its list prices, provider name, throughput p50, and latency p50 onto the model.
+10. Store `models` and `model_provider_endpoints` in SQLite.
 
-### Refresh cadence (hard 24h cap + ops force)
+`DATA_DIR/cache/` survives `erase_data_dir()`, so a wipe does not refetch upstreams or re-bill web enrichment for known model ids.
 
-Rebuild goes through `llm_rankings.refresh.refresh_data` (API uses `refresh_if_stale`):
+## Refresh
 
-- **Automatic / default CLI:** skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json`
-  is younger than 24h. Otherwise run the pipeline (OpenRouter models/endpoints and models.dev may
-  be served from disk cache), write a staging SQLite file, atomically replace `database.db`, then
-  write `last_refresh_at`. The previous live DB stays readable until that swap.
-- **Ops `--force`:** bypass the gate; invalidate selected caches (`models`, `providers`,
-  `models-dev`, `hf`, `enrichment`, or `all`), then rebuild the same staging-swap way. Selecting
-  `models` also invalidates `providers`. Concurrent API + CLI callers share
-  `DATA_DIR/cache/refresh.lock`.
-- API lifespan starts a **background** startup load (optional `EXFILTRATE_BASE_URL` import, then
-  the gated refresh) and a refresh check about every hour. It does not block serving (callers may
-  see the previous snapshot while a rebuild is in flight).
-- CLI: `python -m llm_rankings.refresh` (or `./bin/refresh-data.sh` via docker exec). No public
-  HTTP refresh endpoint. `last_refresh_at` means last successful DB rebuild, not per-source fetch.
-- `GET /exfiltrate` returns both SQLite tables and the durable cache files (not logs, `.env`,
-  `refresh.lock`, or `refresh_status.json`) so another `DATA_DIR` can be rebuilt without those
-  upstream calls ([PLT-10](../docs/requirements.md#plt-10)).
-- Optional `EXFILTRATE_BASE_URL` (http(s) origin, no path or credentials): API startup downloads
-  `{origin}/api/exfiltrate` and replaces the live tables and `DATA_DIR/cache` (lock and status
-  files stay). `last_refresh_at` is stamped to now. `/meta` echoes the origin as
-  `exfiltrate_base_url` so the page can warn until the variable is cleared and the process
-  restarts. A failed download falls through to the normal startup refresh.
+Commands: [root README](../README.md#refresh-model-data). Rebuild entry points: `llm_rankings.refresh.refresh_data` (API uses `refresh_if_stale`). Requires `OR_API_KEY` in the container environment or `.env`.
+
+| Path | Behavior |
+| --- | --- |
+| Automatic / default CLI | Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h. Otherwise run the pipeline (OpenRouter models, endpoints, and models.dev may come from disk cache), write a staging SQLite file, atomically replace `database.db`, then write `last_refresh_at`. The previous live DB stays readable until that swap. A skip leaves the live DB untouched and logs that data is already fresh. |
+| `--force` | Bypass the 24h gate, invalidate the selected caches, then the same staging swap. |
+| Exfiltrate import | On API start, if `EXFILTRATE_BASE_URL` is set. |
+
+`--force` sources: `models`, `providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force` has no `--source`). `models` also invalidates `providers`. API and CLI callers share `DATA_DIR/cache/refresh.lock`.
+
+- API lifespan starts a background startup load (exfiltrate import, then the gated refresh) and a refresh check about every hour. Serving is not blocked. Callers keep reading the previous snapshot while a rebuild is in flight.
+- CLI: `python -m llm_rankings.refresh`, `python -m llm_rankings.database` (same CLI), or `./bin/refresh-data.sh` (via `docker exec`). No public HTTP refresh endpoint.
+- `last_refresh_at` is the last successful DB rebuild, not a per-source fetch time. It resets the 24h gate.
+- A successful rebuild writes `DATA_DIR/database.db.staging`, then replaces `DATA_DIR/database.db`.
+- `GET /meta` and the populating empty state: [PLT-01](../docs/requirements.md#plt-01), [UI-01](../docs/requirements.md#ui-01).
+
+`GET /exfiltrate` (also `/api/exfiltrate`) ([PLT-10](../docs/requirements.md#plt-10)):
+
+- Returns metadata, every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file under `DATA_DIR/cache` except `refresh.lock` and `refresh_status.json`
+- Omits logs and `.env`
+
+`EXFILTRATE_BASE_URL` is an `http` or `https` origin with no path and no credentials.
+
+- Startup downloads `{origin}/api/exfiltrate` and replaces the live tables and `DATA_DIR/cache`. `refresh.lock` and `refresh_status.json` stay. Rows absent from the snapshot are dropped.
+- `last_refresh_at` is stamped to now, so that start does not also rebuild from OpenRouter.
+- `/meta` returns the origin as `exfiltrate_base_url`. A warning at the top of the page includes that origin and stays until the variable is removed and the process restarts. The next start downloads again while the variable is set.
+- A failed download is logged, and startup uses the normal refresh. The 24h refresh still runs later while the process stays up.

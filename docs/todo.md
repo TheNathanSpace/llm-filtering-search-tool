@@ -1,16 +1,14 @@
 # Backlog
 
-Single ordered todo list for this project. Do not keep parallel lists in root `todo.md`,
-README “next ideas”, or ad-hoc notes — update **this file** instead.
+> [!IMPORTANT]
+> Single ordered list. Do not keep parallel lists in root `todo.md`, the README, or ad-hoc notes. Update this file.
 
-Product goals and requirement IDs: [`requirements.md`](requirements.md).  
-Current implementation snapshot: [`status.md`](status.md).
-
----
+Product goals: [`requirements.md`](requirements.md).
+What ships: [`status.md`](status.md).
 
 ## Open decisions
 
-Resolve these before large data-model refactors. Record the choice here when made.
+Record a choice in this table when it is made.
 
 | ID | Decision | Options / notes |
 | --- | --- | --- |
@@ -18,68 +16,19 @@ Resolve these before large data-model refactors. Record the choice here when mad
 | D-02 | Benchmark set for “intelligence” UX | **Decided:** use OpenRouter-embedded AA indices: `benchmark_or_intelligence_index`, `benchmark_or_coding_index`, `benchmark_or_agentic_index` (general / coding / agentic). No dedicated “reasoning” index on OR yet — treat intelligence as the general proxy unless a later source appears. |
 | D-03 | OpenRouter `GET /benchmarks` | **Decided: do not fetch.** Unused raw dump removed. Intelligence scores come from embedded `OpenRouterModel.benchmarks.artificial_analysis` only. |
 
----
+## Active backlog
 
-## Active backlog (priority order)
-
-### 1. Core filter/sort dimensions (README motivation)
-
-Ship dedicated filters (and grid columns where missing) for the five dimensions users care about:
-
-| Item | Requirement | Current gap |
-| --- | --- | --- |
-| Intelligence filter + column + default sort | [QRY-01](requirements.md#qry-01) | **Done** (columns, default sort, panel range filters for intelligence / coding / agentic). |
-| Price filter | [QRY-02](requirements.md#qry-02) | **Done.** Model prices are the chosen provider’s listed $/1M (90% input / 10% output). |
-| Throughput source + filter | [QRY-03](requirements.md#qry-03) | **Done.** Panel range on the chosen provider’s p50 tokens/s. Latency range ships with it. |
-| Context window filter | [QRY-04](requirements.md#qry-04) | **Done** (range filter + column). |
-| Release / creation date filter | [QRY-05](requirements.md#qry-05) | **Done** (creation-date range filter + column). |
-| Open weights filter + column | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) | **Done** (models.dev enrichment + switch + column; opt-in batch web gap-fill [SRC-12](requirements.md#src-12)). |
-| Parameter size filter + column | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) | **Done** (HF Hub via `hugging_face_id`; range filter + `7B`-style column; opt-in batch web gap-fill when HF missing). |
-| Name / family search | [QRY-13](requirements.md#qry-13) | **Done** (panel search: names + slugs, punctuation ignored, comma OR, `-` exclude). |
-
-Related UX: always-visible range controls for shipped numeric filters (**done**), including price, throughput, and latency for the chosen provider.
-
-### 2. Plots
+### 1. Plots
 
 | Item | Requirement | Notes |
 | --- | --- | --- |
-| User-driven plots | [UI-02](requirements.md#ui-02) | README goal #3; **not started**. |
+| User-driven plots | [UI-02](requirements.md#ui-02) | Not started |
 
-### 3. Docs / process hygiene
+### 2. Docs / process hygiene
 
 | Item | Notes |
 | --- | --- |
-| Root `todo.md` redirect | **Done** — pointer to this file. |
-| Keep this backlog authoritative | Ongoing — delete or redirect stray lists when found (none found this pass). |
-| Refresh `api-docs/` when implementing against upstream APIs | Ongoing — `./bin/update-external-api-docs.sh` (OpenRouter only). |
+| Keep this backlog authoritative | Delete or redirect stray lists when found |
+| Refresh `api-docs/` when implementing against upstream APIs | `./bin/update-external-api-docs.sh` (OpenRouter only) |
 
----
-
-## Done (recently consolidated away)
-
-- `EXFILTRATE_BASE_URL` copies another instance on startup; page warns until cleared ([PLT-10](requirements.md#plt-10))
-- `GET /exfiltrate` returns models, provider endpoints, and caches for a restore ([PLT-10](requirements.md#plt-10))
-- Shareable page URL: filter panel, token count, and table sort stay in the query string so a copied link restores that setup ([UI-12](requirements.md#ui-12))
-- `docker-compose.yaml` is the server deploy file (GHCR image, settings inline). Local builds are `docker-compose.local.yaml`. The app runs from the process environment when no `.env` is mounted ([PLT-02](requirements.md#plt-02), [PLT-03](requirements.md#plt-03), [PLT-06](requirements.md#plt-06))
-- Push to `main` creates a GitHub Release (commits since the previous tag) and publishes the production image to GHCR (`:<tag>` and `:latest`) ([PLT-09](requirements.md#plt-09))
-- Removed the provider multi-select. Price, throughput, and latency still use the chosen provider
-- Usage cost column and range (UI-11): filter-panel token count in millions; column left of input cost uses the 90/10 listed blend; a cost range under that field filters rows to the same calculated cost
-- OpenRouter batch web gap-fill (SRC-12): GPT-6 Luna + native web_search; open-weights, size, and knowledge cutoff; cache + cost ledger
-- OpenRouter per-provider endpoints ingest (SRC-10): pricing + throughput/latency table
-- Agent private-worktree lifecycle: `.cursor/worktrees.json` setup (incl. `HOST_DATA_DIR` → primary `data/`); feature-branch rule isolates edits, Compose preview on ask, merges to primary `main` only with go-ahead, then stops preview + deletes worktree + branch; README pointer
-- Docs accuracy pass: drop finished “always-visible ranges” / intelligence-filter backlog wording; collapse finished benchmarks section
-- Benchmarks data path (D-01–D-03): map `benchmark_or_*` to UI; OpenRouter-only AA removal; drop unused `GET /benchmarks` dump. Stretch later only if Design Arena / OR-native evals are wanted
-- Drop `typesafe/jev-router` / floating `*-latest` aliases (e.g. `openai/gpt-chat-latest`) at combine time
-- Drop OpenRouter `openrouter/*` meta routers/tools at combine time
-- Drop OpenRouter `:batch` variants at combine time (alongside `~` / `:free`)
-- Drop OpenRouter `:free` variants at combine time (alongside `~` provider listings)
-- Drop OpenRouter `~` provider listings at combine time; remove unused OR/util helpers
-- Price output/input range filters (QRY-02)
-- Name / family panel text search (QRY-13)
-- Open weights + size: models.dev + Hugging Face enrichment, columns, filter panel (QRY-11/12, SRC-09, UI-09)
-- OpenRouter-only data path: dropped Artificial Analysis fetch/match, `AA_API_KEY`, and AA UI/fields; intelligence from embedded OR AA indices
-- External OpenAPI vendoring + refresh script (`api-docs/`, `bin/update-external-api-docs.sh`)
-- Docker Compose is the app run path (`prod` default + `dev` hot-reload profile); removed host `start-*-live.sh` scripts
-- Docker compose aligned with app ports/healthcheck
-- Agent guidance lives in `.cursor/rules/` (no root `AGENTS.md`)
-- Context length + creation date filters
+Shipped items: Status column in [`requirements.md`](requirements.md).

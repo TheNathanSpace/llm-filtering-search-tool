@@ -1,0 +1,52 @@
+---
+description: Write project docs as terse facts in headings, tables, lists, code, and alerts.
+alwaysApply: true
+---
+
+# Terse documentation
+
+When writing or editing `docs/`, `README.md`, or other project docs, state the facts and stop. Apply this style to the text you add or replace. Leave the surrounding text as it is.
+
+Keep every fact the reader needs to act. Drop restatement and implications that follow from the fact.
+
+## Shape
+
+| Form | Use for |
+| --- | --- |
+| Heading | One topic |
+| Table | Records that share the same fields |
+| Unordered list | A set of peers |
+| Ordered list | Steps, in order |
+| Task list | A checklist in a short procedure |
+| Fenced code | Commands, config, paths, filenames, samples |
+| Alert | One hard constraint (`> [!WARNING]` or `> [!IMPORTANT]`) |
+
+Prefer a table, list, code block, or alert. Prose is allowed when those forms do not fit: one or two sentences under the heading. Do not add a table, list, code block, or alert that carries no fact of its own.
+
+Keep lists flat. Requirement state stays in the status table (`Done` / `Open`).
+
+## Omit
+
+- Why a fact matters when the fact already says it.
+- A second sentence that repeats the first.
+- Lead-ins ("Note that", "It is important", "In other words").
+- "What this means" after the instruction.
+
+## Example
+
+Oppressive:
+
+> AUTH_SECRET, keeper username, and site title stay in the container environment. The keeper password hash lives in the vault with the photographs, so a volume clone keeps the same key. Existing sessions use AUTH_SECRET; a new secret only invalidates cookies, not the password. The public library comes up from the volume alone.
+>
+> Do not copy /data while the container is writing. docker compose stop first. Schedule that archive; the volume is the gallery.
+
+Terse:
+
+| Item | Stored in |
+| --- | --- |
+| `AUTH_SECRET` | Container environment. A new value invalidates cookies only. |
+| Keeper username, site title | Container environment |
+| Keeper password hash, photographs | `/data` |
+
+> [!WARNING]
+> `docker compose stop`, then copy `/data`. Restore the gallery from that copy.

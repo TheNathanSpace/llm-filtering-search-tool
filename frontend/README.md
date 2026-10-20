@@ -5,65 +5,49 @@
 - <https://mui.com/material-ui/all-components/>
 - <https://mui.com/x/react-data-grid/>
 
+Plots: [`docs/todo.md`](../docs/todo.md).
+
 ## Logging
 
-On server start, [`instrumentation.ts`](instrumentation.ts) tees Node.js `console.*` output (and
-`onRequestError` events) to `DATA_DIR/logs/latest.log` — the symlink maintained by the back-end —
-using `DATA_DIR` and `LOG_LEVEL` from the process environment (local dev also loads the repo-root `.env`). Lines are skipped until that symlink
-exists (start the API first, or restart the front-end after the API). Browser/client logs are not
-written to the file.
+On server start, [`instrumentation.ts`](instrumentation.ts) tees Node.js `console.*` and `onRequestError` to `DATA_DIR/logs/latest.log` (the back-end symlink), using `DATA_DIR` and `LOG_LEVEL` from the process environment. Local dev also loads the repo-root `.env`. Browser logs are not written to the file.
 
-Next work (plots): [`docs/todo.md`](../docs/todo.md).
+> [!WARNING]
+> Lines are skipped until `latest.log` exists. Start the API first, or restart the front-end after the API.
 
 ## Model filters
 
-Filter UI and logic live under `app/filters/`:
+Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/status.md`](../docs/status.md).
 
-| Module                                                                          | Role                                           |
-| ------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `model-filters.tsx`                                                             | Filter panel layout                            |
-| `token-count-field.tsx`                                                        | Token-count box that drives the usage-cost column and range |
-| `filter-option.tsx`                                                             | Shared label + control row                     |
-| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` / `text-filter.tsx` | Reusable range, select, and text controls |
-| `checkbox-row-filter.tsx`                                                       | Row of checkboxes with a label under each      |
-| `modality-options.ts`                                                           | Input and output modality checkbox options     |
-| `filter-types.ts`                                                               | Filter state and bounds types                  |
-| `filter-bounds.ts`                                                              | Derive min/max and unique creators from models |
-| `apply-filters.ts`                                                              | Pure `filterModels()`                          |
-| `name-query.ts`                                                                 | Name/slug search matching (punct, comma OR, `-` exclude) |
-| `use-model-filters.ts`                                                          | State + filtered rows for the table            |
-| `filter-query.ts`                                                               | Read and write the shareable page query string |
-| `use-sync-table-query.ts`                                                       | Keep the address bar aligned with that setup   |
+| Module | Role |
+| --- | --- |
+| `model-filters.tsx` | Filter panel layout |
+| `token-count-field.tsx` | Token-count box for the usage-cost column and range |
+| `filter-option.tsx` | Shared label + control row |
+| `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` / `text-filter.tsx` | Range, select, and text controls |
+| `checkbox-row-filter.tsx` | Checkbox row; label under each box |
+| `modality-options.ts` | Input and output modality options |
+| `filter-types.ts` | Filter state and bounds types |
+| `filter-bounds.ts` | Min/max and unique creators from models |
+| `apply-filters.ts` | Pure `filterModels()` |
+| `name-query.ts` | Name and slug matching |
+| `use-model-filters.ts` | State and filtered rows |
+| `filter-query.ts` | Read and write the page query string |
+| `use-sync-table-query.ts` | Keep the address bar aligned with that state |
 
-The panel lays those controls out in two columns and balances them so each column is about the same height. A control stays in one column (it is not split across the break).
-
-`model-table.tsx` only composes the filter panel and Data Grid. Pagination stays on.
-Virtualization is off, so every row and column on the current page is in the page
-and browser find can reach them. Column definitions live in
-`app/columns.tsx`. Column-backed filters follow that column order. The missing-values switch stays
-first. Modality filters have no column, so they come after the column-aligned controls.
-A **Millions of tokens** box sits just before the price ranges. A positive count
-inserts a **Cost (NM)** column to the left of Input Cost and a **Cost** range under the box:
-`tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. The range keeps
-models whose calculated cost falls inside it (missing prices follow the missing-values switch).
-Changing or clearing the count resets that range and, when cleared, removes the column. The blend
-matches provider ranking in `backend/llm_rankings/provider_choice.py`.
-The name cell links to the model’s OpenRouter page.
-Name search matches display names and OpenRouter ids/slugs, ignoring punctuation
-(so `gpt 5` finds `GPT-5`). Commas separate OR’d alternatives; a leading `-` on a
-comma unit excludes models that match every word in that unit. A help icon next to
-the Name label explains this.
-Creator values in the table and the creator filter use the catalog display name (the `OpenAI:` prefix
-on the model name), not the lowercase author slug.
-The modality filters keep models that include **every** checked type (unchecked means no constraint).
-Numeric range controls (`NumberRangeFilter`, including size) show the selected minimum and maximum under the slider.
-Click either number to type a value; Enter or leaving the field applies it, and Escape cancels.
-The value is kept inside the data bounds. If it crosses the other end, that end moves with it so the range stays ordered.
-Date range filters stay slider-only.
+- The panel uses two columns of about the same height. A control is not split across the break.
+- `model-table.tsx` composes the filter panel and Data Grid. Pagination stays on. Virtualization is off, so every row and column on the current page is in the document and browser find can reach them. Column definitions: `app/columns.tsx`.
+- Column-backed filters follow that column order. The missing-values switch is first. Modality filters have no column, so they come after the column-aligned controls.
+- **Millions of tokens** sits just before the price ranges. A positive count inserts a **Cost (NM)** column left of Input Cost and a **Cost** range under the box: `tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. The range keeps models inside it. Missing prices follow the missing-values switch. Changing or clearing the count resets that range. Clearing the count removes the column. The blend matches `backend/llm_rankings/provider_choice.py`.
+- The name cell links to the model’s OpenRouter page.
+- Name search matches display names and OpenRouter ids and slugs, ignoring punctuation (`gpt 5` matches `GPT-5`). Commas separate OR alternatives. A leading `-` on a comma unit excludes models that match every word in that unit. A help icon next to the Name label states this.
+- Creator values use the `Author:` prefix on the model name when it has one. Otherwise they use a leading word that starts the author slug, or the title-cased slug.
+- Modality filters keep models that include every checked type. Unchecked means no constraint.
+- `NumberRangeFilter`, including size, shows the selected minimum and maximum under the slider. Click either number to type a value. Enter or leaving the field applies it. Escape cancels. The value stays inside the data bounds. If it crosses the other end, that end moves with it.
+- Date range filters are slider-only.
 
 ### Shareable URL
 
-The address bar tracks the current setup: filter choices that differ from the defaults, the token-count text, and the table sort. Copy it and open it to restore that setup. Defaults are left off the query string (missing values included, open-weights off, full ranges, intelligence descending). `sort=none` means the table is unsorted. Changing the setup replaces the current history entry, so the back button leaves the page instead of stepping through each slider move.
+The address bar stores filter choices that differ from the defaults, the token-count text, and the table sort; opening that URL restores the setup. Defaults (missing values included, open-weights off, full ranges, intelligence descending) stay off the query string; `sort=none` means unsorted; changing the setup replaces the current history entry, so Back leaves the page.
 
 | Parameter | Value |
 | --- | --- |
@@ -81,50 +65,24 @@ Example: `/?name=gpt+5&openWeights=1&intelligence=40,80&creator=OpenAI&sort=thro
 
 ### Adding a new filter
 
-Reuse an existing control (`MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`, or `CheckboxRowFilter`) when
-possible. Only add a new control component if the interaction pattern is new.
+Reuse `MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`, or `CheckboxRowFilter` when the interaction already exists.
 
-1. **`filter-types.ts`** — Add the field to `ModelFiltersState` and `UserFilterChoices` (and to `FilterBounds` if it
-   needs min/max or option lists derived from the data). Update `createInitialUserChoices` and `resolveFilters` with a
-   sensible default (e.g. `[]` for multi-select, `""` for text, `undefined` for bounds-backed ranges).
-2. **`filter-bounds.ts`** — If the filter needs bounds or options from the model list, compute them in
-   `getFilterBounds`.
-3. **`apply-filters.ts`** — Teach `filterModels` how to apply the new field. Respect `includeMissing` for nullable model
-   properties.
+1. **`filter-types.ts`** — Add the field to `ModelFiltersState` and `UserFilterChoices` (and to `FilterBounds` when it needs min/max or option lists). Update `createInitialUserChoices` and `resolveFilters`. Defaults: `[]` for multi-select, `""` for text, `undefined` for bounds-backed ranges.
+2. **`filter-bounds.ts`** — Compute bounds or options in `getFilterBounds` when they come from the model list.
+3. **`apply-filters.ts`** — Apply the field in `filterModels`. Respect `includeMissing` for nullable properties.
 4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`. Pass `defaultStart` / `defaultEnd` from the resolved filter when the control keeps its own state, so a shared URL shows the restored range.
-5. **`filter-query.ts`** — Parse and serialize the field. Omit it when it still matches `createInitialUserChoices`.
+5. **`filter-query.ts`** — Parse and serialize the field. Omit it when it matches `createInitialUserChoices`.
 
-`model-table.tsx` only needs a change when the filter depends on something outside the model list.
-Usage cost does: pass the parsed token count into `useModelFilters`.
+`model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`.
 
 ## Running
 
-Use Docker Compose from the repo root (see the root [README](../README.md)):
+Commands: [root README](../README.md).
 
-```bash
-# server deploy file (pulls the published image; edit environment: first)
-docker compose up -d
+The browser calls same-origin `/api/*`. [`proxy.ts`](proxy.ts) rewrites each request to `http://<BACKEND_HOST>:<BACKEND_PORT>`. Compose `dev` sets `BACKEND_HOST=backend`. `0.0.0.0` is mapped to `127.0.0.1` for same-container bind-all. Host and port are read per request, so Compose `environment:` overrides apply without a rebuild.
 
-# local production-like build
-docker compose -f docker-compose.local.yaml up --build
+Optional host `npm` install (lint and API client regen): `../bin/setup-frontend.sh`.
 
-# local hot-reload frontend + backend
-COMPOSE_PROFILES=dev docker compose -f docker-compose.local.yaml up --build
-```
+## API client
 
-Open `http://localhost:<FRONTEND_PORT>` (default [http://localhost:3030](http://localhost:3030)).
-The browser calls same-origin `/api/*`; [`proxy.ts`](proxy.ts) rewrites those requests at runtime to
-`http://<BACKEND_HOST>:<BACKEND_PORT>`. Compose `dev` sets `BACKEND_HOST=backend` (service name);
-`0.0.0.0` is mapped to `127.0.0.1` for same-container bind-all. Host/port are read per request, so
-Compose overrides do not require rebuilding.
-
-Optional host `npm` install (lint / API client regen only): `../bin/setup-frontend.sh`.
-
-### API Client
-
-1. The back-end OpenAPI schema is exported to `DATA_DIR/openapi.json` (default `../data/openapi.json`) via
-   FastAPI (`bin/generate-openapi-docs.sh`).
-2. The front-end API client is generated via `@hey-api/openapi-ts` from that file.
-3. The front-end API client is imported into the front-end app, and the endpoints and models/types are able to be used.
-
-This process can be completed by running the `../bin/install-frontend-api-client.sh` script.
+`../bin/install-frontend-api-client.sh` writes the FastAPI schema to `DATA_DIR/openapi.json` (default `../data/openapi.json`) via `bin/generate-openapi-docs.sh`, then runs `@hey-api/openapi-ts` into `frontend/app/client/`.

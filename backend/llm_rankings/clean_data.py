@@ -64,6 +64,7 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
     skipped_meta = 0
     skipped_router = 0
     skipped_latest = 0
+    skipped_preset = 0
     for model in or_models.data:
         if model.is_tilde_provider():
             skipped_tilde += 1
@@ -82,6 +83,9 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
             continue
         if model.is_floating_latest_alias():
             skipped_latest += 1
+            continue
+        if model.is_preset():
+            skipped_preset += 1
             continue
         kept.append(model)
     if skipped_tilde:
@@ -113,6 +117,11 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         logger.info(
             "Skipping %s floating latest alias(es) (ids ending in '-latest')",
             skipped_latest,
+        )
+    if skipped_preset:
+        logger.info(
+            "Skipping %s OpenRouter preset model(s) (ids starting with '@preset/')",
+            skipped_preset,
         )
     open_weights = open_weights_by_openrouter_id()
     hf_ids = {

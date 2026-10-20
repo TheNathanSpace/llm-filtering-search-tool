@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-20 — stale refresh highlight
-**Latest change:** Last refresh text is orange and bold when the refresh is more than two days old.
+**Last updated:** 2026-10-20 — skip `@preset` models
+**Latest change:** OpenRouter `@preset/…` listings are dropped before the endpoints fetch (they 404).
 
 ## Pickup
 

@@ -40,7 +40,7 @@ Shapes match `api-docs/openapi-openrouter.json`.
 ## Pipeline
 
 1. Load OpenRouter `GET /models` from a ≤24h cache at `DATA_DIR/cache/openrouter/models.json`, or fetch and write that cache. Always mirror `DATA_DIR/intermediate/raw/raw_or_models.json` (debug only; not a rebuild source).
-2. Drop listings whose provider id starts with ``~``; whose id ends in ``:free``, ``:batch``, or ``-latest``; whose provider is ``openrouter`` (Auto, Fusion, and the other `openrouter` listings); or whose slug is ``router`` or ends with ``-router``.
+2. Drop listings whose provider id starts with ``~``; whose id ends in ``:free``, ``:batch``, or ``-latest``; whose provider is ``openrouter`` (Auto, Fusion, and the other `openrouter` listings) or ``@preset``; or whose slug is ``router`` or ends with ``-router``.
 3. For each remaining model, load `GET /models/{author}/{slug}/endpoints` from a ≤24h cache at `DATA_DIR/cache/openrouter/endpoints.json`, or fetch with a thread pool (default 8) and 429/5xx retries with backoff. Mirror `DATA_DIR/intermediate/raw/raw_or_endpoints.json`.
 4. Fetch [models.dev](https://models.dev) `api.json`, or reuse a ≤24h cache under `DATA_DIR/cache/models_dev/`. Map that file’s `openrouter` provider `open_weights` flags by OpenRouter model id. Mirror `DATA_DIR/intermediate/raw/raw_models_dev.json`.
 5. For each distinct non-empty OpenRouter `hugging_face_id`, read `safetensors.total` and store billions as `parameters_b`. Cache under `DATA_DIR/cache/hf/` (permanent per repo id; a new id fetches on miss). Use a project User-Agent, ~1s pacing, and 429 backoff. Optional `HF_TOKEN` raises Hub rate limits.

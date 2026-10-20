@@ -206,6 +206,10 @@ class OpenRouterModel(ORBaseModel):
         """Moving ``*-latest`` API aliases (e.g. ``openai/gpt-chat-latest``)."""
         return self.id.endswith("-latest")
 
+    def is_preset(self) -> bool:
+        """Account presets (``@preset/...``). OpenRouter has no endpoints route for them."""
+        return self.get_provider() == "@preset"
+
     def get_created_date(self) -> datetime.datetime | None:
         if self.created:
             return datetime.datetime.fromtimestamp(self.created, datetime.UTC)

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-20 — OpenRouter endpoint fields
-**Latest change:** Accept OpenRouter endpoint `service_tier` and `supports_diarization` so a wiped database can rebuild.
+**Last updated:** 2026-10-20 — stale refresh highlight
+**Latest change:** Last refresh text is orange and bold when the refresh is more than two days old.
 
 ## Pickup
 

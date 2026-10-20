@@ -26,6 +26,13 @@ const REFRESH_DATE_OPTIONS: Intl.DateTimeFormatOptions = {
     minute: "2-digit",
 };
 
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
+const staleRefreshStyle = {
+    color: "#e67e22",
+    fontWeight: 700,
+} as const;
+
 function parseRefreshDate(iso: string | null): Date | null {
     if (!iso) {
         return null;
@@ -57,17 +64,28 @@ function formatUtcRefreshTooltip(iso: string | null): string | undefined {
     });
 }
 
+function isRefreshOlderThanTwoDays(iso: string | null, nowMs: number): boolean {
+    const date = parseRefreshDate(iso);
+    if (!date) {
+        return false;
+    }
+    return nowMs - date.getTime() > TWO_DAYS_MS;
+}
+
 export default function MetadataNote() {
     const [loaded, setLoaded] = useState(false);
     const [costUsd, setCostUsd] = useState(0);
     const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
+    const [refreshStale, setRefreshStale] = useState(false);
 
     useEffect(() => {
         getMetaMetaGet()
             .then((response) => {
                 if (response.data) {
+                    const iso = response.data.last_refresh_at;
                     setCostUsd(response.data.enrichment_cost_usd);
-                    setLastRefreshAt(response.data.last_refresh_at ?? null);
+                    setLastRefreshAt(iso);
+                    setRefreshStale(isRefreshOlderThanTwoDays(iso, Date.now()));
                 }
             })
             .finally(() => {
@@ -94,14 +112,24 @@ export default function MetadataNote() {
                 opacity: 0.85,
             }}
         >
-            <span style={metaPairStyle}>
-                <span className="font-casual" style={{ fontSize: "1.1rem" }}>Last refresh:</span>
+            <span
+                style={
+                    loaded && refreshStale
+                        ? { ...metaPairStyle, ...staleRefreshStyle }
+                        : metaPairStyle
+                }
+            >
+                <span className="font-casual" style={{ fontSize: "1.1rem" }}>
+                    Last refresh:
+                </span>
                 <span className="font-mono" title={refreshUtcTitle}>
                     {refreshDisplay}.
                 </span>
             </span>
             <span style={metaPairStyle}>
-                <span className="font-casual" style={{ fontSize: "1.1rem" }}>Enrichment cost:</span>
+                <span className="font-casual" style={{ fontSize: "1.1rem" }}>
+                    Enrichment cost:
+                </span>
                 <span className="font-mono">{costDisplay}.</span>
             </span>
         </div>

@@ -61,7 +61,7 @@ Help a user pick an LLM by filtering and sorting on the dimensions that matter f
 | <a id="ui-07"></a>UI-07 | Load models from the API via a generated TypeScript client (same-origin `/api`) | must | done |
 | <a id="ui-08"></a>UI-08 | Landing header with product title, short goal copy, and GitHub link | stretch | done |
 | <a id="ui-09"></a>UI-09 | Show open-weights and size columns; dedicated open-weights switch and size range filter in the filter panel | must | done |
-| <a id="ui-10"></a>UI-10 | Bottom-left footer row: last data refresh and lifetime enrichment research cost (browser local date/time; UTC tooltip on hover) | stretch | done |
+| <a id="ui-10"></a>UI-10 | Bottom-left footer row: last data refresh and lifetime enrichment research cost (browser local date/time; UTC tooltip on hover). Refresh text is orange and bold when that refresh is more than two days old | stretch | done |
 | <a id="ui-12"></a>UI-12 | Keep the page URL in sync with the filter panel, token count, and table sort, so opening a copied link restores that setup. Defaults stay off the query string. `sort=none` is an unsorted table | must | done |
 
 ## Platform and operations

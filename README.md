@@ -140,6 +140,10 @@ Variables in [`.env.template`](.env.template):
 - `BACKEND_HOST` — FastAPI listen address (default `127.0.0.1` on the host). Containers use `0.0.0.0`
 - `BACKEND_PORT` — FastAPI listen port (default `8000`)
 - `ENABLE_API_DOCS` — optional; set to `1` for FastAPI `/docs` / `/redoc` / `/openapi.json` (off by default; local `dev` profile enables it)
+- `EXFILTRATE_BASE_URL` — optional public origin of another running instance
+  (`http://host:3030`, no path). Each API start replaces this database and
+  `DATA_DIR/cache` from that origin’s `/api/exfiltrate`. The page keeps a
+  warning up until the variable is removed and the process restarts
 - `FRONTEND_PORT` — Next.js listen port (default `3030`)
 - `COMPOSE_PROFILES` — local Compose only: `prod` (default) or `dev` (hot reload)
 
@@ -288,8 +292,23 @@ fresh.
 
 Lifetime enrichment spend and last successful refresh time (for the UI footer) are available at
 `GET /meta` (`enrichment_cost_usd`, `last_refresh_at`, `database_ready`,
-`refresh_in_progress`). When the live DB is missing or still being built, the table empty
-state explains that population is in progress and the page polls until models appear.
+`refresh_in_progress`, `exfiltrate_base_url`). When the live DB is missing or still being built, the
+table empty state explains that population is in progress and the page polls until models appear.
+
+`GET /exfiltrate` (also via the front-end proxy at `/api/exfiltrate`) returns that same metadata
+plus every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file
+under `DATA_DIR/cache` except `refresh.lock` and `refresh_status.json`. Logs and `.env` are not
+included.
+
+Set `EXFILTRATE_BASE_URL` to another instance’s public origin (scheme, host, and port; no path) in
+`docker-compose.yaml` or `.env`. On each API start this process downloads `{origin}/api/exfiltrate`
+and replaces its SQLite tables and durable caches with that snapshot. Local rows that are not in
+the snapshot are dropped. The download is stamped as a fresh refresh, so that startup does not
+also rebuild from OpenRouter. A filled warning stays at the top of the page, including the source
+origin, until `EXFILTRATE_BASE_URL` is removed and the process is restarted. Leaving it set
+downloads the snapshot again on the next start. If the download fails, startup logs the error and
+falls back to the normal local refresh. The usual 24h refresh still runs later while the process
+stays up.
 
 ### Regenerate the front-end API client
 

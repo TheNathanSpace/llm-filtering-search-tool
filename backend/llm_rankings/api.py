@@ -10,11 +10,17 @@ from pydantic import BaseModel, Field
 
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models
+from llm_rankings.exfiltrate import (
+    ExfiltrateResponse,
+    build_exfiltrate_response,
+    configured_exfiltrate_base_url,
+)
 from llm_rankings.refresh import (
     database_ready,
     is_refresh_in_progress,
     last_refresh_at_iso,
     refresh_if_stale,
+    startup_data_load,
 )
 from llm_rankings.util import (
     bootstrap_env_from_argv,
@@ -59,14 +65,14 @@ async def _periodic_refresh_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # Never block serving on refresh (batch enrichment can take a long time). Keep
-    # the previous DB online until a staging rebuild atomically replaces it.
-    startup_refresh = asyncio.create_task(
-        asyncio.to_thread(refresh_if_stale, reason="startup"),
-        name="startup-refresh",
+    # Never block serving on import/refresh (batch enrichment can take a long time).
+    # Keep the previous DB online until a staging rebuild atomically replaces it.
+    startup_load = asyncio.create_task(
+        asyncio.to_thread(startup_data_load),
+        name="startup-data-load",
     )
-    startup_refresh.add_done_callback(
-        lambda task: _log_background_refresh(task, label="Startup refresh")
+    startup_load.add_done_callback(
+        lambda task: _log_background_refresh(task, label="Startup data load")
     )
 
     checker = asyncio.create_task(_periodic_refresh_loop(), name="refresh-checker")
@@ -75,10 +81,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     finally:
         # Cancel without waiting on to_thread refresh work (batch enrichment can run
         # for hours; process exit will stop the worker thread).
-        startup_refresh.cancel()
+        startup_load.cancel()
         checker.cancel()
         await asyncio.wait(
-            {startup_refresh, checker},
+            {startup_load, checker},
             timeout=5.0,
         )
 
@@ -119,6 +125,12 @@ class AppMeta(BaseModel):
     refresh_in_progress: bool = Field(
         description="True while a background or CLI refresh is rebuilding the database"
     )
+    exfiltrate_base_url: str | None = Field(
+        description=(
+            "EXFILTRATE_BASE_URL when set. Startup replaces local data from that "
+            "instance, and the page warns until the process restarts without it."
+        )
+    )
 
 
 @app.get("/health")
@@ -134,6 +146,7 @@ def get_meta():
             last_refresh_at=last_refresh_at_iso(),
             database_ready=database_ready(),
             refresh_in_progress=is_refresh_in_progress(),
+            exfiltrate_base_url=configured_exfiltrate_base_url(),
         )
     except Exception as e:
         logger.exception("Failed to read app metadata")
@@ -146,6 +159,16 @@ def get_models():
         return get_all_models()
     except Exception as e:
         logger.exception("Failed to retrieve models")
+        raise HTTPException(status_code=500, detail=_CLIENT_ERROR_DETAIL) from e
+
+
+@app.get("/exfiltrate", response_model=ExfiltrateResponse)
+def exfiltrate():
+    """Return models, provider endpoints, and durable caches for a full local restore."""
+    try:
+        return build_exfiltrate_response()
+    except Exception as e:
+        logger.exception("Failed to exfiltrate instance data")
         raise HTTPException(status_code=500, detail=_CLIENT_ERROR_DETAIL) from e
 
 

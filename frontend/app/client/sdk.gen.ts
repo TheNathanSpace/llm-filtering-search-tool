@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetMetaMetaGetData, GetMetaMetaGetResponses, GetModelsModelsGetData, GetModelsModelsGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses } from './types.gen';
+import type { ExfiltrateExfiltrateGetData, ExfiltrateExfiltrateGetResponses, GetMetaMetaGetData, GetMetaMetaGetResponses, GetModelsModelsGetData, GetModelsModelsGetResponses, HealthCheckHealthGetData, HealthCheckHealthGetResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -32,3 +32,10 @@ export const getMetaMetaGet = <ThrowOnError extends boolean = false>(options?: O
  * Get Models
  */
 export const getModelsModelsGet = <ThrowOnError extends boolean = false>(options?: Options<GetModelsModelsGetData, ThrowOnError>): RequestResult<GetModelsModelsGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetModelsModelsGetResponses, unknown, ThrowOnError>({ url: '/models', ...options });
+
+/**
+ * Exfiltrate
+ *
+ * Return models, provider endpoints, and durable caches for a full local restore.
+ */
+export const exfiltrateExfiltrateGet = <ThrowOnError extends boolean = false>(options?: Options<ExfiltrateExfiltrateGetData, ThrowOnError>): RequestResult<ExfiltrateExfiltrateGetResponses, unknown, ThrowOnError> => (options?.client ?? client).get<ExfiltrateExfiltrateGetResponses, unknown, ThrowOnError>({ url: '/exfiltrate', ...options });

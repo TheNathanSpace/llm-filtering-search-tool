@@ -92,7 +92,16 @@ Rebuild goes through `llm_rankings.refresh.refresh_data` (API uses `refresh_if_s
   `models-dev`, `hf`, `enrichment`, or `all`), then rebuild the same staging-swap way. Selecting
   `models` also invalidates `providers`. Concurrent API + CLI callers share
   `DATA_DIR/cache/refresh.lock`.
-- API lifespan starts a **background** gated refresh on startup and about every hour; it does not
-  block serving (callers may see up to ~24h-old rows while a refresh is in flight).
+- API lifespan starts a **background** startup load (optional `EXFILTRATE_BASE_URL` import, then
+  the gated refresh) and a refresh check about every hour. It does not block serving (callers may
+  see the previous snapshot while a rebuild is in flight).
 - CLI: `python -m llm_rankings.refresh` (or `./bin/refresh-data.sh` via docker exec). No public
   HTTP refresh endpoint. `last_refresh_at` means last successful DB rebuild, not per-source fetch.
+- `GET /exfiltrate` returns both SQLite tables and the durable cache files (not logs, `.env`,
+  `refresh.lock`, or `refresh_status.json`) so another `DATA_DIR` can be rebuilt without those
+  upstream calls ([PLT-10](../docs/requirements.md#plt-10)).
+- Optional `EXFILTRATE_BASE_URL` (http(s) origin, no path or credentials): API startup downloads
+  `{origin}/api/exfiltrate` and replaces the live tables and `DATA_DIR/cache` (lock and status
+  files stay). `last_refresh_at` is stamped to now. `/meta` echoes the origin as
+  `exfiltrate_base_url` so the page can warn until the variable is cleared and the process
+  restarts. A failed download falls through to the normal startup refresh.

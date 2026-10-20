@@ -71,13 +71,14 @@ def wipe_database() -> None:
     Path.unlink(get_database_path(), missing_ok=True)
 
 
-def populate_with_models() -> None:
+def replace_database(
+    models: list[CombinedModel],
+    provider_endpoints: list[ModelProviderEndpoint],
+) -> None:
     """
-    Fetch/combine models, write a staging SQLite file, then atomically replace
-    ``database.db`` so readers keep serving the previous snapshot until swap.
+    Write ``models`` and ``provider_endpoints`` to a staging SQLite file, then
+    atomically replace ``database.db``. Previous rows are dropped.
     """
-    models, provider_endpoints = get_and_clean_data()
-
     live_path = get_database_path()
     staging_path = get_staging_database_path()
     live_path.parent.mkdir(parents=True, exist_ok=True)
@@ -89,14 +90,10 @@ def populate_with_models() -> None:
         for model in models:
             model.add_to_database(db)
         logger.debug(f"Wrote {len(models)} models to staging database")
-        logger.debug(
-            f"Writing {len(provider_endpoints)} provider endpoints to staging database"
-        )
+        logger.debug(f"Writing {len(provider_endpoints)} provider endpoints to staging database")
         for row in provider_endpoints:
             row.add_to_database(db)
-        logger.debug(
-            f"Wrote {len(provider_endpoints)} provider endpoints to staging database"
-        )
+        logger.debug(f"Wrote {len(provider_endpoints)} provider endpoints to staging database")
     except Exception:
         _close_database(db)
         staging_path.unlink(missing_ok=True)
@@ -109,6 +106,15 @@ def populate_with_models() -> None:
         len(models),
         len(provider_endpoints),
     )
+
+
+def populate_with_models() -> None:
+    """
+    Fetch/combine models, write a staging SQLite file, then atomically replace
+    ``database.db`` so readers keep serving the previous snapshot until swap.
+    """
+    models, provider_endpoints = get_and_clean_data()
+    replace_database(models, provider_endpoints)
 
 
 def get_all_models() -> list[CombinedModel]:

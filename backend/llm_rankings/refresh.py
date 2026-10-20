@@ -319,6 +319,30 @@ def refresh_if_stale(*, reason: str) -> RefreshResult:
     return refresh_data(reason=reason, force=False)
 
 
+def startup_data_load() -> None:
+    """Import a configured external snapshot, then run the normal startup refresh."""
+    # Lazy import: exfiltrate already imports this module.
+    from llm_rankings.exfiltrate import import_configured_instance
+
+    try:
+        import_configured_instance()
+    except Exception:
+        logger.exception("Exfiltrate import failed; continuing with local data")
+    refresh_if_stale(reason="startup")
+
+
+@contextmanager
+def refresh_lock() -> Iterator[None]:
+    """Exclusive lock shared by refresh and the startup exfiltrate import."""
+    with _refresh_file_lock():
+        yield
+
+
+def set_refresh_in_progress(*, in_progress: bool, reason: str) -> None:
+    """Publish whether a rebuild or exfiltrate import is in flight."""
+    _write_refresh_status(in_progress=in_progress, reason=reason)
+
+
 def _parse_cli_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         prog="python -m llm_rankings.refresh",

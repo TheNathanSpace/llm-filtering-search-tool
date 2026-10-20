@@ -32,6 +32,12 @@ export type AppMeta = {
      * True while a background or CLI refresh is rebuilding the database
      */
     refresh_in_progress: boolean;
+    /**
+     * Exfiltrate Base Url
+     *
+     * EXFILTRATE_BASE_URL when set. Startup replaces local data from that instance, and the page warns until the process restarts without it.
+     */
+    exfiltrate_base_url: string | null;
 };
 
 /**
@@ -121,11 +127,155 @@ export type CombinedModel = {
 };
 
 /**
+ * ExfiltrateResponse
+ *
+ * Snapshot of the served tables plus the caches a refresh would reuse.
+ */
+export type ExfiltrateResponse = {
+    /**
+     * Models
+     */
+    models: Array<CombinedModel>;
+    /**
+     * Provider Endpoints
+     */
+    provider_endpoints: Array<ModelProviderEndpoint>;
+    /**
+     * Enrichment Cost Usd
+     *
+     * Lifetime USD spent on opt-in OpenRouter batch web enrichment
+     */
+    enrichment_cost_usd: number;
+    /**
+     * Last Refresh At
+     *
+     * ISO-8601 UTC timestamp of the last successful model data refresh
+     */
+    last_refresh_at: string | null;
+    /**
+     * Database Ready
+     *
+     * True when the live model SQLite file exists
+     */
+    database_ready: boolean;
+    /**
+     * Cache Files
+     *
+     * UTF-8 contents of DATA_DIR/cache, excluding refresh.lock and refresh_status.json. Write each file back under DATA_DIR/cache/<path> and load models plus provider_endpoints into SQLite to reconstruct the instance without calling OpenRouter, Hugging Face, models.dev, or web enrichment.
+     */
+    cache_files: Array<ExportedCacheFile>;
+};
+
+/**
+ * ExportedCacheFile
+ *
+ * One durable cache file. ``path`` is relative to ``DATA_DIR/cache``.
+ */
+export type ExportedCacheFile = {
+    /**
+     * Path
+     */
+    path: string;
+    /**
+     * Text
+     */
+    text: string;
+};
+
+/**
  * InputModality
  *
  * OpenAPI `InputModality`.
  */
 export type InputModality = 'text' | 'image' | 'file' | 'audio' | 'video';
+
+/**
+ * ModelProviderEndpoint
+ *
+ * One OpenRouter provider endpoint: pricing + throughput/latency for a model.
+ */
+export type ModelProviderEndpoint = {
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Model Id
+     */
+    model_id: string;
+    /**
+     * Provider Name
+     */
+    provider_name: string;
+    /**
+     * Tag
+     */
+    tag: string;
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Pricing Input
+     */
+    pricing_input?: number | null;
+    /**
+     * Pricing Output
+     */
+    pricing_output?: number | null;
+    /**
+     * Pricing Discount
+     */
+    pricing_discount?: number | null;
+    /**
+     * Throughput P50
+     */
+    throughput_p50?: number | null;
+    /**
+     * Throughput P75
+     */
+    throughput_p75?: number | null;
+    /**
+     * Throughput P90
+     */
+    throughput_p90?: number | null;
+    /**
+     * Throughput P99
+     */
+    throughput_p99?: number | null;
+    /**
+     * Latency P50
+     */
+    latency_p50?: number | null;
+    /**
+     * Latency P75
+     */
+    latency_p75?: number | null;
+    /**
+     * Latency P90
+     */
+    latency_p90?: number | null;
+    /**
+     * Latency P99
+     */
+    latency_p99?: number | null;
+    /**
+     * Status
+     */
+    status?: number | null;
+    /**
+     * Uptime Last 30M
+     */
+    uptime_last_30m?: number | null;
+    /**
+     * Quantization
+     */
+    quantization?: string | null;
+    /**
+     * Context Length
+     */
+    context_length?: number | null;
+};
 
 /**
  * OutputModality
@@ -181,3 +331,19 @@ export type GetModelsModelsGetResponses = {
 };
 
 export type GetModelsModelsGetResponse = GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];
+
+export type ExfiltrateExfiltrateGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/exfiltrate';
+};
+
+export type ExfiltrateExfiltrateGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: ExfiltrateResponse;
+};
+
+export type ExfiltrateExfiltrateGetResponse = ExfiltrateExfiltrateGetResponses[keyof ExfiltrateExfiltrateGetResponses];

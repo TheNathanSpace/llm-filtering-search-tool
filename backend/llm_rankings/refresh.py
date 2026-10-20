@@ -321,25 +321,25 @@ def refresh_if_stale(*, reason: str) -> RefreshResult:
 
 def startup_data_load() -> None:
     """Import a configured external snapshot, then run the normal startup refresh."""
-    # Lazy import: exfiltrate already imports this module.
-    from llm_rankings.exfiltrate import import_configured_instance
+    # Lazy import: export already imports this module.
+    from llm_rankings.export import import_configured_instance
 
     try:
         import_configured_instance()
     except Exception:
-        logger.exception("Exfiltrate import failed; continuing with local data")
+        logger.exception("Export import failed; continuing with local data")
     refresh_if_stale(reason="startup")
 
 
 @contextmanager
 def refresh_lock() -> Iterator[None]:
-    """Exclusive lock shared by refresh and the startup exfiltrate import."""
+    """Exclusive lock shared by refresh and the startup export import."""
     with _refresh_file_lock():
         yield
 
 
 def set_refresh_in_progress(*, in_progress: bool, reason: str) -> None:
-    """Publish whether a rebuild or exfiltrate import is in flight."""
+    """Publish whether a rebuild or export import is in flight."""
     _write_refresh_status(in_progress=in_progress, reason=reason)
 
 

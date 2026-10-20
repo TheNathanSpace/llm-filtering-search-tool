@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-20 — skip `@preset` models
-**Latest change:** OpenRouter `@preset/…` listings are dropped before the endpoints fetch (they 404).
+**Last updated:** 2026-10-20 — snapshot route renamed to export
+**Latest change:** `GET /export`, `EXPORT_BASE_URL`, and the copy warning use export.
 
 ## Pickup
 

@@ -38,9 +38,9 @@ services:
       # ENABLE_API_DOCS: "1"
       # Optional. Public origin of another running instance. On each start, this
       # process replaces its database and caches from that instance's
-      # /api/exfiltrate snapshot. The page shows a warning until this is removed
+      # /api/export snapshot. The page shows a warning until this is removed
       # and the container is restarted (otherwise every start downloads it again).
-      # EXFILTRATE_BASE_URL: "http://other-host:3030"
+      # EXPORT_BASE_URL: "http://other-host:3030"
     volumes:
       - ./data:/app/data
     healthcheck:

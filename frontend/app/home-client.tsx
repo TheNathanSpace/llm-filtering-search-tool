@@ -11,7 +11,7 @@ import { client } from "@/app/client/client.gen";
 import type { PageSearchQuery } from "@/app/filters/filter-query";
 import Titles from "@/app/titles";
 import MetadataNote from "@/app/metadata-note";
-import ExfiltrateBanner from "@/app/exfiltrate-banner";
+import ExportBanner from "@/app/export-banner";
 
 client.setConfig({
     baseUrl: "/api",
@@ -27,7 +27,7 @@ export default function Home({
 }) {
     const [models, setModels] = useState<CombinedModel[]>([]);
     const [populating, setPopulating] = useState(false);
-    const [exfiltrateBaseUrl, setExfiltrateBaseUrl] = useState<
+    const [exportBaseUrl, setExportBaseUrl] = useState<
         string | undefined
     >();
     const pollTimerReference = useRef<
@@ -65,7 +65,7 @@ export default function Home({
                 setModels(nextModels);
 
                 const meta = metaResponse.data;
-                setExfiltrateBaseUrl(meta?.exfiltrate_base_url || undefined);
+                setExportBaseUrl(meta?.export_base_url || undefined);
                 const databaseReady =
                     meta?.database_ready ?? nextModels.length > 0;
                 const refreshInProgress = meta?.refresh_in_progress ?? false;
@@ -107,8 +107,8 @@ export default function Home({
                 flexDirection: "column",
             }}
         >
-            {exfiltrateBaseUrl && (
-                <ExfiltrateBanner baseUrl={exfiltrateBaseUrl} />
+            {exportBaseUrl && (
+                <ExportBanner baseUrl={exportBaseUrl} />
             )}
             <div
                 style={{

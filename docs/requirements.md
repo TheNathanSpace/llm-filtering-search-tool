@@ -68,16 +68,16 @@ Help a user pick an LLM by filtering and sorting on the dimensions that matter f
 
 | ID | Requirement | Priority | Status |
 | --- | --- | --- | --- |
-| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`). `/meta` returns `{enrichment_cost_usd, last_refresh_at, database_ready, refresh_in_progress, exfiltrate_base_url}`. Interactive API docs are off unless `ENABLE_API_DOCS`. 500 responses use a generic client message. Refresh: [SRC-02](#src-02), [SRC-11](#src-11) | must | done |
+| <a id="plt-01"></a>PLT-01 | REST API for health, model list, and metadata (`GET /health`, `GET /models`, `GET /meta`). `/meta` returns `{enrichment_cost_usd, last_refresh_at, database_ready, refresh_in_progress, export_base_url}`. Interactive API docs are off unless `ENABLE_API_DOCS`. 500 responses use a generic client message. Refresh: [SRC-02](#src-02), [SRC-11](#src-11) | must | done |
 | <a id="plt-02"></a>PLT-02 | `docker-compose.yaml` is the server deploy file (published image, settings inline). `docker-compose.local.yaml` is the local source build (`prod` default, `dev` hot-reload); worktree preview reuses primary `data/` via `HOST_DATA_DIR` | must | done |
-| <a id="plt-03"></a>PLT-03 | Configuration via process environment (server Compose `environment:` block) or optional `.env` (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT`, optional `ENABLE_API_DOCS`, optional `EXFILTRATE_BASE_URL`, `DATA_DIR`, optional `HOST_DATA_DIR` for local Compose mounts, logging, host/ports). Already-set environment variables win over the file | must | done |
+| <a id="plt-03"></a>PLT-03 | Configuration via process environment (server Compose `environment:` block) or optional `.env` (`OR_API_KEY`, optional `HF_TOKEN`, optional `OR_WEB_ENRICHMENT`, optional `ENABLE_API_DOCS`, optional `EXPORT_BASE_URL`, `DATA_DIR`, optional `HOST_DATA_DIR` for local Compose mounts, logging, host/ports). Already-set environment variables win over the file | must | done |
 | <a id="plt-04"></a>PLT-04 | Logging to stdout and rotating files under `DATA_DIR/logs/` (with `latest.log`); front-end server logs can append to the same file | must | done |
 | <a id="plt-05"></a>PLT-05 | Front-end proxies `/api/*` to the back-end using runtime `BACKEND_HOST` / `BACKEND_PORT` | must | done |
 | <a id="plt-06"></a>PLT-06 | Docker Compose: server file runs the published image (API + Next via supervisord); local file builds that image or, with the `dev` profile, separate reloadable backend/frontend services; UI port published; API health-checked. The app starts from the process environment when no `.env` file is mounted | must | done |
 | <a id="plt-07"></a>PLT-07 | Regenerate this project's FastAPI OpenAPI → TypeScript client (`bin/install-frontend-api-client.sh`) | must | done |
 | <a id="plt-08"></a>PLT-08 | Vendor upstream OpenAPI specs under `api-docs/` and refresh via script | stretch | done |
 | <a id="plt-09"></a>PLT-09 | Push to `main` creates a GitHub Release (tag `v<commit-date>-<7-char sha>`, body = commit subjects and short hashes since the previous tag) and publishes the production image to GHCR (`:<tag>` and `:latest`) | must | done |
-| <a id="plt-10"></a>PLT-10 | `GET /exfiltrate` returns the served tables (`models`, `model_provider_endpoints`) and durable `DATA_DIR/cache` files (OpenRouter models and endpoints, models.dev, Hugging Face, web enrichment, last refresh) so another instance can be rebuilt without calling those upstreams. Omits logs, `.env`, `refresh.lock`, and `refresh_status.json`. Optional `EXFILTRATE_BASE_URL` (public origin, no path) makes each API start replace the local tables and caches from `{origin}/api/exfiltrate`. The page shows a warning until that variable is removed and the process restarts | stretch | done |
+| <a id="plt-10"></a>PLT-10 | `GET /export` returns the served tables (`models`, `model_provider_endpoints`) and durable `DATA_DIR/cache` files (OpenRouter models and endpoints, models.dev, Hugging Face, web enrichment, last refresh) so another instance can be rebuilt without calling those upstreams. Omits logs, `.env`, `refresh.lock`, and `refresh_status.json`. Optional `EXPORT_BASE_URL` (public origin, no path) makes each API start replace the local tables and caches from `{origin}/api/export`. The page shows a warning until that variable is removed and the process restarts | stretch | done |
 
 ## Information architecture
 
@@ -85,7 +85,7 @@ Help a user pick an LLM by filtering and sorting on the dimensions that matter f
 OpenRouter (+ endpoints) + models.dev + HF (+ opt-in OR batch/web-search gap-fill) → retrieve/clean/enrich → SQLite
   tables: models (CombinedModel), model_provider_endpoints (per-provider price/speed)
                                                                       ↓
-                                        FastAPI /models  +  GET /exfiltrate (restore dump)
+                                        FastAPI /models  +  GET /export (restore dump)
                                                                       ↓
                                                Next.js /api proxy → generated client (/models)
                                                                       ↓

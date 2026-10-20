@@ -29,7 +29,7 @@ from llm_rankings.web_enrichment import read_lifetime_cost_usd
 
 logger = logging.getLogger(__name__)
 
-EXFILTRATE_BASE_URL_ENV = "EXFILTRATE_BASE_URL"
+EXPORT_BASE_URL_ENV = "EXPORT_BASE_URL"
 _USER_AGENT = "llm-filtering-search-tool/0.1"
 # Connect quickly; a full cache dump can be large.
 _FETCH_TIMEOUT_SECONDS = (10, 600)
@@ -45,7 +45,7 @@ class ExportedCacheFile(BaseModel):
     text: str
 
 
-class ExfiltrateResponse(BaseModel):
+class ExportResponse(BaseModel):
     """Snapshot of the served tables plus the caches a refresh would reuse."""
 
     models: list[CombinedModel]
@@ -89,18 +89,18 @@ def _cache_files() -> list[ExportedCacheFile]:
     return exported
 
 
-def build_exfiltrate_response() -> ExfiltrateResponse:
+def build_export_response() -> ExportResponse:
     """Read the live database and durable caches. Does not call upstream APIs."""
     models = get_all_models()
     provider_endpoints = get_all_provider_endpoints()
     cache_files = _cache_files()
     logger.info(
-        "Exfiltrate snapshot: %d models, %d provider endpoints, %d cache files",
+        "Export snapshot: %d models, %d provider endpoints, %d cache files",
         len(models),
         len(provider_endpoints),
         len(cache_files),
     )
-    return ExfiltrateResponse(
+    return ExportResponse(
         models=models,
         provider_endpoints=provider_endpoints,
         enrichment_cost_usd=read_lifetime_cost_usd(),
@@ -110,24 +110,24 @@ def build_exfiltrate_response() -> ExfiltrateResponse:
     )
 
 
-def configured_exfiltrate_base_url() -> str | None:
-    """Public origin from ``EXFILTRATE_BASE_URL``, without a trailing slash."""
-    raw = (os.environ.get(EXFILTRATE_BASE_URL_ENV) or "").strip()
+def configured_export_base_url() -> str | None:
+    """Public origin from ``EXPORT_BASE_URL``, without a trailing slash."""
+    raw = (os.environ.get(EXPORT_BASE_URL_ENV) or "").strip()
     if not raw:
         return None
     return raw.rstrip("/")
 
 
-def exfiltrate_snapshot_url(base: str) -> str:
-    """``{origin}/api/exfiltrate`` for a scheme/host/port base URL."""
+def export_snapshot_url(base: str) -> str:
+    """``{origin}/api/export`` for a scheme/host/port base URL."""
     parsed = urlsplit(base)
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
-        raise ValueError(f"{EXFILTRATE_BASE_URL_ENV} must be an http(s) origin: {base}")
+        raise ValueError(f"{EXPORT_BASE_URL_ENV} must be an http(s) origin: {base}")
     if parsed.username or parsed.password:
-        raise ValueError(f"{EXFILTRATE_BASE_URL_ENV} must not include credentials: {base}")
+        raise ValueError(f"{EXPORT_BASE_URL_ENV} must not include credentials: {base}")
     if parsed.path not in ("", "/") or parsed.query or parsed.fragment:
-        raise ValueError(f"{EXFILTRATE_BASE_URL_ENV} must be an origin with no path: {base}")
-    return f"{parsed.scheme}://{parsed.netloc}/api/exfiltrate"
+        raise ValueError(f"{EXPORT_BASE_URL_ENV} must be an origin with no path: {base}")
+    return f"{parsed.scheme}://{parsed.netloc}/api/export"
 
 
 def _validated_cache_relative(path: str) -> str:
@@ -184,9 +184,9 @@ def _restore_cache_files(files: list[ExportedCacheFile]) -> None:
             directory.rmdir()
 
 
-def fetch_exfiltrate_snapshot(base: str) -> ExfiltrateResponse:
-    """GET the source instance's public ``/api/exfiltrate`` snapshot."""
-    url = exfiltrate_snapshot_url(base)
+def fetch_export_snapshot(base: str) -> ExportResponse:
+    """GET the source instance's public ``/api/export`` snapshot."""
+    url = export_snapshot_url(base)
     logger.info("Downloading instance snapshot from %s", url)
     response = requests.get(
         url,
@@ -194,10 +194,10 @@ def fetch_exfiltrate_snapshot(base: str) -> ExfiltrateResponse:
         headers={"User-Agent": _USER_AGENT},
     )
     response.raise_for_status()
-    return ExfiltrateResponse.model_validate(response.json())
+    return ExportResponse.model_validate(response.json())
 
 
-def apply_exfiltrate_snapshot(payload: ExfiltrateResponse) -> None:
+def apply_export_snapshot(payload: ExportResponse) -> None:
     """
     Replace the live SQLite tables and durable caches with ``payload``.
 
@@ -206,29 +206,29 @@ def apply_exfiltrate_snapshot(payload: ExfiltrateResponse) -> None:
     rebuild from upstream.
     """
     with refresh_lock():
-        set_refresh_in_progress(in_progress=True, reason="exfiltrate-import")
+        set_refresh_in_progress(in_progress=True, reason="export-import")
         try:
             _restore_cache_files(payload.cache_files)
             replace_database(payload.models, payload.provider_endpoints)
             write_last_refresh_at()
         except Exception:
-            set_refresh_in_progress(in_progress=False, reason="exfiltrate-import-failed")
+            set_refresh_in_progress(in_progress=False, reason="export-import-failed")
             raise
-        set_refresh_in_progress(in_progress=False, reason="exfiltrate-import-done")
+        set_refresh_in_progress(in_progress=False, reason="export-import-done")
 
 
 def import_configured_instance() -> bool:
     """
-    When ``EXFILTRATE_BASE_URL`` is set, replace local data from that instance.
+    When ``EXPORT_BASE_URL`` is set, replace local data from that instance.
 
     Returns False when the variable is unset. Raises when it is set and the
     download or restore fails.
     """
-    base = configured_exfiltrate_base_url()
+    base = configured_export_base_url()
     if base is None:
         return False
-    payload = fetch_exfiltrate_snapshot(base)
-    apply_exfiltrate_snapshot(payload)
+    payload = fetch_export_snapshot(base)
+    apply_export_snapshot(payload)
     logger.info(
         "Imported instance from %s (%d models, %d provider rows, %d cache files)",
         base,

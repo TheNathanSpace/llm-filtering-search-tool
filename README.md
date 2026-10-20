@@ -68,7 +68,7 @@ cp .env.template .env
 | `BACKEND_HOST` | | FastAPI listen address (default `127.0.0.1` on the host). Containers use `0.0.0.0`. |
 | `BACKEND_PORT` | | FastAPI listen port (default `8000`) |
 | `ENABLE_API_DOCS` | no | `1` enables FastAPI `/docs`, `/redoc`, and `/openapi.json`. Off by default. The local `dev` profile turns it on. |
-| `EXFILTRATE_BASE_URL` | no | Public origin (`http://host:3030`, no path). See [Refresh](backend/README.md#refresh). |
+| `EXPORT_BASE_URL` | no | Public origin (`http://host:3030`, no path). See [Refresh](backend/README.md#refresh). |
 | `FRONTEND_PORT` | | Next.js listen port (default `3030`) |
 | `COMPOSE_PROFILES` | local Compose | `prod` (default) or `dev` (hot reload) |
 

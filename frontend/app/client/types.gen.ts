@@ -33,11 +33,11 @@ export type AppMeta = {
      */
     refresh_in_progress: boolean;
     /**
-     * Exfiltrate Base Url
+     * Export Base Url
      *
-     * EXFILTRATE_BASE_URL when set. Startup replaces local data from that instance, and the page warns until the process restarts without it.
+     * EXPORT_BASE_URL when set. Startup replaces local data from that instance, and the page warns until the process restarts without it.
      */
-    exfiltrate_base_url: string | null;
+    export_base_url: string | null;
 };
 
 /**
@@ -127,11 +127,11 @@ export type CombinedModel = {
 };
 
 /**
- * ExfiltrateResponse
+ * ExportResponse
  *
  * Snapshot of the served tables plus the caches a refresh would reuse.
  */
-export type ExfiltrateResponse = {
+export type ExportResponse = {
     /**
      * Models
      */
@@ -332,18 +332,18 @@ export type GetModelsModelsGetResponses = {
 
 export type GetModelsModelsGetResponse = GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];
 
-export type ExfiltrateExfiltrateGetData = {
+export type ExportExportGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/exfiltrate';
+    url: '/export';
 };
 
-export type ExfiltrateExfiltrateGetResponses = {
+export type ExportExportGetResponses = {
     /**
      * Successful Response
      */
-    200: ExfiltrateResponse;
+    200: ExportResponse;
 };
 
-export type ExfiltrateExfiltrateGetResponse = ExfiltrateExfiltrateGetResponses[keyof ExfiltrateExfiltrateGetResponses];
+export type ExportExportGetResponse = ExportExportGetResponses[keyof ExportExportGetResponses];

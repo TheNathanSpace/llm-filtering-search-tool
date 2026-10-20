@@ -60,24 +60,24 @@ Commands: [root README](../README.md#refresh-model-data). Rebuild entry points: 
 | --- | --- |
 | Automatic / default CLI | Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h. Otherwise run the pipeline (OpenRouter models, endpoints, and models.dev may come from disk cache), write a staging SQLite file, atomically replace `database.db`, then write `last_refresh_at`. The previous live DB stays readable until that swap. A skip leaves the live DB untouched and logs that data is already fresh. |
 | `--force` | Bypass the 24h gate, invalidate the selected caches, then the same staging swap. |
-| Exfiltrate import | On API start, if `EXFILTRATE_BASE_URL` is set. |
+| Export import | On API start, if `EXPORT_BASE_URL` is set. |
 
 `--force` sources: `models`, `providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force` has no `--source`). `models` also invalidates `providers`. API and CLI callers share `DATA_DIR/cache/refresh.lock`.
 
-- API lifespan starts a background startup load (exfiltrate import, then the gated refresh) and a refresh check about every hour. Serving is not blocked. Callers keep reading the previous snapshot while a rebuild is in flight.
+- API lifespan starts a background startup load (export import, then the gated refresh) and a refresh check about every hour. Serving is not blocked. Callers keep reading the previous snapshot while a rebuild is in flight.
 - CLI: `python -m llm_rankings.refresh`, `python -m llm_rankings.database` (same CLI), or `./bin/refresh-data.sh` (via `docker exec`). No public HTTP refresh endpoint.
 - `last_refresh_at` is the last successful DB rebuild, not a per-source fetch time. It resets the 24h gate.
 - A successful rebuild writes `DATA_DIR/database.db.staging`, then replaces `DATA_DIR/database.db`.
 - `GET /meta` and the populating empty state: [PLT-01](../docs/requirements.md#plt-01), [UI-01](../docs/requirements.md#ui-01).
 
-`GET /exfiltrate` (also `/api/exfiltrate`) ([PLT-10](../docs/requirements.md#plt-10)):
+`GET /export` (also `/api/export`) ([PLT-10](../docs/requirements.md#plt-10)):
 
 - Returns metadata, every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file under `DATA_DIR/cache` except `refresh.lock` and `refresh_status.json`
 - Omits logs and `.env`
 
-`EXFILTRATE_BASE_URL` is an `http` or `https` origin with no path and no credentials.
+`EXPORT_BASE_URL` is an `http` or `https` origin with no path and no credentials.
 
-- Startup downloads `{origin}/api/exfiltrate` and replaces the live tables and `DATA_DIR/cache`. `refresh.lock` and `refresh_status.json` stay. Rows absent from the snapshot are dropped.
+- Startup downloads `{origin}/api/export` and replaces the live tables and `DATA_DIR/cache`. `refresh.lock` and `refresh_status.json` stay. Rows absent from the snapshot are dropped.
 - `last_refresh_at` is stamped to now, so that start does not also rebuild from OpenRouter.
-- `/meta` returns the origin as `exfiltrate_base_url`. A warning at the top of the page includes that origin and stays until the variable is removed and the process restarts. The next start downloads again while the variable is set.
+- `/meta` returns the origin as `export_base_url`. A warning at the top of the page includes that origin and stays until the variable is removed and the process restarts. The next start downloads again while the variable is set.
 - A failed download is logged, and startup uses the normal refresh. The 24h refresh still runs later while the process stays up.

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-19 — terse docs pass
-**Latest change:** Terse docs pass, corrected against the current pipeline, filters, and release notes.
+**Last updated:** 2026-10-20 — OpenRouter endpoint fields
+**Latest change:** Accept OpenRouter endpoint `service_tier` and `supports_diarization` so a wiped database can rebuild.
 
 ## Pickup
 

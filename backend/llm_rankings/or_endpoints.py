@@ -64,6 +64,7 @@ class ORPublicEndpoint(ORBaseModel):
     pricing: ORPricing
     provider_name: str
     tag: str
+    service_tier: str | None = None
     quantization: str | None
     max_completion_tokens: int | None
     max_prompt_tokens: int | None
@@ -73,6 +74,7 @@ class ORPublicEndpoint(ORBaseModel):
     uptime_last_5m: float | None
     uptime_last_1d: float | None
     supports_implicit_caching: bool
+    supports_diarization: bool = False
     native_tools: dict[str, ORNativeTool]
     latency_last_30m: ORPercentileStats | None
     throughput_last_30m: ORPercentileStats | None

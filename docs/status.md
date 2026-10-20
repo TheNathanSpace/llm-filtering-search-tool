@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-20 — snapshot route renamed to export
-**Latest change:** `GET /export`, `EXPORT_BASE_URL`, and the copy warning use export.
+**Last updated:** 2026-10-20 — reset button matches the filter column
+**Latest change:** The reset button fills the left filter column, with filter-sized black text, a blue outline, and space below it.
 
 ## Pickup
 
@@ -9,7 +9,7 @@
 | --- | --- |
 | Data fetch (OR + models.dev + HF + opt-in batch web) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [PLT-10](requirements.md#plt-10), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)) |
-| Next.js table + filters | Implemented ([QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13), [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-12](requirements.md#ui-12)) |
+| Next.js table + filters | Implemented ([QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13), [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-13](requirements.md#ui-13)) |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
 | Docker / env / logging / proxy | Implemented ([PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06), [PLT-09](requirements.md#plt-09)) |
 | External + project OpenAPI tooling | Implemented ([PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08)) |
@@ -17,7 +17,7 @@
 
 ## UI map (filters vs columns)
 
-Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
+A full-width reset button is first in the left column, above the missing-values switch. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |

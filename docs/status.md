@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — web enrichment skips knowledge cutoff
-**Latest change:** Web enrichment gap-fills open weights and size only. Knowledge cutoff stays the OpenRouter value.
+**Last updated:** 2026-10-26 — empty range fields reset
+**Latest change:** Clearing a typed min or max field restores that end to the data bound.
 
 ## Pickup
 

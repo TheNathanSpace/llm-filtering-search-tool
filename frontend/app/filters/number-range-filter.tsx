@@ -56,6 +56,8 @@ function applyTypedEndpoint(
 interface RangeEndpointEditorProperties {
     initialDraft: string;
     ariaLabel: string;
+    /** Value used when the field is cleared. */
+    emptyValue: number;
     onCommit: (next: number) => void;
     onClose: () => void;
 }
@@ -73,6 +75,8 @@ function RangeEndpointEditor(
         const parsed = parseTypedNumber(text);
         if (parsed !== undefined) {
             properties.onCommit(parsed);
+        } else if (text.trim() === "") {
+            properties.onCommit(properties.emptyValue);
         }
         properties.onClose();
     }
@@ -124,6 +128,7 @@ function RangeEndpointEditor(
 interface RangeEndpointProperties {
     label: string;
     value: number;
+    emptyValue: number;
     ariaLabel: string;
     active: boolean;
     onActivate: () => void;
@@ -164,6 +169,7 @@ function RangeEndpoint(properties: Readonly<RangeEndpointProperties>) {
         <RangeEndpointEditor
             initialDraft={formatDraft(properties.value)}
             ariaLabel={properties.ariaLabel}
+            emptyValue={properties.emptyValue}
             onCommit={properties.onCommit}
             onClose={properties.onClose}
         />
@@ -237,6 +243,7 @@ export default function NumberRangeFilter(
                     <RangeEndpoint
                         label={String(formatValue(value[0]) ?? "")}
                         value={value[0]}
+                        emptyValue={properties.minValue}
                         ariaLabel={`${properties.name} minimum, click to type a value`}
                         active={activeEndpoint === "start"}
                         onActivate={() => {
@@ -253,6 +260,7 @@ export default function NumberRangeFilter(
                     <RangeEndpoint
                         label={String(formatValue(value[1]) ?? "")}
                         value={value[1]}
+                        emptyValue={properties.maxValue}
                         ariaLabel={`${properties.name} maximum, click to type a value`}
                         active={activeEndpoint === "end"}
                         onActivate={() => {

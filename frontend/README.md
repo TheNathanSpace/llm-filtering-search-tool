@@ -43,7 +43,7 @@ Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/sta
 - Name search matches display names and OpenRouter ids and slugs, ignoring punctuation (`gpt 5` matches `GPT-5`). Commas separate OR alternatives. A leading `-` on a comma unit excludes models that match every word in that unit. A help icon next to the Name label states this.
 - Creator values use the `Author:` prefix on the model name when it has one. Otherwise they use a leading word that starts the author slug, or the title-cased slug.
 - Modality filters keep models that include every checked type. Unchecked means no constraint.
-- `NumberRangeFilter`, including size, shows the selected minimum and maximum under the slider. Click either number to type a value. Enter or leaving the field applies it. Escape cancels. The value stays inside the data bounds. If it crosses the other end, that end moves with it.
+- `NumberRangeFilter`, including size, shows the selected minimum and maximum under the slider. Click either number to type a value. Enter or leaving the field applies it. Clearing the field restores that end to the data bound. Escape cancels. The value stays inside the data bounds. If it crosses the other end, that end moves with it.
 - Date range filters are slider-only.
 
 ### Shareable URL

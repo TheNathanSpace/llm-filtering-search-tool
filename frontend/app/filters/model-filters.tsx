@@ -128,6 +128,7 @@ export default function ModelFilters(
                 name="Name"
                 label="Search names or slugs"
                 value={filters.nameQuery}
+                resizable
                 help={
                     "Matches display names and OpenRouter slugs (e.g. gpt-5-nano).\n" +
                     "Punctuation is ignored, so gpt 5 matches GPT-5.\n" +

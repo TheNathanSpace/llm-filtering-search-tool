@@ -9,12 +9,19 @@ interface TextFilterProperties {
     value: string;
     onChange?: (value: string) => void;
     help?: ReactNode;
+    /** One-line textarea the user can drag taller. */
+    resizable?: boolean;
 }
 
-export default function TextFilter(
-    properties: Readonly<TextFilterProperties>,
-) {
-    const { name, label, value, onChange, help } = properties;
+export default function TextFilter(properties: Readonly<TextFilterProperties>) {
+    const {
+        name,
+        label,
+        value,
+        onChange,
+        help,
+        resizable = false,
+    } = properties;
 
     return (
         <FilterOption name={name} help={help}>
@@ -27,6 +34,19 @@ export default function TextFilter(
                     }}
                     fullWidth={true}
                     size="small"
+                    multiline={resizable}
+                    minRows={resizable ? 1 : undefined}
+                    slotProps={
+                        resizable
+                            ? {
+                                  input: { inputComponent: "textarea" },
+                                  htmlInput: {
+                                      rows: 1,
+                                      style: { resize: "vertical" },
+                                  },
+                              }
+                            : undefined
+                    }
                 />
             </MuiFontSans>
         </FilterOption>

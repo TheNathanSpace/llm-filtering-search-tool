@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — empty range fields reset
-**Latest change:** Clearing a typed min or max field restores that end to the data bound.
+**Last updated:** 2026-10-26 — table cells lose focus outline
+**Latest change:** Clicking a table cell or column header does not show a focus outline.
 
 ## Pickup
 

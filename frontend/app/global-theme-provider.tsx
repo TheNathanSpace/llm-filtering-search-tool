@@ -48,10 +48,16 @@ const theme = createTheme({
             styleOverrides: {
                 root: {
                     "& .MuiDataGrid-cell:focus": {
-                        outline: "none",
+                        outline: "none !important",
                     },
                     "& .MuiDataGrid-cell:focus-within": {
-                        outline: "none",
+                        outline: "none !important",
+                    },
+                    "& .MuiDataGrid-columnHeader:focus": {
+                        outline: "none !important",
+                    },
+                    "& .MuiDataGrid-columnHeader:focus-within": {
+                        outline: "none !important",
                     },
                 },
             },

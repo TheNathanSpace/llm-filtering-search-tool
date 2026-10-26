@@ -35,9 +35,10 @@ Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/sta
 | `use-sync-table-query.ts` | Keep the address bar aligned with that state |
 
 - The panel uses two columns of about the same height. A control is not split across the break.
-- **Reset all of these dang filters** is first in the left column, above the missing-values switch, and fills that column. The label uses the filter text size and color; the outline stays blue. It restores default filter choices and clears the token count. Range sliders remount so the thumbs match those defaults. Table sort stays, except a usage-cost sort, which drops with the token count ([UI-13](../docs/requirements.md#ui-13)).
-- `model-table.tsx` composes the filter panel and Data Grid. Pagination stays on. Virtualization is off, so every row and column on the current page is in the document and browser find can reach them. Column definitions: `app/columns.tsx`. Cells and column headers do not show a focus outline.
-- Column-backed filters follow that column order. The missing-values switch is first. Modality filters have no column, so they come after the column-aligned controls.
+- **Reset all of these dang filters** is first in the left column, above **Clear pins**, and fills that column. The label uses the filter text size and color; the outline stays blue. It restores default filter choices, including turning hide-unpinned off, and clears the token count. It leaves pinned ids in place. Range sliders remount so the thumbs match those defaults. Table sort stays, except a usage-cost sort, which drops with the token count ([UI-13](../docs/requirements.md#ui-13)).
+- **Clear pins** sits under reset and uses the same button. It empties the pin set and turns hide-unpinned off ([UI-14](../docs/requirements.md#ui-14)).
+- `model-table.tsx` composes the filter panel and Data Grid. Pagination stays on. Virtualization is off, so every row and column on the current page is in the document and browser find can reach them. Column definitions: `app/columns.tsx`. Cells and column headers do not show a focus outline. The first column is a pin control.
+- Column-backed filters follow that column order. The missing-values switch is first, then hide unpinned. Modality filters have no column, so they come after the column-aligned controls.
 - **Millions of tokens** sits just before the price ranges. A positive count inserts a **Cost (NM)** column left of Input Cost and a **Cost** range under the box: `tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. The range keeps models inside it. Missing prices follow the missing-values switch. Changing or clearing the count resets that range. Clearing the count removes the column. The blend matches `backend/llm_rankings/provider_choice.py`.
 - The name cell links to the model’s OpenRouter page.
 - Name search matches display names and OpenRouter ids and slugs, ignoring punctuation (`gpt 5` matches `GPT-5`). A decimal point between digits stays. A number matches that whole numeric span, including inside a word (`4.1` matches `v4.1`; `5` does not match `5.5` or `15`). Other words stay substring matches. Commas separate OR alternatives. A leading `-` on a comma unit excludes models that match every word in that unit. The field is one line and can be dragged taller. A help icon next to the Name label states the matching rules.
@@ -48,12 +49,14 @@ Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/sta
 
 ### Shareable URL
 
-The address bar stores filter choices that differ from the defaults, the token-count text, and the table sort; opening that URL restores the setup. Defaults (missing values included, open-weights off, full ranges, intelligence descending) stay off the query string; `sort=none` means unsorted; changing the setup replaces the current history entry, so Back leaves the page.
+The address bar stores filter choices that differ from the defaults, the token-count text, the table sort, and pinned model ids; opening that URL restores the setup. Defaults (missing values included, open-weights off, hide-unpinned off, full ranges, intelligence descending, no pins) stay off the query string; `sort=none` means unsorted; changing the setup replaces the current history entry, so Back leaves the page.
 
 | Parameter | Value |
 | --- | --- |
 | `missing=0` | Do not treat missing values as included |
 | `openWeights=1` | Open weights only |
+| `pinnedOnly=1` | Hide unpinned models |
+| `pin` | One parameter per pinned OpenRouter id |
 | `name` | Name and slug search text |
 | `creator` | One parameter per selected creator |
 | `size`, `intelligence`, `coding`, `agentic`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency` | `min,max` |
@@ -74,7 +77,7 @@ Reuse `MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`,
 4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`. Pass `defaultStart` / `defaultEnd` from the resolved filter when the control keeps its own state, so a shared URL shows the restored range.
 5. **`filter-query.ts`** — Parse and serialize the field. Omit it when it matches `createInitialUserChoices`.
 
-`model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`.
+`model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`. Pins do too: the pin set lives next to the sort model and is passed into `useModelFilters` and `columnsForTokenMillions`.
 
 ## Running
 

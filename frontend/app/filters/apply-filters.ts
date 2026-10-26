@@ -63,9 +63,13 @@ function passesOpenWeightsOnly(
 export function filterModels(
     models: CombinedModel[],
     filters: ModelFiltersState,
-    tokenMillions?: number,
+    tokenMillions: number | undefined,
+    pinnedIds: ReadonlySet<string>,
 ): CombinedModel[] {
     return models.filter((model) => {
+        if (filters.pinnedOnly && !pinnedIds.has(model.id)) {
+            return false;
+        }
         if (
             !passesOpenWeightsOnly(
                 model.is_open_weights,

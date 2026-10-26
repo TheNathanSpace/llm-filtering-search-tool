@@ -22,6 +22,7 @@ export type TableQueryState = {
     choices: UserFilterChoices;
     tokenMillionsText: string;
     sortModel: TableSortItem[];
+    pinnedIds: string[];
 };
 
 /** Intelligence descending — omitted from the URL when it is the only sort. */
@@ -229,6 +230,9 @@ export function parseTableQuery(query: PageSearchQuery): TableQueryState {
     if (readFirst(query, "openWeights") === "1") {
         choices.openWeightsOnly = true;
     }
+    if (readFirst(query, "pinnedOnly") === "1") {
+        choices.pinnedOnly = true;
+    }
     choices.nameQuery = readFirst(query, "name") ?? "";
     choices.creators = uniqueInOrder(readList(query, "creator"));
     for (const [parameter, field] of RANGE_QUERY_FIELDS) {
@@ -249,6 +253,7 @@ export function parseTableQuery(query: PageSearchQuery): TableQueryState {
         choices,
         tokenMillionsText: readFirst(query, "tokens") ?? "",
         sortModel: parseSort(readFirst(query, "sort")),
+        pinnedIds: uniqueInOrder(readList(query, "pin")),
     };
 }
 
@@ -260,6 +265,9 @@ export function serializeTableQuery(state: TableQueryState): string {
     }
     if (choices.openWeightsOnly) {
         parameters.set("openWeights", "1");
+    }
+    if (choices.pinnedOnly) {
+        parameters.set("pinnedOnly", "1");
     }
     if (choices.nameQuery !== "") {
         parameters.set("name", choices.nameQuery);
@@ -289,6 +297,9 @@ export function serializeTableQuery(state: TableQueryState): string {
     const sort = serializeSort(state.sortModel);
     if (sort !== undefined) {
         parameters.set("sort", sort);
+    }
+    for (const id of uniqueInOrder(state.pinnedIds)) {
+        parameters.append("pin", id);
     }
     return parameters.toString();
 }

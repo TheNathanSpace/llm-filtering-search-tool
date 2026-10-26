@@ -51,6 +51,44 @@ interface ModelFiltersProperties {
     setFilters: Dispatch<SetStateAction<ModelFiltersState>>;
     tokenMillions: string;
     onTokenMillionsChange: (value: string) => void;
+    onClearPins: () => void;
+}
+
+const panelButtonSx = {
+    textTransform: "none",
+    whiteSpace: "nowrap",
+    fontSize: "1rem",
+    lineHeight: 1.15,
+    color: "inherit",
+    borderColor: "primary.main",
+    "&:hover": {
+        color: "inherit",
+        borderColor: "primary.main",
+    },
+} as const;
+
+function PanelButton({
+    label,
+    onClick,
+}: {
+    label: string;
+    onClick: () => void;
+}) {
+    return (
+        <div className="w-full break-inside-avoid px-1 pt-2 pb-4">
+            <MuiFontCasual style={{ width: "100%" }}>
+                <Button
+                    variant="outlined"
+                    color="primary"
+                    fullWidth
+                    onClick={onClick}
+                    sx={panelButtonSx}
+                >
+                    {label}
+                </Button>
+            </MuiFontCasual>
+        </div>
+    );
 }
 
 export default function ModelFilters(
@@ -62,6 +100,7 @@ export default function ModelFilters(
         setFilters,
         tokenMillions,
         onTokenMillionsChange,
+        onClearPins,
     } = properties;
     const [rangeRevision, setRangeRevision] = useState(0);
     const parsedTokenMillions = parseTokenMillions(tokenMillions);
@@ -75,30 +114,11 @@ export default function ModelFilters(
 
     return (
         <div className="w-full columns-2 gap-x-16">
-            <div className="w-full break-inside-avoid px-1 pt-2 pb-4">
-                <MuiFontCasual style={{ width: "100%" }}>
-                    <Button
-                        variant="outlined"
-                        color="primary"
-                        fullWidth
-                        onClick={resetFilters}
-                        sx={{
-                            textTransform: "none",
-                            whiteSpace: "nowrap",
-                            fontSize: "1rem",
-                            lineHeight: 1.15,
-                            color: "inherit",
-                            borderColor: "primary.main",
-                            "&:hover": {
-                                color: "inherit",
-                                borderColor: "primary.main",
-                            },
-                        }}
-                    >
-                        Reset all of these dang filters
-                    </Button>
-                </MuiFontCasual>
-            </div>
+            <PanelButton
+                label="Reset all of these dang filters"
+                onClick={resetFilters}
+            />
+            <PanelButton label="Clear pins" onClick={onClearPins} />
             <div className="w-full break-inside-avoid">
                 <FormGroup sx={{ width: "100%" }}>
                     <FormControlLabel
@@ -121,6 +141,31 @@ export default function ModelFilters(
                             />
                         }
                         label="Treat entries with missing values as included in filters"
+                    />
+                </FormGroup>
+            </div>
+            <div className="w-full break-inside-avoid">
+                <FormGroup sx={{ width: "100%" }}>
+                    <FormControlLabel
+                        sx={{
+                            display: "flex",
+                            maxWidth: "100%",
+                            "& .MuiFormControlLabel-label": {
+                                whiteSpace: "normal",
+                            },
+                        }}
+                        control={
+                            <Switch
+                                checked={filters.pinnedOnly}
+                                onChange={(_event, checked) => {
+                                    setFilters((previous) => ({
+                                        ...previous,
+                                        pinnedOnly: checked,
+                                    }));
+                                }}
+                            />
+                        }
+                        label="Hide unpinned models"
                     />
                 </FormGroup>
             </div>

@@ -14,7 +14,7 @@ import {
 } from "@/app/filters/filter-query";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 import { useSyncTableQuery } from "@/app/filters/use-sync-table-query";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 const POPULATING_MESSAGE =
     "The models database is still being populated. Check back in a little (or maybe a lot) while.";
@@ -68,17 +68,43 @@ export default function ModelTable({
         initialSetup.tokenMillionsText,
     );
     const [sortModel, setSortModel] = useState(initialSetup.sortModel);
+    const [pinnedIds, setPinnedIds] = useState(initialSetup.pinnedIds);
     const tokenMillions = parseTokenMillions(tokenMillionsText);
+    const pinnedIdSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
     const { bounds, filters, setFilters, filteredModels, userChoices } =
-        useModelFilters(models, tokenMillions, initialSetup.choices);
+        useModelFilters(
+            models,
+            tokenMillions,
+            initialSetup.choices,
+            pinnedIdSet,
+        );
     useSyncTableQuery({
         choices: userChoices,
         tokenMillionsText,
         sortModel,
+        pinnedIds,
     });
+    const togglePin = useCallback((id: string) => {
+        setPinnedIds((previous) =>
+            previous.includes(id)
+                ? previous.filter((item) => item !== id)
+                : [...previous, id],
+        );
+    }, []);
+    const clearPins = useCallback(() => {
+        setPinnedIds([]);
+        setFilters((previous) => ({
+            ...previous,
+            pinnedOnly: false,
+        }));
+    }, [setFilters]);
     const columns = useMemo(
-        () => columnsForTokenMillions(tokenMillions),
-        [tokenMillions],
+        () =>
+            columnsForTokenMillions(tokenMillions, {
+                pinnedIds: pinnedIdSet,
+                onTogglePin: togglePin,
+            }),
+        [tokenMillions, pinnedIdSet, togglePin],
     );
 
     const emptyMessage = useMemo(() => {
@@ -114,6 +140,7 @@ export default function ModelTable({
                                 ),
                             );
                         }}
+                        onClearPins={clearPins}
                     />
                 </div>
                 <MuiFontSans style={{ height: "50%", width: "100%" }}>

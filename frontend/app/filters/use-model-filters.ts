@@ -45,6 +45,7 @@ function toUserChoices(
     return {
         includeMissing: filters.includeMissing,
         openWeightsOnly: filters.openWeightsOnly,
+        pinnedOnly: filters.pinnedOnly,
         nameQuery: filters.nameQuery,
         creators: filters.creators,
         intelligenceIndex: choiceRange(
@@ -54,10 +55,7 @@ function toUserChoices(
         codingIndex: choiceRange(filters.codingIndex, bounds.codingIndex),
         agenticIndex: choiceRange(filters.agenticIndex, bounds.agenticIndex),
         pricingInput: choiceRange(filters.pricingInput, bounds.pricingInput),
-        pricingOutput: choiceRange(
-            filters.pricingOutput,
-            bounds.pricingOutput,
-        ),
+        pricingOutput: choiceRange(filters.pricingOutput, bounds.pricingOutput),
         throughput: choiceRange(filters.throughput, bounds.throughput),
         latencyMs: choiceRange(filters.latencyMs, bounds.latencyMs),
         creationDate: choiceRange(filters.creationDate, bounds.creationDate),
@@ -65,10 +63,7 @@ function toUserChoices(
             filters.knowledgeCutoff,
             bounds.knowledgeCutoff,
         ),
-        contextLength: choiceRange(
-            filters.contextLength,
-            bounds.contextLength,
-        ),
+        contextLength: choiceRange(filters.contextLength, bounds.contextLength),
         parametersB: choiceRange(filters.parametersB, bounds.parametersB),
         usageCost: choiceRange(filters.usageCost, bounds.usageCost),
         inputModalities: filters.inputModalities,
@@ -79,7 +74,8 @@ function toUserChoices(
 export function useModelFilters(
     models: CombinedModel[],
     tokenMillions: number | undefined,
-    initialChoices?: UserFilterChoices,
+    initialChoices: UserFilterChoices | undefined,
+    pinnedIds: ReadonlySet<string>,
 ) {
     const bounds = useMemo(
         () => getFilterBounds(models, tokenMillions),
@@ -109,8 +105,8 @@ export function useModelFilters(
     );
 
     const filteredModels = useMemo(
-        () => filterModels(models, filters, tokenMillions),
-        [models, filters, tokenMillions],
+        () => filterModels(models, filters, tokenMillions, pinnedIds),
+        [models, filters, tokenMillions, pinnedIds],
     );
 
     return { bounds, filters, setFilters, filteredModels, userChoices };

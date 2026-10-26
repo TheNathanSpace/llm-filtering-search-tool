@@ -7,8 +7,53 @@ import {
     formatPrice,
     formatTimestamp,
 } from "@/app/utility";
-import { Link } from "@mui/material";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
+import { IconButton, Link } from "@mui/material";
 import { GridColDef } from "@mui/x-data-grid";
+
+export type PinColumnControls = {
+    pinnedIds: ReadonlySet<string>;
+    onTogglePin: (id: string) => void;
+};
+
+function pinColumn(pins: PinColumnControls): GridColDef {
+    return {
+        field: "pin",
+        headerName: "Pin",
+        width: 64,
+        sortable: false,
+        filterable: false,
+        disableColumnMenu: true,
+        align: "center",
+        headerAlign: "center",
+        display: "flex",
+        renderCell: (parameters) => {
+            const modelId = String(parameters.id);
+            const pinned = pins.pinnedIds.has(modelId);
+            return (
+                <IconButton
+                    size="small"
+                    aria-label={pinned ? `Unpin ${modelId}` : `Pin ${modelId}`}
+                    aria-pressed={pinned}
+                    onMouseDown={(event) => {
+                        event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                        event.stopPropagation();
+                        pins.onTogglePin(modelId);
+                    }}
+                >
+                    {pinned ? (
+                        <PushPinIcon fontSize="small" />
+                    ) : (
+                        <PushPinOutlinedIcon fontSize="small" />
+                    )}
+                </IconButton>
+            );
+        },
+    };
+}
 
 export const columns: GridColDef[] = [
     {
@@ -145,10 +190,16 @@ function usageCostColumn(tokenMillions: number): GridColDef<CombinedModel> {
 /** Table columns, with a usage-cost column left of input cost when a token count is set. */
 export function columnsForTokenMillions(
     tokenMillions: number | undefined,
+    pins: PinColumnControls,
 ): GridColDef[] {
-    if (tokenMillions === undefined) {
-        return columns;
-    }
+    const dataColumns =
+        tokenMillions === undefined
+            ? columns
+            : columnsWithUsageCost(tokenMillions);
+    return [pinColumn(pins), ...dataColumns];
+}
+
+function columnsWithUsageCost(tokenMillions: number): GridColDef[] {
     const pricingIndex = columns.findIndex(
         (column) => column.field === "pricing_input",
     );

@@ -5,6 +5,7 @@ export type NumberRange = [number, number];
 export type ModelFiltersState = {
     includeMissing: boolean;
     openWeightsOnly: boolean;
+    pinnedOnly: boolean;
     nameQuery: string;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
@@ -27,6 +28,7 @@ export type ModelFiltersState = {
 export type UserFilterChoices = {
     includeMissing: boolean;
     openWeightsOnly: boolean;
+    pinnedOnly: boolean;
     nameQuery: string;
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
@@ -65,6 +67,7 @@ export function createInitialUserChoices(): UserFilterChoices {
     return {
         includeMissing: true,
         openWeightsOnly: false,
+        pinnedOnly: false,
         nameQuery: "",
         creators: [],
         intelligenceIndex: undefined,
@@ -101,6 +104,7 @@ export function resolveFilters(
     return {
         includeMissing: choices.includeMissing,
         openWeightsOnly: choices.openWeightsOnly,
+        pinnedOnly: choices.pinnedOnly,
         nameQuery: choices.nameQuery,
         creators: choices.creators,
         intelligenceIndex: resolveRange(

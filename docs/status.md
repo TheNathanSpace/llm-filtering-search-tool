@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — table cells lose focus outline
-**Latest change:** Clicking a table cell or column header does not show a focus outline.
+**Last updated:** 2026-10-26 — name search matches whole numbers
+**Latest change:** A numeric search token matches that whole number, including inside a word such as `v4.1`.
 
 ## Pickup
 
@@ -21,7 +21,7 @@ A full-width reset button is first in the left column, above the missing-values 
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
-| Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; comma OR; `-` exclude) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
+| Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; whole numbers; comma OR; `-` exclude) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |

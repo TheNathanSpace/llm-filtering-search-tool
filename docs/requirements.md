@@ -28,7 +28,7 @@ Help a user pick an LLM by filtering and sorting on the dimensions that matter f
 | <a id="qry-10"></a>QRY-10 | Option to treat missing values as included when filters would otherwise drop them | must | done |
 | <a id="qry-11"></a>QRY-11 | Filter and sort by open weights (boolean from models.dev) | must | done |
 | <a id="qry-12"></a>QRY-12 | Filter and sort by parameter size (billions; display as e.g. `7B`) | must | done |
-| <a id="qry-13"></a>QRY-13 | Filter by name (case-insensitive; names and slugs; punctuation ignored; comma = OR; leading `-` excludes) | must | done |
+| <a id="qry-13"></a>QRY-13 | Filter by name (case-insensitive; names and slugs; punctuation ignored except a decimal point between digits; a number matches that whole numeric span, including inside a word such as `v4.1`; comma = OR; leading `-` excludes) | must | done |
 
 ## Data sources and pipeline
 

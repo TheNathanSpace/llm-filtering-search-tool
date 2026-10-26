@@ -1,10 +1,40 @@
-/** Lowercase and remove non-alphanumeric characters (spaces kept for tokenizing). */
-export function stripPunctuation(text: string): string {
-    return text.toLowerCase().replaceAll(/[^a-z0-9\s]+/g, "");
+const NUMBER_SPAN = /\d+(?:\.\d+)*/g;
+
+/** Lowercase. Keep a decimal point between digits. Other punctuation becomes a space. */
+export function normalizeSearchText(text: string): string {
+    const lower = text.toLowerCase();
+    let normalized = "";
+    for (let index = 0; index < lower.length; index += 1) {
+        const character = lower[index] ?? "";
+        if (/[a-z0-9\s]/.test(character)) {
+            normalized += character;
+            continue;
+        }
+        const previous = lower[index - 1] ?? "";
+        const next = lower[index + 1] ?? "";
+        if (character === "." && /\d/.test(previous) && /\d/.test(next)) {
+            normalized += ".";
+            continue;
+        }
+        normalized += " ";
+    }
+    return normalized;
 }
 
 function queryWords(text: string): string[] {
-    return stripPunctuation(text).split(/\s+/).filter(Boolean);
+    return normalizeSearchText(text).split(/\s+/).filter(Boolean);
+}
+
+function isNumberToken(word: string): boolean {
+    return /^\d+(?:\.\d+)*$/.test(word);
+}
+
+function numericSpans(normalized: string): Set<string> {
+    const matched = normalized.match(NUMBER_SPAN);
+    if (!matched) {
+        return new Set();
+    }
+    return new Set(matched);
 }
 
 function fieldMatchesWords(
@@ -14,8 +44,14 @@ function fieldMatchesWords(
     if (!field || words.length === 0) {
         return false;
     }
-    const normalized = stripPunctuation(field);
-    return words.every((word) => normalized.includes(word));
+    const normalized = normalizeSearchText(field);
+    const spans = numericSpans(normalized);
+    return words.every((word) => {
+        if (isNumberToken(word)) {
+            return spans.has(word);
+        }
+        return normalized.includes(word);
+    });
 }
 
 /** True when every query word appears in the name or the slug/id. */
@@ -24,15 +60,14 @@ export function modelMatchesWords(
     slug: string | undefined,
     words: string[],
 ): boolean {
-    return (
-        fieldMatchesWords(name, words) || fieldMatchesWords(slug, words)
-    );
+    return fieldMatchesWords(name, words) || fieldMatchesWords(slug, words);
 }
 
 /**
  * Name/slug search:
  * - Matches readable names and OpenRouter ids/slugs
- * - Punctuation is ignored in the query and in those fields
+ * - Punctuation is ignored, except a decimal point between digits
+ * - A number matches that whole numeric span, including inside a word (`4.1` matches `v4.1`)
  * - Commas separate OR'd alternatives
  * - A leading `-` on a comma unit excludes models that match every word in it
  */

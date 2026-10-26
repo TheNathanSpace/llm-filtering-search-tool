@@ -1,10 +1,11 @@
 import asyncio
 import logging
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -34,6 +35,16 @@ from llm_rankings.web_enrichment import read_lifetime_cost_usd
 bootstrap_env_from_argv()
 setup_logging()
 logger = logging.getLogger(__name__)
+
+
+class _DropHealthAccessLog(logging.Filter):
+    """Uvicorn's access log would otherwise record every Compose health check."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return " /health " not in record.getMessage()
+
+
+logging.getLogger("uvicorn.access").addFilter(_DropHealthAccessLog())
 
 validate_env_vars()
 frontend_port = get_env_var("FRONTEND_PORT")
@@ -110,6 +121,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_http_requests(request: Request, call_next):
+    if request.url.path == "/health":
+        return await call_next(request)
+    started = time.perf_counter()
+    try:
+        response = await call_next(request)
+    except Exception:
+        logger.exception(
+            "%s %s failed after %.0fms",
+            request.method,
+            request.url.path,
+            (time.perf_counter() - started) * 1000,
+        )
+        raise
+    logger.info(
+        "%s %s %s %.0fms",
+        request.method,
+        request.url.path,
+        response.status_code,
+        (time.perf_counter() - started) * 1000,
+    )
+    return response
 
 
 class AppMeta(BaseModel):

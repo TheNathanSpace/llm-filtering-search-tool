@@ -1,5 +1,7 @@
 import json
 import logging
+import time
+from contextlib import contextmanager
 
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.hf_enrichment import parameters_b_for_repo_ids
@@ -18,6 +20,26 @@ from llm_rankings.util import (
 from llm_rankings.web_enrichment import enrich_combined_models
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _refresh_stage(name: str):
+    started = time.perf_counter()
+    logger.info("Refresh stage start: %s", name)
+    try:
+        yield
+    except Exception:
+        logger.exception(
+            "Refresh stage failed: %s after %.1fs",
+            name,
+            time.perf_counter() - started,
+        )
+        raise
+    logger.info(
+        "Refresh stage done: %s (%.1fs)",
+        name,
+        time.perf_counter() - started,
+    )
 
 
 def _prefixed_scores(prefix: str, values: dict[str, object]) -> dict[str, float]:
@@ -123,17 +145,20 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
             "Skipping %s OpenRouter preset model(s) (ids starting with '@preset/')",
             skipped_preset,
         )
-    open_weights = open_weights_by_openrouter_id()
+    with _refresh_stage("models.dev open weights"):
+        open_weights = open_weights_by_openrouter_id()
     hf_ids = {
         (model.hugging_face_id or "").strip() for model in kept if (model.hugging_face_id or "").strip()
     }
-    parameters_b = parameters_b_for_repo_ids(hf_ids)
+    with _refresh_stage(f"Hugging Face parameter sizes ({len(hf_ids)} repos)"):
+        parameters_b = parameters_b_for_repo_ids(hf_ids)
     combined = [
         openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b)
         for model in kept
     ]
     # Opt-in OpenRouter batch + native web search gap-fill for open-weights / size.
-    enrich_combined_models(combined)
+    with _refresh_stage("web enrichment"):
+        enrich_combined_models(combined)
     return combined
 
 
@@ -168,24 +193,23 @@ def write_provider_endpoints(rows: list[ModelProviderEndpoint]) -> None:
 
 
 def get_and_clean_data() -> tuple[list[CombinedModel], list[ModelProviderEndpoint]]:
-    logger.info("Refresh pipeline: fetching OpenRouter model catalog")
-    or_models = get_all_model_data()
-    logger.info(
-        "Refresh pipeline: combining models (models.dev + Hugging Face + optional web enrichment)"
-    )
+    with _refresh_stage("OpenRouter model catalog"):
+        or_models = get_all_model_data()
     combined_models = combine_openrouter_models(or_models)
     kept_ids = {m.id for m in combined_models}
     kept_or_models = [m for m in or_models.data if m.id in kept_ids]
+    with _refresh_stage(f"OpenRouter endpoints ({len(kept_or_models)} models)"):
+        endpoint_lists = get_endpoints_for_models(kept_or_models)
+    with _refresh_stage("provider choice"):
+        provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
+        apply_provider_choice(combined_models, provider_rows)
+        write_combined_models(combined_models)
+        write_provider_endpoints(provider_rows)
     logger.info(
-        "Refresh pipeline: fetching OpenRouter endpoints for %d models",
-        len(kept_or_models),
+        "Refresh pipeline: done (%d models, %d provider rows)",
+        len(combined_models),
+        len(provider_rows),
     )
-    endpoint_lists = get_endpoints_for_models(kept_or_models)
-    provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
-    apply_provider_choice(combined_models, provider_rows)
-    write_combined_models(combined_models)
-    write_provider_endpoints(provider_rows)
-    logger.info("Refresh pipeline: done (%d models, %d provider rows)", len(combined_models), len(provider_rows))
     return combined_models, provider_rows
 
 

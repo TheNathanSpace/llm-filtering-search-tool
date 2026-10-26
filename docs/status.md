@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — pin models from the table
-**Latest change:** Rows can be pinned. Pinned ids stay in the URL. A switch hides unpinned models. Clear pins empties the set. Reset leaves the pins in place.
+**Last updated:** 2026-10-26 — API and refresh stage logs
+**Latest change:** API requests log method, path, status, and duration. `/health` is omitted. Refresh stages log start, finish, duration, and failure.
 
 ## Pickup
 

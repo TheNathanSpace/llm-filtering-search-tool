@@ -18,6 +18,8 @@ Process environment, or a `.env` file via discovery / `--env-file` / `-e` / `LLM
 
 The Next.js server appends `console.*` and request-error logs to `latest.log` (same `LOG_LEVEL`). Each line includes the logger name (module path, or `frontend` for Next.js).
 
+Each API request other than `GET /health` logs method, path, status, and duration. Each refresh stage logs start, finish, and duration. A failed stage logs the exception, including the upstream status in that message, then the refresh aborts.
+
 ## API
 
 Vendored upstream OpenAPI: [`../api-docs/README.md`](../api-docs/README.md). Refresh with `../bin/update-external-api-docs.sh`.

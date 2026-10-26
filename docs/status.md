@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — export requests are limited
-**Latest change:** `GET /export` allows one export at a time and one completed export per minute. Further requests get `429`.
+**Last updated:** 2026-10-26 — enrichment failure does not stop refresh
+**Latest change:** A failed web enrichment batch is logged and skipped. Cache hits and a successful earlier pass are kept. The refresh continues.
 
 ## Pickup
 

@@ -4,7 +4,8 @@ Opt-in with ``OR_WEB_ENRICHMENT=1``. Uses hardcoded OpenAI GPT-6 Luna batch
 (``openai/gpt-6-luna:batch``) on ``POST /batches`` with the Responses wire and
 provider-native ``web_search`` (Exa / OpenRouter-orchestrated search is not
 available in batch). The refresh job waits for the batch; the live DB keeps
-serving until staging swap. Never overwrites non-null OpenRouter, models.dev, or
+serving until staging swap. A failed batch is logged and skipped, and the
+refresh continues. Never overwrites non-null OpenRouter, models.dev, or
 Hugging Face values. Durable cache and cost ledger live under
 ``DATA_DIR/cache/web_enrichment/``.
 """
@@ -851,13 +852,23 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
 
     No-op unless ``OR_WEB_ENRICHMENT`` is truthy. Requires ``OR_API_KEY`` when
     enabled. Waits for batch results inside the refresh job (the live DB stays
-    readable until staging swap). Mutates ``models`` in place; never overwrites
-    non-null upstream values.
+    readable until staging swap). A failed batch, including an out-of-funds
+    response, is logged and skipped. Cache hits and a successful earlier pass
+    are kept. Mutates ``models`` in place; never overwrites non-null upstream
+    values.
     """
     if not web_enrichment_enabled():
         logger.info("Web enrichment skipped (OR_WEB_ENRICHMENT not enabled)")
         return
+    try:
+        _apply_web_enrichment(models)
+    except Exception:
+        logger.exception(
+            "Web enrichment failed; continuing refresh without enrichment"
+        )
 
+
+def _apply_web_enrichment(models: list[CombinedModel]) -> None:
     api_key = get_env_var("OR_API_KEY")
 
     candidates = [m for m in models if _needs_enrichment(m)]
@@ -895,64 +906,83 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
         to_fetch.append(model)
 
     if to_fetch:
-        first_pass = _run_enrichment_batch(
-            to_fetch,
-            api_key=api_key,
-            costs=costs,
-            pass_number=1,
-            prompt_template=USER_PROMPT_TEMPLATE,
-        )
-        for model in to_fetch:
-            result, meta = first_pass.get(
-                model.id, (WebEnrichmentResult(), {"error": "missing from batch"})
-            )
-            results_by_id[model.id] = result
-            attempts_by_id[model.id] = [{"pass": 1, **meta}]
-
-        retry_models = [
-            model
-            for model in to_fetch
-            if _gaps_remain(model, results_by_id[model.id])
-        ]
-        if retry_models:
-            logger.info(
-                "Web enrichment: %d model(s) still have gaps; submitting retry batch",
-                len(retry_models),
-            )
-            second_pass = _run_enrichment_batch(
-                retry_models,
+        try:
+            first_pass = _run_enrichment_batch(
+                to_fetch,
                 api_key=api_key,
                 costs=costs,
-                pass_number=2,
-                prompt_template=RETRY_USER_PROMPT_TEMPLATE,
+                pass_number=1,
+                prompt_template=USER_PROMPT_TEMPLATE,
             )
-            for model in retry_models:
-                retry_result, retry_meta = second_pass.get(
-                    model.id,
-                    (WebEnrichmentResult(), {"error": "missing from retry batch"}),
-                )
-                attempts_by_id.setdefault(model.id, []).append(
-                    {"pass": 2, **retry_meta}
-                )
-                results_by_id[model.id] = _merge_parsed_passes(
-                    results_by_id[model.id], retry_result
-                )
+        except Exception:
+            logger.exception(
+                "Web enrichment pass 1 failed; continuing without new enrichment results"
+            )
+            first_pass = None
 
-        for model in to_fetch:
-            parsed = results_by_id[model.id]
-            cache_payload = {
-                "model_id": model.id,
-                "is_open_weights": parsed.is_open_weights,
-                "parameters_b": parsed.parameters_b,
-                "notes": parsed.notes,
-                "enrichment_model": ENRICHMENT_MODEL,
-                "attempts": attempts_by_id.get(model.id, []),
-                "cached_at": datetime.now(timezone.utc).isoformat(),
-                "_cache_miss": (
-                    parsed.is_open_weights is None and parsed.parameters_b is None
-                ),
-            }
-            _write_cache(model.id, cache_payload)
+        if first_pass is not None:
+            for model in to_fetch:
+                result, meta = first_pass.get(
+                    model.id, (WebEnrichmentResult(), {"error": "missing from batch"})
+                )
+                results_by_id[model.id] = result
+                attempts_by_id[model.id] = [{"pass": 1, **meta}]
+
+            retry_models = [
+                model
+                for model in to_fetch
+                if _gaps_remain(model, results_by_id[model.id])
+            ]
+            if retry_models:
+                logger.info(
+                    "Web enrichment: %d model(s) still have gaps; submitting retry batch",
+                    len(retry_models),
+                )
+                try:
+                    second_pass = _run_enrichment_batch(
+                        retry_models,
+                        api_key=api_key,
+                        costs=costs,
+                        pass_number=2,
+                        prompt_template=RETRY_USER_PROMPT_TEMPLATE,
+                    )
+                except Exception:
+                    logger.exception(
+                        "Web enrichment pass 2 failed; keeping pass 1 results"
+                    )
+                    second_pass = None
+                if second_pass is not None:
+                    for model in retry_models:
+                        retry_result, retry_meta = second_pass.get(
+                            model.id,
+                            (
+                                WebEnrichmentResult(),
+                                {"error": "missing from retry batch"},
+                            ),
+                        )
+                        attempts_by_id.setdefault(model.id, []).append(
+                            {"pass": 2, **retry_meta}
+                        )
+                        results_by_id[model.id] = _merge_parsed_passes(
+                            results_by_id[model.id], retry_result
+                        )
+
+            for model in to_fetch:
+                parsed = results_by_id[model.id]
+                cache_payload = {
+                    "model_id": model.id,
+                    "is_open_weights": parsed.is_open_weights,
+                    "parameters_b": parsed.parameters_b,
+                    "notes": parsed.notes,
+                    "enrichment_model": ENRICHMENT_MODEL,
+                    "attempts": attempts_by_id.get(model.id, []),
+                    "cached_at": datetime.now(timezone.utc).isoformat(),
+                    "_cache_miss": (
+                        parsed.is_open_weights is None
+                        and parsed.parameters_b is None
+                    ),
+                }
+                _write_cache(model.id, cache_payload)
 
     for model in candidates:
         parsed = results_by_id.get(model.id, WebEnrichmentResult())

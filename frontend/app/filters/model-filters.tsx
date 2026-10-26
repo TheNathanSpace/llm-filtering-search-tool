@@ -131,6 +131,7 @@ export default function ModelFilters(
                 help={
                     "Matches display names and OpenRouter slugs (e.g. gpt-5-nano).\n" +
                     "Punctuation is ignored, so gpt 5 matches GPT-5.\n" +
+                    "A number matches that whole number, including inside a word: 4.1 matches v4.1, and 5 does not match 5.5.\n" +
                     "Commas OR alternatives: gpt 5, deepseek v4.1\n" +
                     "A leading minus excludes matches: -nano"
                 }

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — name search matches whole numbers
-**Latest change:** A numeric search token matches that whole number, including inside a word such as `v4.1`.
+**Last updated:** 2026-10-26 — name search help states whole numbers
+**Latest change:** The name-search help states that a number matches that whole number, including inside a word.
 
 ## Pickup
 

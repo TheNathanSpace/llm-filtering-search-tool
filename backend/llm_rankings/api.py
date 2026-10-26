@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -54,6 +55,12 @@ backend_port = get_env_var("BACKEND_PORT")
 _REFRESH_CHECK_INTERVAL_SECONDS = 60 * 60
 
 _CLIENT_ERROR_DETAIL = "Internal server error"
+
+# One export at a time, then a quiet period, so a public GET /export cannot be hammered.
+_EXPORT_INTERVAL_SECONDS = 60
+_export_state_lock = threading.Lock()
+_export_in_flight = False
+_export_completed_at = 0.0
 
 
 def _log_background_refresh(task: asyncio.Task[object], *, label: str) -> None:
@@ -148,6 +155,33 @@ async def log_http_requests(request: Request, call_next):
     return response
 
 
+def _begin_export() -> None:
+    global _export_in_flight
+    with _export_state_lock:
+        now = time.monotonic()
+        if _export_in_flight:
+            logger.warning("Rejected GET /export: another export is in progress")
+            raise HTTPException(status_code=429, detail="Export already in progress")
+        if (
+            _export_completed_at > 0
+            and now - _export_completed_at < _EXPORT_INTERVAL_SECONDS
+        ):
+            logger.warning("Rejected GET /export: cooldown")
+            raise HTTPException(
+                status_code=429,
+                detail="Export is limited to one completed response per minute",
+            )
+        _export_in_flight = True
+
+
+def _finish_export(*, completed: bool) -> None:
+    global _export_in_flight, _export_completed_at
+    with _export_state_lock:
+        _export_in_flight = False
+        if completed:
+            _export_completed_at = time.monotonic()
+
+
 class AppMeta(BaseModel):
     enrichment_cost_usd: float = Field(
         description="Lifetime USD spent on opt-in OpenRouter batch web enrichment"
@@ -201,11 +235,17 @@ def get_models():
 @app.get("/export", response_model=ExportResponse)
 def export():
     """Return models, provider endpoints, and durable caches for a full local restore."""
+    _begin_export()
+    completed = False
     try:
-        return build_export_response()
+        payload = build_export_response()
+        completed = True
+        return payload
     except Exception as e:
         logger.exception("Failed to export instance data")
         raise HTTPException(status_code=500, detail=_CLIENT_ERROR_DETAIL) from e
+    finally:
+        _finish_export(completed=completed)
 
 
 if __name__ == "__main__":

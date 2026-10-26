@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — API and refresh stage logs
-**Latest change:** API requests log method, path, status, and duration. `/health` is omitted. Refresh stages log start, finish, duration, and failure.
+**Last updated:** 2026-10-26 — export requests are limited
+**Latest change:** `GET /export` allows one export at a time and one completed export per minute. Further requests get `429`.
 
 ## Pickup
 

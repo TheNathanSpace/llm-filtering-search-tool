@@ -76,6 +76,8 @@ Commands: [root README](../README.md#refresh-model-data). Rebuild entry points: 
 
 - Returns metadata, every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file under `DATA_DIR/cache` except `refresh.lock` and `refresh_status.json`
 - Omits logs and `.env`
+- One export runs at a time. A second request gets `429`.
+- At most one completed export per 60 seconds. A request inside that window gets `429`. A failed build does not start the cooldown.
 
 `EXPORT_BASE_URL` is an `http` or `https` origin with no path and no credentials.
 

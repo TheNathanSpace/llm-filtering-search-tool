@@ -59,7 +59,7 @@ cp .env.template .env
 | Variable | Required | Value |
 | --- | --- | --- |
 | `OR_API_KEY` | yes | OpenRouter API key for models, per-provider endpoints, and embedded benchmarks |
-| `OR_WEB_ENRICHMENT` | no | `1` gap-fills missing open-weights, size, and knowledge cutoff. See [SRC-12](docs/requirements.md#src-12). |
+| `OR_WEB_ENRICHMENT` | no | `1` gap-fills missing open-weights and, for open models, size. See [SRC-12](docs/requirements.md#src-12). |
 | `HF_TOKEN` | no | Hugging Face Hub token (higher rate limits for size enrichment) |
 | `DATA_DIR` | | SQLite, logs, and caches. Relative paths resolve from the `.env` directory when that file is loaded, otherwise from the working directory. Server compose sets `/app/data`. |
 | `HOST_DATA_DIR` | local Compose | Host path bind-mounted to `/app/data` (default `./data`). Worktree setup points this at the primary checkout’s `data/`. |

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-20 — reset button matches the filter column
-**Latest change:** The reset button fills the left filter column, with filter-sized black text, a blue outline, and space below it.
+**Last updated:** 2026-10-26 — web enrichment skips knowledge cutoff
+**Latest change:** Web enrichment gap-fills open weights and size only. Knowledge cutoff stays the OpenRouter value.
 
 ## Pickup
 

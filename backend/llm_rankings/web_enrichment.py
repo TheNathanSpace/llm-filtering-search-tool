@@ -1,4 +1,4 @@
-"""Gap-fill open-weights / size / knowledge cutoff via OpenRouter Batch + web search.
+"""Gap-fill open-weights / size via OpenRouter Batch + web search.
 
 Opt-in with ``OR_WEB_ENRICHMENT=1``. Uses hardcoded OpenAI GPT-6 Luna batch
 (``openai/gpt-6-luna:batch``) on ``POST /batches`` with the Responses wire and
@@ -54,10 +54,8 @@ SYSTEM_PROMPT = (
     "(HF, GitHub release, ModelScope, etc.), not merely an open API or "
     "open-source inference code. parameters_b = total parameter count in "
     "billions (e.g. 70 not 70000000000); for MoE prefer total over active "
-    "when both appear. knowledge_cutoff = the model's training-data knowledge "
-    "cutoff as YYYY-MM-DD (not the release/announce date). If unsure or "
-    "sources conflict, use null — do not guess. Ignore unrelated models with "
-    "similar names."
+    "when both appear. If unsure or sources conflict, use null — do not guess. "
+    "Ignore unrelated models with similar names."
 )
 
 USER_PROMPT_TEMPLATE = (
@@ -65,9 +63,8 @@ USER_PROMPT_TEMPLATE = (
     "Display name: {name}\n"
     "Creator/provider: {creator}\n\n"
     "For this exact model, find: (1) whether weights are publicly downloadable, "
-    "(2) total parameter count in billions, (3) knowledge cutoff date "
-    "(YYYY-MM-DD). Prefer official model cards, Hugging Face, GitHub, arXiv, "
-    "and vendor docs."
+    "(2) total parameter count in billions. Prefer official model cards, "
+    "Hugging Face, GitHub, arXiv, and vendor docs."
 )
 
 RETRY_USER_PROMPT_TEMPLATE = (
@@ -75,9 +72,8 @@ RETRY_USER_PROMPT_TEMPLATE = (
     'Display name: {name}\n'
     'Creator/provider: {creator}\n\n'
     'Search again for "{name}" "{creator}" open weights parameter count '
-    "billions knowledge cutoff YYYY-MM-DD model card. Prefer Hugging Face, "
-    "GitHub releases, arXiv, and official vendor documentation for this exact "
-    "model only."
+    "billions model card. Prefer Hugging Face, GitHub releases, arXiv, and "
+    "official vendor documentation for this exact model only."
 )
 
 RESPONSE_JSON_SCHEMA: dict[str, Any] = {
@@ -89,38 +85,11 @@ RESPONSE_JSON_SCHEMA: dict[str, Any] = {
         "properties": {
             "is_open_weights": {"type": ["boolean", "null"]},
             "parameters_b": {"type": ["number", "null"]},
-            "knowledge_cutoff": {"type": ["string", "null"]},
             "notes": {"type": ["string", "null"]},
         },
-        "required": ["is_open_weights", "parameters_b", "knowledge_cutoff", "notes"],
+        "required": ["is_open_weights", "parameters_b", "notes"],
     },
 }
-
-
-def _parse_cutoff_to_ms(value: object) -> float | None:
-    """Parse a knowledge-cutoff date into epoch milliseconds (UTC midnight)."""
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        # Already ms (or seconds): treat large values as ms, small as seconds.
-        number = float(value)
-        if number <= 0:
-            return None
-        if number < 1e12:
-            number *= 1000.0
-        return number
-    if not isinstance(value, str):
-        return None
-    text = value.strip()
-    if not text:
-        return None
-    for fmt in ("%Y-%m-%d", "%Y/%m/%d", "%Y-%m", "%Y"):
-        try:
-            parsed = datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
-            return parsed.timestamp() * 1000.0
-        except ValueError:
-            continue
-    return None
 
 
 class WebEnrichmentResult(BaseModel):
@@ -128,8 +97,6 @@ class WebEnrichmentResult(BaseModel):
 
     is_open_weights: bool | None = None
     parameters_b: float | None = None
-    # Epoch milliseconds (same as CombinedModel.knowledge_cutoff).
-    knowledge_cutoff: float | None = None
     notes: str | None = None
 
     @field_validator("parameters_b", mode="before")
@@ -150,11 +117,6 @@ class WebEnrichmentResult(BaseModel):
             number = number / 1e9
         number = round(number, 2)
         return number if number > 0 else None
-
-    @field_validator("knowledge_cutoff", mode="before")
-    @classmethod
-    def _normalize_knowledge_cutoff(cls, value: object) -> float | None:
-        return _parse_cutoff_to_ms(value)
 
 
 class _CostTracker:
@@ -360,8 +322,6 @@ def _needs_enrichment(model: CombinedModel) -> bool:
         return True
     if model.is_open_weights is True and model.parameters_b is None:
         return True
-    if model.knowledge_cutoff is None:
-        return True
     return False
 
 
@@ -377,23 +337,15 @@ def _gaps_remain(model: CombinedModel, parsed: WebEnrichmentResult) -> bool:
         params = parsed.parameters_b
     if open_flag is True and params is None:
         return True
-    cutoff = (
-        model.knowledge_cutoff
-        if model.knowledge_cutoff is not None
-        else parsed.knowledge_cutoff
-    )
-    if cutoff is None:
-        return True
     return False
 
 
 def _merge_into_model(
     model: CombinedModel, parsed: WebEnrichmentResult
-) -> tuple[bool, bool, bool]:
-    """Apply non-null fills. Returns (filled_open, filled_params, filled_cutoff)."""
+) -> tuple[bool, bool]:
+    """Apply non-null fills. Returns (filled_open, filled_params)."""
     filled_open = False
     filled_params = False
-    filled_cutoff = False
     if model.is_open_weights is None and parsed.is_open_weights is not None:
         model.is_open_weights = parsed.is_open_weights
         filled_open = True
@@ -405,10 +357,7 @@ def _merge_into_model(
     ):
         model.parameters_b = parsed.parameters_b
         filled_params = True
-    if model.knowledge_cutoff is None and parsed.knowledge_cutoff is not None:
-        model.knowledge_cutoff = parsed.knowledge_cutoff
-        filled_cutoff = True
-    return filled_open, filled_params, filled_cutoff
+    return filled_open, filled_params
 
 
 def _parse_content(content: str | None, *, model_id: str) -> WebEnrichmentResult:
@@ -449,7 +398,6 @@ def _result_from_cache(cached: dict[str, Any]) -> WebEnrichmentResult:
             {
                 "is_open_weights": cached.get("is_open_weights"),
                 "parameters_b": cached.get("parameters_b"),
-                "knowledge_cutoff": cached.get("knowledge_cutoff"),
                 "notes": cached.get("notes"),
             }
         )
@@ -458,12 +406,7 @@ def _result_from_cache(cached: dict[str, Any]) -> WebEnrichmentResult:
 
 
 def _cache_usable_for_model(model: CombinedModel, cached: dict[str, Any]) -> bool:
-    """Reject stale caches that predate fields we still need (e.g. knowledge_cutoff)."""
-    version = int(cached.get("schema_version") or 1)
-    if model.knowledge_cutoff is None and (
-        version < 2 or "knowledge_cutoff" not in cached
-    ):
-        return False
+    """Reject caches whose size was crushed by an old billions-vs-raw heuristic."""
     # Old heuristic treated billions > 1000 as raw counts (e.g. 2400 → 0.0).
     # Re-fetch when we still need size and a pass recorded that mangled zero.
     if model.parameters_b is None:
@@ -573,11 +516,6 @@ def _merge_parsed_passes(
         ),
         parameters_b=(
             first.parameters_b if first.parameters_b is not None else second.parameters_b
-        ),
-        knowledge_cutoff=(
-            first.knowledge_cutoff
-            if first.knowledge_cutoff is not None
-            else second.knowledge_cutoff
         ),
         notes=second.notes or first.notes,
     )
@@ -908,8 +846,8 @@ def _run_enrichment_batch(
 
 def enrich_combined_models(models: list[CombinedModel]) -> None:
     """
-    Fill null ``is_open_weights`` / ``parameters_b`` / ``knowledge_cutoff`` via
-    OpenRouter Batch (GPT-6 Luna + native web search) when enabled.
+    Fill null ``is_open_weights``, and null ``parameters_b`` when the model is
+    open weights, via OpenRouter Batch (GPT-6 Luna + native web search) when enabled.
 
     No-op unless ``OR_WEB_ENRICHMENT`` is truthy. Requires ``OR_API_KEY`` when
     enabled. Waits for batch results inside the refresh job (the live DB stays
@@ -924,7 +862,7 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
 
     candidates = [m for m in models if _needs_enrichment(m)]
     if not candidates:
-        logger.info("Web enrichment: no models with open-weights/size/cutoff gaps")
+        logger.info("Web enrichment: no models with open-weights or size gaps")
         return
 
     logger.info(
@@ -938,7 +876,6 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
     costs = _CostTracker()
     filled_open = 0
     filled_params = 0
-    filled_cutoff = 0
 
     results_by_id: dict[str, WebEnrichmentResult] = {}
     attempts_by_id: dict[str, list[dict[str, Any]]] = {}
@@ -1007,34 +944,27 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
                 "model_id": model.id,
                 "is_open_weights": parsed.is_open_weights,
                 "parameters_b": parsed.parameters_b,
-                "knowledge_cutoff": parsed.knowledge_cutoff,
                 "notes": parsed.notes,
                 "enrichment_model": ENRICHMENT_MODEL,
                 "attempts": attempts_by_id.get(model.id, []),
                 "cached_at": datetime.now(timezone.utc).isoformat(),
                 "_cache_miss": (
-                    parsed.is_open_weights is None
-                    and parsed.parameters_b is None
-                    and parsed.knowledge_cutoff is None
+                    parsed.is_open_weights is None and parsed.parameters_b is None
                 ),
             }
             _write_cache(model.id, cache_payload)
 
     for model in candidates:
         parsed = results_by_id.get(model.id, WebEnrichmentResult())
-        open_filled, params_filled, cutoff_filled = _merge_into_model(model, parsed)
+        open_filled, params_filled = _merge_into_model(model, parsed)
         if open_filled:
             filled_open += 1
         if params_filled:
             filled_params += 1
-        if cutoff_filled:
-            filled_cutoff += 1
 
     costs.finalize()
     logger.info(
-        "Web enrichment done: filled is_open_weights=%d, parameters_b=%d, "
-        "knowledge_cutoff=%d",
+        "Web enrichment done: filled is_open_weights=%d, parameters_b=%d",
         filled_open,
         filled_params,
-        filled_cutoff,
     )

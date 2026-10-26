@@ -132,7 +132,7 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b)
         for model in kept
     ]
-    # Opt-in OpenRouter batch + native web search gap-fill for open-weights / size / cutoff.
+    # Opt-in OpenRouter batch + native web search gap-fill for open-weights / size.
     enrich_combined_models(combined)
     return combined
 

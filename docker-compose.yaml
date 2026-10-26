@@ -23,7 +23,7 @@ services:
     environment:
       # Required. https://openrouter.ai/
       OR_API_KEY: "replace-with-your-openrouter-api-key"
-      # Optional. Set to 1 to gap-fill missing open-weights / size / knowledge cutoff
+      # Optional. Set to 1 to gap-fill missing open-weights / size
       # via OpenRouter Batch (paid; refresh waits on the batch).
       # OR_WEB_ENRICHMENT: "1"
       # Optional Hugging Face token (higher rate limits for size enrichment).

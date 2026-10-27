@@ -69,6 +69,7 @@ cp .env.template .env
 | `BACKEND_PORT` | | FastAPI listen port (default `8000`) |
 | `ENABLE_API_DOCS` | no | `1` enables FastAPI `/docs`, `/redoc`, and `/openapi.json`. Off by default. The local `dev` profile turns it on. |
 | `EXPORT_BASE_URL` | no | Public origin (`http://host:3030`, no path). See [Refresh](backend/README.md#refresh). |
+| `TZ` | no | IANA timezone for container log timestamps (default `Etc/UTC`). Example: `America/Denver`. |
 | `FRONTEND_PORT` | | Next.js listen port (default `3030`) |
 | `COMPOSE_PROFILES` | local Compose | `prod` (default) or `dev` (hot reload) |
 

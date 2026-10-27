@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-26 — enrichment failure does not stop refresh
-**Latest change:** A failed web enrichment batch is logged and skipped. Cache hits and a successful earlier pass are kept. The refresh continues.
+**Last updated:** 2026-10-27 — container timezone from `TZ`
+**Latest change:** `TZ` (IANA, default `Etc/UTC`) sets container log timestamps. Stored refresh and enrichment instants stay UTC.
 
 ## Pickup
 

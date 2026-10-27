@@ -23,6 +23,7 @@ services:
     environment:
       # Image must listen on all interfaces; host .env often uses 127.0.0.1 for tooling.
       BACKEND_HOST: "0.0.0.0"
+      TZ: "${TZ:-Etc/UTC}"
     volumes:
       # HOST_DATA_DIR: absolute path to primary checkout data/ for worktree previews.
       - ${HOST_DATA_DIR:-./data}:/app/data
@@ -52,6 +53,7 @@ services:
       - .env
     environment:
       BACKEND_HOST: "0.0.0.0"
+      TZ: "${TZ:-Etc/UTC}"
       WATCHFILES_FORCE_POLLING: "true"
       # Interactive Swagger/ReDoc; off by default in prod (see ENABLE_API_DOCS).
       ENABLE_API_DOCS: "1"
@@ -85,6 +87,7 @@ services:
     environment:
       # Reach the sibling Compose service (not loopback / bind-all).
       BACKEND_HOST: backend
+      TZ: "${TZ:-Etc/UTC}"
       BACKEND_PORT: "${BACKEND_PORT:-8000}"
       FRONTEND_PORT: "${FRONTEND_PORT:-3030}"
     volumes:

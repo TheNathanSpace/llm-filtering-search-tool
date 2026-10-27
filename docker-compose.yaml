@@ -34,6 +34,8 @@ services:
       BACKEND_HOST: "0.0.0.0"
       BACKEND_PORT: "8000"
       FRONTEND_PORT: "3030"
+      # IANA timezone for log timestamps. Example: America/Denver.
+      TZ: "Etc/UTC"
       # Set to 1 to serve FastAPI /docs, /redoc, and /openapi.json.
       # ENABLE_API_DOCS: "1"
       # Optional. Public origin of another running instance. On each start, this

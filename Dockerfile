@@ -19,9 +19,12 @@ WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci
 
+RUN apk add --no-cache tzdata
+
 # Source is bind-mounted at runtime; node_modules is kept via a named volume.
 ENV HOSTNAME=0.0.0.0
 ENV FRONTEND_PORT=3030
+ENV TZ=Etc/UTC
 
 EXPOSE 3030
 
@@ -40,8 +43,9 @@ RUN pip install --no-cache-dir --prefix=/install ./backend
 # ---- Back-end: Compose `dev` profile (uvicorn --reload) ----
 FROM python:3.12-slim AS backend-dev
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     curl \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -51,6 +55,7 @@ RUN pip install --no-cache-dir -e ./backend
 
 ENV BACKEND_HOST=0.0.0.0
 ENV BACKEND_PORT=8000
+ENV TZ=Etc/UTC
 ENV WATCHFILES_FORCE_POLLING=true
 
 EXPOSE 8000
@@ -62,9 +67,10 @@ CMD ["sh", "-c", "exec uvicorn llm_rankings.api:app --reload --reload-dir /app/b
 FROM python:3.12-slim
 
 # Install supervisord and Node.js runtime
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     supervisor \
     curl \
+    tzdata \
     && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
@@ -92,6 +98,7 @@ COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 ENV BACKEND_HOST=0.0.0.0
 ENV BACKEND_PORT=8000
 ENV FRONTEND_PORT=3030
+ENV TZ=Etc/UTC
 
 EXPOSE 3030
 

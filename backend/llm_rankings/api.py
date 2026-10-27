@@ -31,7 +31,13 @@ from llm_rankings.util import (
     setup_logging,
     validate_env_vars,
 )
-from llm_rankings.web_enrichment import read_lifetime_cost_usd
+from llm_rankings.web_enrichment import (
+    enrichment_in_progress,
+    last_enrichment_completed_at_iso,
+    read_lifetime_cost_usd,
+    start_enrichment_worker,
+    stop_enrichment_worker,
+)
 
 bootstrap_env_from_argv()
 setup_logging()
@@ -83,8 +89,9 @@ async def _periodic_refresh_loop() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
-    # Never block serving on import/refresh (batch enrichment can take a long time).
-    # Keep the previous DB online until a staging rebuild atomically replaces it.
+    # Never block serving on import/refresh. Enrichment runs on its own thread
+    # and patches the live DB when the batch finishes.
+    start_enrichment_worker()
     startup_load = asyncio.create_task(
         asyncio.to_thread(startup_data_load),
         name="startup-data-load",
@@ -97,8 +104,9 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     try:
         yield
     finally:
-        # Cancel without waiting on to_thread refresh work (batch enrichment can run
-        # for hours; process exit will stop the worker thread).
+        # Cancel without waiting on to_thread refresh work. The enrichment thread
+        # is a daemon; process exit releases its lock. active_batch.json remains.
+        stop_enrichment_worker()
         startup_load.cancel()
         checker.cancel()
         await asyncio.wait(
@@ -189,6 +197,15 @@ class AppMeta(BaseModel):
     last_refresh_at: str | None = Field(
         description="ISO-8601 UTC timestamp of the last successful model data refresh"
     )
+    last_enrichment_completed_at: str | None = Field(
+        description=(
+            "ISO-8601 UTC timestamp of the last web enrichment run that reached "
+            "a terminal status. A new batch waits 24h after this time."
+        )
+    )
+    enrichment_in_progress: bool = Field(
+        description="True while a saved OpenRouter enrichment batch has not finished"
+    )
     database_ready: bool = Field(
         description="True when the live model SQLite file exists"
     )
@@ -214,6 +231,8 @@ def get_meta():
         return AppMeta(
             enrichment_cost_usd=read_lifetime_cost_usd(),
             last_refresh_at=last_refresh_at_iso(),
+            last_enrichment_completed_at=last_enrichment_completed_at_iso(),
+            enrichment_in_progress=enrichment_in_progress(),
             database_ready=database_ready(),
             refresh_in_progress=is_refresh_in_progress(),
             export_base_url=configured_export_base_url(),

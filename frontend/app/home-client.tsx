@@ -17,8 +17,10 @@ client.setConfig({
     baseUrl: "/api",
 });
 
-/** Poll while the live DB is missing or a refresh is still writing the first snapshot. */
-const POPULATE_POLL_MS = 15_000;
+/** Poll models while a refresh or enrichment run is writing rows. */
+const ACTIVE_POLL_MS = 15_000;
+/** Poll metadata while the page is idle so the footer can show a new run. */
+const META_POLL_MS = 60_000;
 
 export default function Home({
     initialQuery,
@@ -27,12 +29,22 @@ export default function Home({
 }) {
     const [models, setModels] = useState<CombinedModel[]>([]);
     const [populating, setPopulating] = useState(false);
-    const [exportBaseUrl, setExportBaseUrl] = useState<
-        string | undefined
-    >();
+    const [metaLoaded, setMetaLoaded] = useState(false);
+    const [costUsd, setCostUsd] = useState(0);
+    const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
+    const [lastEnrichmentAt, setLastEnrichmentAt] = useState<string | null>(
+        null,
+    );
+    const [enrichmentInProgress, setEnrichmentInProgress] = useState(false);
+    const [exportBaseUrl, setExportBaseUrl] = useState<string | undefined>();
     const pollTimerReference = useRef<
         ReturnType<typeof setTimeout> | undefined
     >(undefined);
+    const modelCountReference = useRef(0);
+    const refreshSeenReference = useRef<string | null | undefined>(undefined);
+    const enrichmentSeenReference = useRef<string | null | undefined>(
+        undefined,
+    );
 
     useEffect(() => {
         let cancelled = false;
@@ -44,53 +56,82 @@ export default function Home({
             }
         };
 
-        const schedulePoll = () => {
+        const schedulePoll = (delayMs: number, includeModels: boolean) => {
             clearPoll();
             pollTimerReference.current = setTimeout(() => {
-                void load();
-            }, POPULATE_POLL_MS);
+                void load(includeModels);
+            }, delayMs);
         };
 
-        const load = async () => {
+        const load = async (includeModels: boolean) => {
             try {
-                const [modelsResponse, metaResponse] = await Promise.all([
-                    getModelsModelsGet(),
-                    getMetaMetaGet(),
-                ]);
+                const metaResponse = await getMetaMetaGet();
+                const modelsResponse = includeModels
+                    ? await getModelsModelsGet()
+                    : null;
                 if (cancelled) {
                     return;
                 }
 
-                const nextModels = modelsResponse.data ?? [];
-                setModels(nextModels);
-
                 const meta = metaResponse.data;
-                setExportBaseUrl(meta?.export_base_url || undefined);
-                const databaseReady =
-                    meta?.database_ready ?? nextModels.length > 0;
+                if (meta) {
+                    const refreshChanged =
+                        refreshSeenReference.current !== undefined &&
+                        refreshSeenReference.current !== meta.last_refresh_at;
+                    const enrichmentChanged =
+                        enrichmentSeenReference.current !== undefined &&
+                        enrichmentSeenReference.current !==
+                            meta.last_enrichment_completed_at;
+                    refreshSeenReference.current = meta.last_refresh_at;
+                    enrichmentSeenReference.current =
+                        meta.last_enrichment_completed_at;
+                    setMetaLoaded(true);
+                    setCostUsd(meta.enrichment_cost_usd);
+                    setLastRefreshAt(meta.last_refresh_at);
+                    setLastEnrichmentAt(meta.last_enrichment_completed_at);
+                    setEnrichmentInProgress(meta.enrichment_in_progress);
+                    setExportBaseUrl(meta.export_base_url || undefined);
+                    if (
+                        (refreshChanged || enrichmentChanged) &&
+                        !includeModels
+                    ) {
+                        void load(true);
+                        return;
+                    }
+                }
+
+                const nextModels = modelsResponse?.data;
+                if (nextModels) {
+                    setModels(nextModels);
+                    modelCountReference.current = nextModels.length;
+                }
+                const modelCount =
+                    nextModels?.length ?? modelCountReference.current;
+
+                const databaseReady = meta?.database_ready ?? modelCount > 0;
                 const refreshInProgress = meta?.refresh_in_progress ?? false;
+                const enrichmentActive = meta?.enrichment_in_progress ?? false;
                 const stillPopulating =
-                    nextModels.length === 0 &&
-                    (!databaseReady || refreshInProgress);
+                    modelCount === 0 && (!databaseReady || refreshInProgress);
+                const jobActive =
+                    stillPopulating || refreshInProgress || enrichmentActive;
 
                 setPopulating(stillPopulating);
-
-                if (stillPopulating) {
-                    schedulePoll();
-                } else {
-                    clearPoll();
-                }
+                schedulePoll(
+                    jobActive ? ACTIVE_POLL_MS : META_POLL_MS,
+                    jobActive,
+                );
             } catch {
                 if (cancelled) {
                     return;
                 }
                 // Keep polling if the API is not ready yet on cold start.
                 setPopulating(true);
-                schedulePoll();
+                schedulePoll(ACTIVE_POLL_MS, true);
             }
         };
 
-        void load();
+        void load(true);
 
         return () => {
             cancelled = true;
@@ -107,9 +148,7 @@ export default function Home({
                 flexDirection: "column",
             }}
         >
-            {exportBaseUrl && (
-                <ExportBanner baseUrl={exportBaseUrl} />
-            )}
+            {exportBaseUrl && <ExportBanner baseUrl={exportBaseUrl} />}
             <div
                 style={{
                     width: "100%",
@@ -137,7 +176,13 @@ export default function Home({
                 />
             </div>
             <div style={{ flex: "0 0 auto", width: "100%" }}>
-                <MetadataNote />
+                <MetadataNote
+                    loaded={metaLoaded}
+                    costUsd={costUsd}
+                    lastRefreshAt={lastRefreshAt}
+                    lastEnrichmentAt={lastEnrichmentAt}
+                    enrichmentInProgress={enrichmentInProgress}
+                />
             </div>
         </div>
     );

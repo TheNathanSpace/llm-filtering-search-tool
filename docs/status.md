@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — help on the millions-of-tokens field
-**Latest change:** A help icon on Millions of tokens and on the Cost range explains the count, the inserted column, and the 90/10 blend.
+**Last updated:** 2026-10-27 — refresh no longer waits on enrichment
+**Latest change:** Refresh swaps using the enrichment cache. One background batch fills open-weights and size afterward, then waits 24h. The refresh-time tooltip shows the last enrichment time and whether a batch is in progress.
 
 ## Pickup
 

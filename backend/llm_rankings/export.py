@@ -35,7 +35,9 @@ _USER_AGENT = "llm-filtering-search-tool/0.1"
 _FETCH_TIMEOUT_SECONDS = (10, 600)
 
 # Process coordination only. A restored copy should not inherit an in-progress refresh.
-_SKIP_CACHE_RELATIVE = frozenset({"refresh.lock", "refresh_status.json"})
+_SKIP_CACHE_RELATIVE = frozenset(
+    {"refresh.lock", "refresh_status.json", "enrichment.lock"}
+)
 
 
 class ExportedCacheFile(BaseModel):
@@ -61,8 +63,8 @@ class ExportResponse(BaseModel):
     )
     cache_files: list[ExportedCacheFile] = Field(
         description=(
-            "UTF-8 contents of DATA_DIR/cache, excluding refresh.lock and "
-            "refresh_status.json. Write each file back under DATA_DIR/cache/<path> "
+            "UTF-8 contents of DATA_DIR/cache, excluding refresh.lock, "
+            "refresh_status.json, and enrichment.lock. Write each file back under DATA_DIR/cache/<path> "
             "and load models plus provider_endpoints into SQLite to reconstruct "
             "the instance without calling OpenRouter, Hugging Face, models.dev, "
             "or web enrichment."

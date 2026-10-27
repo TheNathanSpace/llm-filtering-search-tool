@@ -3,26 +3,29 @@
 Opt-in with ``OR_WEB_ENRICHMENT=1``. Uses hardcoded OpenAI GPT-6 Luna batch
 (``openai/gpt-6-luna:batch``) on ``POST /batches`` with the Responses wire and
 provider-native ``web_search`` (Exa / OpenRouter-orchestrated search is not
-available in batch). The refresh job waits for the batch; the live DB keeps
-serving until staging swap. The batch id is written to ``active_batch.json``
-before polling and resumed after a restart, so a new batch is not submitted
-on top of a pending one. A failed batch is logged and skipped, and the
-refresh continues. Never overwrites non-null OpenRouter, models.dev, or
-Hugging Face values. Durable cache and cost ledger live under
-``DATA_DIR/cache/web_enrichment/``.
+available in batch). Refresh applies the on-disk cache and swaps the live
+database without waiting. One background run polls the batch, then fills
+null open-weights and size on the live database. The batch id is written to
+``active_batch.json`` before polling and resumed after a restart. A new run
+starts only when that file is absent, the previous run finished at least 24h
+ago, and gaps remain. A failed batch is logged and skipped. Never overwrites
+non-null OpenRouter, models.dev, or Hugging Face values. Durable cache and
+cost ledger live under ``DATA_DIR/cache/web_enrichment/``.
 """
 
 from __future__ import annotations
 
+import fcntl
 import json
 import logging
 import os
 import re
 import threading
 import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 import requests
 from pydantic import BaseModel, ConfigDict, ValidationError, field_validator
@@ -49,6 +52,11 @@ POLL_MAX_WAIT_SECONDS = 24 * 60 * 60
 # Bump when cache payload fields change so older entries are re-fetched when needed.
 CACHE_SCHEMA_VERSION = 2
 ACTIVE_BATCH_FILENAME = "active_batch.json"
+LAST_ENRICHMENT_FILENAME = "last_enrichment.json"
+ENRICHMENT_LOCK_FILENAME = "enrichment.lock"
+# A new batch waits until this long after the previous run reached a terminal status.
+ENRICHMENT_MIN_INTERVAL_SECONDS = 24 * 60 * 60
+_ENRICHMENT_POLL_SECONDS = 60.0
 
 TERMINAL_BATCH_STATUSES = frozenset({"completed", "failed", "expired", "cancelled"})
 
@@ -327,6 +335,87 @@ def _write_active_batch(
 
 def _clear_active_batch() -> None:
     _active_batch_path().unlink(missing_ok=True)
+    _write_last_enrichment_completed()
+
+
+def _last_enrichment_path() -> Path:
+    return _web_cache_dir() / LAST_ENRICHMENT_FILENAME
+
+
+def _read_last_enrichment_completed_at() -> datetime | None:
+    path = _last_enrichment_path()
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        logger.warning("Corrupt %s; ignoring enrichment cooldown", path.name)
+        return None
+    raw = payload.get("last_enrichment_completed_at") if isinstance(payload, dict) else None
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        logger.warning("Invalid last_enrichment_completed_at in %s", path.name)
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def _write_last_enrichment_completed() -> None:
+    path = _last_enrichment_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "last_enrichment_completed_at": datetime.now(timezone.utc).isoformat(),
+    }
+    path.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def last_enrichment_completed_at_iso() -> str | None:
+    """ISO-8601 UTC time of the last enrichment run that reached a terminal status."""
+    stamp = _read_last_enrichment_completed_at()
+    if stamp is None:
+        return None
+    return stamp.isoformat()
+
+
+def enrichment_in_progress() -> bool:
+    """True while ``active_batch.json`` exists (a batch is saved and not finished)."""
+    return _active_batch_path().is_file()
+
+
+def _enrichment_due() -> bool:
+    stamp = _read_last_enrichment_completed_at()
+    if stamp is None:
+        return True
+    age = (datetime.now(timezone.utc) - stamp).total_seconds()
+    return age >= ENRICHMENT_MIN_INTERVAL_SECONDS
+
+
+class _EnrichmentLockBusy(Exception):
+    pass
+
+
+@contextmanager
+def _enrichment_lock(*, blocking: bool) -> Iterator[None]:
+    """One enrichment runner across processes. The API worker holds this while it lives."""
+    path = get_cache_dir() / ENRICHMENT_LOCK_FILENAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(path, os.O_CREAT | os.O_RDWR)
+    try:
+        flags = fcntl.LOCK_EX
+        if not blocking:
+            flags |= fcntl.LOCK_NB
+        try:
+            fcntl.flock(fd, flags)
+        except BlockingIOError as exc:
+            raise _EnrichmentLockBusy from exc
+        yield
+    finally:
+        fcntl.flock(fd, fcntl.LOCK_UN)
+        os.close(fd)
 
 
 _ledger_lock = threading.Lock()
@@ -962,17 +1051,41 @@ def _run_enrichment_batch(
     )
 
 
+def apply_cached_enrichment(models: list[CombinedModel]) -> None:
+    """Fill gaps from the on-disk enrichment cache. Does not call OpenRouter."""
+    filled_open = 0
+    filled_params = 0
+    for model in models:
+        if not _needs_enrichment(model):
+            continue
+        cached = _load_cached(model.id)
+        if cached is None or not _cache_usable_for_model(model, cached):
+            continue
+        open_filled, params_filled = _merge_into_model(
+            model, _result_from_cache(cached)
+        )
+        if open_filled:
+            filled_open += 1
+        if params_filled:
+            filled_params += 1
+    if filled_open or filled_params:
+        logger.info(
+            "Web enrichment cache: filled is_open_weights=%d, parameters_b=%d",
+            filled_open,
+            filled_params,
+        )
+
+
 def enrich_combined_models(models: list[CombinedModel]) -> None:
     """
     Fill null ``is_open_weights``, and null ``parameters_b`` when the model is
     open weights, via OpenRouter Batch (GPT-6 Luna + native web search) when enabled.
 
     No-op unless ``OR_WEB_ENRICHMENT`` is truthy. Requires ``OR_API_KEY`` when
-    enabled. Waits for batch results inside the refresh job (the live DB stays
-    readable until staging swap). A failed batch, including an out-of-funds
-    response, is logged and skipped. Cache hits and a successful earlier pass
-    are kept. Mutates ``models`` in place; never overwrites non-null upstream
-    values.
+    enabled. Resumes ``active_batch.json`` when present; otherwise submits one
+    batch. A failed batch, including an out-of-funds response, is logged and
+    skipped. Cache hits and a successful earlier pass are kept. Mutates
+    ``models`` in place; never overwrites non-null upstream values.
     """
     if not web_enrichment_enabled():
         logger.info("Web enrichment skipped (OR_WEB_ENRICHMENT not enabled)")
@@ -1266,3 +1379,80 @@ def _apply_web_enrichment(models: list[CombinedModel]) -> None:
         filled_open,
         filled_params,
     )
+
+
+_worker_stop = threading.Event()
+
+
+def _enrichment_tick_unlocked() -> None:
+    if not web_enrichment_enabled():
+        return
+    from llm_rankings.database import get_all_models, update_enrichment_fields
+    from llm_rankings.refresh import is_refresh_in_progress, refresh_lock
+
+    active = _read_active_batch()
+    if active is None:
+        if is_refresh_in_progress():
+            logger.debug("Web enrichment: refresh in progress; not starting a batch")
+            return
+        if not _enrichment_due():
+            logger.debug(
+                "Web enrichment: last completion is within 24h; not starting a batch"
+            )
+            return
+    models = get_all_models()
+    if active is None and not any(_needs_enrichment(model) for model in models):
+        logger.debug("Web enrichment: no open-weights or size gaps")
+        return
+    before = {
+        model.id: (model.is_open_weights, model.parameters_b) for model in models
+    }
+    enrich_combined_models(models)
+    changed = [
+        model
+        for model in models
+        if (model.is_open_weights, model.parameters_b) != before.get(model.id)
+    ]
+    if not changed:
+        return
+    with refresh_lock():
+        update_enrichment_fields(changed)
+
+
+def enrichment_tick() -> None:
+    """Run one enrichment pass when this process can take the worker lock."""
+    if not web_enrichment_enabled():
+        return
+    try:
+        with _enrichment_lock(blocking=False):
+            _enrichment_tick_unlocked()
+    except _EnrichmentLockBusy:
+        logger.info("Web enrichment worker is already running; not starting another")
+
+
+def enrichment_worker() -> None:
+    """Hold the enrichment lock and tick until ``stop_enrichment_worker``."""
+    try:
+        with _enrichment_lock(blocking=True):
+            while not _worker_stop.is_set():
+                try:
+                    if web_enrichment_enabled():
+                        _enrichment_tick_unlocked()
+                except Exception:
+                    logger.exception("Web enrichment tick failed")
+                _worker_stop.wait(_ENRICHMENT_POLL_SECONDS)
+    except Exception:
+        logger.exception("Web enrichment worker exited")
+
+
+def start_enrichment_worker() -> None:
+    _worker_stop.clear()
+    threading.Thread(
+        target=enrichment_worker,
+        name="web-enrichment",
+        daemon=True,
+    ).start()
+
+
+def stop_enrichment_worker() -> None:
+    _worker_stop.set()

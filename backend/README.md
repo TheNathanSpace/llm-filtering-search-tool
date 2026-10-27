@@ -47,7 +47,7 @@ Shapes match `api-docs/openapi-openrouter.json`.
 4. Fetch [models.dev](https://models.dev) `api.json`, or reuse a ≤24h cache under `DATA_DIR/cache/models_dev/`. Map that file’s `openrouter` provider `open_weights` flags by OpenRouter model id. Mirror `DATA_DIR/intermediate/raw/raw_models_dev.json`.
 5. For each distinct non-empty OpenRouter `hugging_face_id`, read `safetensors.total` and store billions as `parameters_b`. Cache under `DATA_DIR/cache/hf/` (permanent per repo id; a new id fetches on miss). Use a project User-Agent, ~1s pacing, and 429 backoff. Optional `HF_TOKEN` raises Hub rate limits.
 6. Map each remaining model to `CombinedModel` (`llm_rankings/combined_models.py`): identity, modalities, OpenRouter URL, embedded Artificial Analysis indices as `benchmark_or_*`, and `is_open_weights` / `parameters_b` when enrichment succeeds. Do not copy nested Design Arena rows.
-7. Optional (`OR_WEB_ENRICHMENT=1`): gap-fill null `is_open_weights`, and null `parameters_b` only when the model is open weights, via OpenRouter Batch (`POST /batches`, Responses endpoint `/v1/responses`, hardcoded `openai/gpt-6-luna:batch`, OpenAI-only `web_search`). Knowledge cutoff stays the OpenRouter value. The refresh job waits until the batch completes. The batch id is written to ``active_batch.json`` before polling and resumed after a restart, so a pending batch is not submitted again. ``--force --source enrichment`` does not delete that file. A failed batch, including an out-of-funds response, is logged and skipped. Cache hits and a successful earlier pass are kept, and the refresh continues. Never overwrite a non-null OpenRouter, models.dev, or Hugging Face value. Per-model cache (schema v2) and cost ledger/summary: `DATA_DIR/cache/web_enrichment/` (`llm_rankings/web_enrichment.py`).
+7. Optional (`OR_WEB_ENRICHMENT=1`): gap-fill null `is_open_weights`, and null `parameters_b` only when the model is open weights, via OpenRouter Batch (`POST /batches`, Responses endpoint `/v1/responses`, hardcoded `openai/gpt-6-luna:batch`, OpenAI-only `web_search`). Knowledge cutoff stays the OpenRouter value. Refresh applies the on-disk cache and swaps without waiting. A background worker submits at most one batch, resumes `active_batch.json` after a restart, and patches null open-weights and size on the live DB when the batch finishes. The next batch waits 24h after that run reaches a terminal status. `--force --source enrichment` does not delete `active_batch.json`. A failed batch, including an out-of-funds response, is logged and skipped. Cache hits and a successful earlier pass are kept. Never overwrite a non-null OpenRouter, models.dev, or Hugging Face value. Per-model cache (schema v2) and cost ledger/summary: `DATA_DIR/cache/web_enrichment/` (`llm_rankings/web_enrichment.py`).
 8. Flatten endpoint providers into `ModelProviderEndpoint` rows (`llm_rankings/provider_endpoints.py`): $/1M input and output price, optional discount, throughput and latency percentiles for the last 30 minutes (p50, p75, p90, p99), status, uptime for the last 30 minutes, quantization, and context. Primary key ``{model_id}|{tag}``.
 9. Choose one endpoint per model (`llm_rankings/provider_choice.py`): cheapest listed blend ``0.90 * input + 0.10 * output``. If the next endpoint’s latency p50 is more than 2× lower and its throughput p50 is more than 2× higher, use that endpoint. Copy its list prices, provider name, throughput p50, and latency p50 onto the model.
 10. Store `models` and `model_provider_endpoints` in SQLite.
@@ -60,28 +60,28 @@ Commands: [root README](../README.md#refresh-model-data). Rebuild entry points: 
 
 | Path | Behavior |
 | --- | --- |
-| Automatic / default CLI | Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h. Otherwise run the pipeline (OpenRouter models, endpoints, and models.dev may come from disk cache), write a staging SQLite file, atomically replace `database.db`, then write `last_refresh_at`. The previous live DB stays readable until that swap. A skip leaves the live DB untouched and logs that data is already fresh. |
+| Automatic / default CLI | Skip when `database.db` exists and `DATA_DIR/cache/last_refresh.json` is younger than 24h. Otherwise run the pipeline (OpenRouter models, endpoints, and models.dev may come from disk cache; web enrichment contributes cached rows only), write a staging SQLite file, atomically replace `database.db`, then write `last_refresh_at`. The previous live DB stays readable until that swap. A skip leaves the live DB untouched and logs that data is already fresh. |
 | `--force` | Bypass the 24h gate, invalidate the selected caches, then the same staging swap. |
 | Export import | On API start, if `EXPORT_BASE_URL` is set. |
 
 `--force` sources: `models`, `providers`, `models-dev`, `hf`, `enrichment`, `all` (default when `--force` has no `--source`). `models` also invalidates `providers`. API and CLI callers share `DATA_DIR/cache/refresh.lock`.
 
-- API lifespan starts a background startup load (export import, then the gated refresh) and a refresh check about every hour. Serving is not blocked. Callers keep reading the previous snapshot while a rebuild is in flight.
-- CLI: `python -m llm_rankings.refresh`, `python -m llm_rankings.database` (same CLI), or `./bin/refresh-data.sh` (via `docker exec`). No public HTTP refresh endpoint.
-- `last_refresh_at` is the last successful DB rebuild, not a per-source fetch time. It resets the 24h gate.
+- API lifespan starts a background startup load (export import, then the gated refresh), a refresh check about every hour, and one web-enrichment worker. Serving is not blocked. Callers keep reading the previous snapshot while a rebuild is in flight. The worker resumes a saved batch even during a refresh. It starts a new batch only when none is saved, refresh is idle, the last run finished at least 24h ago, and rows still have gaps. Completion patches null `is_open_weights` and `parameters_b` on the live DB.
+- CLI: `python -m llm_rankings.refresh`, `python -m llm_rankings.database` (same CLI), or `./bin/refresh-data.sh` (via `docker exec`). After the swap it runs one enrichment tick when the API worker does not already hold `enrichment.lock`. No public HTTP refresh endpoint.
+- `last_refresh_at` is the last successful DB rebuild, not a per-source fetch time. It resets the 24h refresh gate. `last_enrichment_completed_at` is the last enrichment run that reached a terminal status. It resets the 24h enrichment gate.
 - A successful rebuild writes `DATA_DIR/database.db.staging`, then replaces `DATA_DIR/database.db`.
 - `GET /meta` and the populating empty state: [PLT-01](../docs/requirements.md#plt-01), [UI-01](../docs/requirements.md#ui-01).
 
 `GET /export` (also `/api/export`) ([PLT-10](../docs/requirements.md#plt-10)):
 
-- Returns metadata, every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file under `DATA_DIR/cache` except `refresh.lock` and `refresh_status.json`
+- Returns metadata, every `models` row, every `model_provider_endpoints` row, and the UTF-8 text of each file under `DATA_DIR/cache` except `refresh.lock`, `refresh_status.json`, and `enrichment.lock`
 - Omits logs and `.env`
 - One export runs at a time. A second request gets `429`.
 - At most one completed export per 60 seconds. A request inside that window gets `429`. A failed build does not start the cooldown.
 
 `EXPORT_BASE_URL` is an `http` or `https` origin with no path and no credentials.
 
-- Startup downloads `{origin}/api/export` and replaces the live tables and `DATA_DIR/cache`. `refresh.lock` and `refresh_status.json` stay. Rows absent from the snapshot are dropped.
+- Startup downloads `{origin}/api/export` and replaces the live tables and `DATA_DIR/cache`. `refresh.lock`, `refresh_status.json`, and `enrichment.lock` stay. Rows absent from the snapshot are dropped.
 - `last_refresh_at` is stamped to now, so that start does not also rebuild from OpenRouter.
 - `/meta` returns the origin as `export_base_url`. A warning at the top of the page includes that origin and stays until the variable is removed and the process restarts. The next start downloads again while the variable is set.
 - A failed download is logged, and startup uses the normal refresh. The 24h refresh still runs later while the process stays up.

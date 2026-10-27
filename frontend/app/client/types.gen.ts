@@ -21,6 +21,18 @@ export type AppMeta = {
      */
     last_refresh_at: string | null;
     /**
+     * Last Enrichment Completed At
+     *
+     * ISO-8601 UTC timestamp of the last web enrichment run that reached a terminal status. A new batch waits 24h after this time.
+     */
+    last_enrichment_completed_at: string | null;
+    /**
+     * Enrichment In Progress
+     *
+     * True while a saved OpenRouter enrichment batch has not finished
+     */
+    enrichment_in_progress: boolean;
+    /**
      * Database Ready
      *
      * True when the live model SQLite file exists
@@ -161,7 +173,7 @@ export type ExportResponse = {
     /**
      * Cache Files
      *
-     * UTF-8 contents of DATA_DIR/cache, excluding refresh.lock and refresh_status.json. Write each file back under DATA_DIR/cache/<path> and load models plus provider_endpoints into SQLite to reconstruct the instance without calling OpenRouter, Hugging Face, models.dev, or web enrichment.
+     * UTF-8 contents of DATA_DIR/cache, excluding refresh.lock, refresh_status.json, and enrichment.lock. Write each file back under DATA_DIR/cache/<path> and load models plus provider_endpoints into SQLite to reconstruct the instance without calling OpenRouter, Hugging Face, models.dev, or web enrichment.
      */
     cache_files: Array<ExportedCacheFile>;
 };

@@ -8,6 +8,7 @@ from pydantic_sqlite import DataBase
 from pydantic_sqlite._core import TableBaseModel
 
 from llm_rankings.clean_data import get_and_clean_data
+from llm_rankings.web_enrichment import apply_cached_enrichment
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.or_models import is_preset_model_id
 from llm_rankings.provider_endpoints import ModelProviderEndpoint
@@ -113,9 +114,51 @@ def populate_with_models() -> None:
     """
     Fetch/combine models, write a staging SQLite file, then atomically replace
     ``database.db`` so readers keep serving the previous snapshot until swap.
+
+    Cached web enrichment is applied again immediately before the swap. Callers
+    that hold the refresh file lock keep that second read inside the lock.
     """
     models, provider_endpoints = get_and_clean_data()
+    apply_cached_enrichment(models)
     replace_database(models, provider_endpoints)
+
+
+def update_enrichment_fields(models: list[CombinedModel]) -> None:
+    """
+    Fill null ``is_open_weights`` / ``parameters_b`` on the live database.
+
+    ``parameters_b`` is written only when the live row is open weights.
+    Other columns are left as they are.
+    """
+    path = get_database_path()
+    if not path.is_file() or not models:
+        return
+    incoming = {model.id: model for model in models}
+    db = initialize_database(path)
+    updated = 0
+    try:
+        for row in list(db("models")):
+            source = incoming.get(row.id)
+            if source is None:
+                continue
+            changed = False
+            if row.is_open_weights is None and source.is_open_weights is not None:
+                row.is_open_weights = source.is_open_weights
+                changed = True
+            if (
+                row.parameters_b is None
+                and row.is_open_weights is True
+                and source.parameters_b is not None
+            ):
+                row.parameters_b = source.parameters_b
+                changed = True
+            if changed:
+                row.add_to_database(db)
+                updated += 1
+    finally:
+        _close_database(db)
+    if updated:
+        logger.info("Patched enrichment fields on %d live model row(s)", updated)
 
 
 def get_all_models() -> list[CombinedModel]:

@@ -17,7 +17,7 @@ from llm_rankings.util import (
     get_data_dir,
     setup_logging,
 )
-from llm_rankings.web_enrichment import enrich_combined_models
+from llm_rankings.web_enrichment import apply_cached_enrichment
 
 logger = logging.getLogger(__name__)
 
@@ -156,9 +156,8 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b)
         for model in kept
     ]
-    # Opt-in OpenRouter batch + native web search gap-fill for open-weights / size.
-    with _refresh_stage("web enrichment"):
-        enrich_combined_models(combined)
+    with _refresh_stage("web enrichment cache"):
+        apply_cached_enrichment(combined)
     return combined
 
 

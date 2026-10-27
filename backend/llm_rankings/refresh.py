@@ -264,12 +264,13 @@ def refresh_data(
     """
     Rebuild the model DB into a staging file, then atomically replace the live DB.
 
-    The previous ``database.db`` stays readable until the swap, so API reads are not
-    interrupted by a long refresh (including batch web enrichment). When ``force`` is
-    False (API startup/scheduler/default CLI), skip if data is fresh within 24h. When
-    ``force`` is True (ops CLI), invalidate selected caches then rebuild regardless of
-    the gate. Concurrent callers serialize on a cross-process file lock and re-check
-    freshness after acquiring it (non-force path only).
+    The previous ``database.db`` stays readable until the swap. Web enrichment is
+    not part of this rebuild: the cache is applied, then a separate worker fills
+    gaps. When ``force`` is false (API startup, scheduler, default CLI), skip if
+    data is fresh within 24h. When ``force`` is true (ops CLI), invalidate selected
+    caches then rebuild regardless of the gate. Concurrent callers serialize on a
+    cross-process file lock and re-check freshness after acquiring it (non-force
+    path only).
     """
     with _refresh_file_lock():
         if not force and is_data_fresh():
@@ -393,6 +394,9 @@ def main(argv: list[str] | None = None) -> int:
     )
     if result.skipped:
         logger.info(result.detail)
+    from llm_rankings.web_enrichment import enrichment_tick
+
+    enrichment_tick()
     return 0
 
 

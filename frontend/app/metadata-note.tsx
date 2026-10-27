@@ -1,8 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getMetaMetaGet } from "@/app/client";
-
 function formatCostUsd(usd: number): string {
     return usd.toLocaleString(undefined, {
         style: "currency",
@@ -64,6 +61,26 @@ function formatUtcRefreshTooltip(iso: string | null): string | undefined {
     });
 }
 
+function refreshTooltip(
+    lastRefreshAt: string | null,
+    lastEnrichmentAt: string | null,
+    enrichmentInProgress: boolean,
+): string | undefined {
+    const refreshUtc = formatUtcRefreshTooltip(lastRefreshAt);
+    const enrichmentLine = lastEnrichmentAt
+        ? `Last enrichment: ${formatLocalRefresh(lastEnrichmentAt)}`
+        : "Last enrichment: none";
+    const waitingLine = enrichmentInProgress
+        ? "Enrichment in progress."
+        : "Enrichment is not running.";
+    const lines = [
+        refreshUtc ? `Refresh (UTC): ${refreshUtc}` : undefined,
+        enrichmentLine,
+        waitingLine,
+    ].filter((line): line is string => line !== undefined);
+    return lines.join("\n");
+}
+
 function isRefreshOlderThanTwoDays(iso: string | null, nowMs: number): boolean {
     const date = parseRefreshDate(iso);
     if (!date) {
@@ -72,31 +89,25 @@ function isRefreshOlderThanTwoDays(iso: string | null, nowMs: number): boolean {
     return nowMs - date.getTime() > TWO_DAYS_MS;
 }
 
-export default function MetadataNote() {
-    const [loaded, setLoaded] = useState(false);
-    const [costUsd, setCostUsd] = useState(0);
-    const [lastRefreshAt, setLastRefreshAt] = useState<string | null>(null);
-    const [refreshStale, setRefreshStale] = useState(false);
-
-    useEffect(() => {
-        getMetaMetaGet()
-            .then((response) => {
-                if (response.data) {
-                    const iso = response.data.last_refresh_at;
-                    setCostUsd(response.data.enrichment_cost_usd);
-                    setLastRefreshAt(iso);
-                    setRefreshStale(isRefreshOlderThanTwoDays(iso, Date.now()));
-                }
-            })
-            .finally(() => {
-                setLoaded(true);
-            });
-    }, []);
-
+export default function MetadataNote({
+    loaded,
+    costUsd,
+    lastRefreshAt,
+    lastEnrichmentAt,
+    enrichmentInProgress,
+}: {
+    loaded: boolean;
+    costUsd: number;
+    lastRefreshAt: string | null;
+    lastEnrichmentAt: string | null;
+    enrichmentInProgress: boolean;
+}) {
+    const refreshStale =
+        loaded && isRefreshOlderThanTwoDays(lastRefreshAt, Date.now());
     const costDisplay = loaded ? formatCostUsd(costUsd) : "…";
     const refreshDisplay = loaded ? formatLocalRefresh(lastRefreshAt) : "…";
     const refreshUtcTitle = loaded
-        ? formatUtcRefreshTooltip(lastRefreshAt)
+        ? refreshTooltip(lastRefreshAt, lastEnrichmentAt, enrichmentInProgress)
         : undefined;
 
     return (

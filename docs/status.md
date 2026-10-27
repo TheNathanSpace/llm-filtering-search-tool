@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — enrichment batch id survives restart
-**Latest change:** The OpenRouter enrichment batch id is saved before polling and resumed after a restart. A pending batch is not submitted again.
+**Last updated:** 2026-10-27 — help on the millions-of-tokens field
+**Latest change:** A help icon on Millions of tokens and on the Cost range explains the count, the inserted column, and the 90/10 blend.
 
 ## Pickup
 

@@ -1,7 +1,7 @@
 import FilterOption from "@/app/filters/filter-option";
 import { Slider, TextField, Typography } from "@mui/material";
 import { MuiFontSans } from "@/app/mui-font";
-import { useRef, useState, type KeyboardEvent } from "react";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { formatNumber } from "@/app/utility";
 
 interface NumberRangeFilterProperties {
@@ -21,6 +21,8 @@ interface NumberRangeFilterProperties {
      * (optional ``$`` or trailing ``B``). Empty input still restores the bound.
      */
     parseDraft?: (text: string) => number | undefined;
+    /** Optional help shown on a circled ? after the label. */
+    help?: ReactNode;
 }
 
 type RangeEndpointName = "start" | "end";
@@ -224,7 +226,7 @@ export default function NumberRangeFilter(
     }
 
     return (
-        <FilterOption name={properties.name}>
+        <FilterOption name={properties.name} help={properties.help}>
             <MuiFontSans>
                 <Slider
                     value={value}

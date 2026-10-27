@@ -337,6 +337,7 @@ export default function ModelFilters(
                             usageCostBounds[1],
                         )}
                         formatValue={formatPrice}
+                        help="Dollar cost of the token count above, using the 90% input / 10% output blend."
                         onChange={(usageCost) => {
                             setFilters((previous) => ({
                                 ...previous,

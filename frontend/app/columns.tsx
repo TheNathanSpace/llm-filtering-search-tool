@@ -2,6 +2,8 @@ import { CombinedModel } from "@/app/client";
 import { formatTokenMillions, usageCost } from "@/app/usage-cost";
 import {
     creatorLabel,
+    formatContextLength,
+    formatLatencySeconds,
     formatNumber,
     formatParametersB,
     formatPrice,
@@ -114,8 +116,11 @@ export const columns: GridColDef[] = [
     {
         field: "context_length",
         headerName: "Context Length",
+        description:
+            "Thousands under 500,000 tokens (400k); millions from 500,000 (1.2M)",
         type: "number",
         width: 130,
+        valueFormatter: formatContextLength,
     },
     {
         field: "pricing_input",
@@ -146,12 +151,12 @@ export const columns: GridColDef[] = [
     },
     {
         field: "latency_ms",
-        headerName: "Latency (ms)",
+        headerName: "Latency",
         description:
-            "Median time to first token (p50, last 30 minutes) for the chosen provider",
+            "Median time to first token in seconds (p50, last 30 minutes) for the chosen provider",
         type: "number",
         width: 120,
-        valueFormatter: formatNumber,
+        valueFormatter: formatLatencySeconds,
     },
     {
         field: "created",

@@ -17,7 +17,14 @@ import TextFilter from "@/app/filters/text-filter";
 import TokenCountField from "@/app/filters/token-count-field";
 import { parseTokenMillions, usageCostStep } from "@/app/usage-cost";
 import { MuiFontCasual } from "@/app/mui-font";
-import { formatLatencyMs, formatPrice, formatThroughput } from "@/app/utility";
+import {
+    formatContextLength,
+    formatLatencySeconds,
+    formatPrice,
+    formatThroughput,
+    parseContextLength,
+    parseLatencySeconds,
+} from "@/app/utility";
 import { Button, FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
 import { Dispatch, SetStateAction, useState } from "react";
@@ -293,6 +300,9 @@ export default function ModelFilters(
                         filters.contextLength,
                         bounds.contextLength,
                     )}
+                    formatValue={formatContextLength}
+                    formatDraft={formatContextLength}
+                    parseDraft={parseContextLength}
                     onChange={(contextLength) => {
                         setFilters((previous) => ({
                             ...previous,
@@ -396,12 +406,14 @@ export default function ModelFilters(
             {bounds.latencyMs && (
                 <NumberRangeFilter
                     key={`latency-${rangeRevision}`}
-                    name="Latency (ms)"
+                    name="Latency"
                     minValue={bounds.latencyMs[0]}
                     maxValue={bounds.latencyMs[1]}
                     {...rangeDefaults(filters.latencyMs, bounds.latencyMs)}
                     step={1}
-                    formatValue={formatLatencyMs}
+                    formatValue={formatLatencySeconds}
+                    formatDraft={formatLatencySeconds}
+                    parseDraft={parseLatencySeconds}
                     onChange={(latencyMs) => {
                         setFilters((previous) => ({
                             ...previous,

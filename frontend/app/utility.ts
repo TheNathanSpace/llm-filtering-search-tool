@@ -24,11 +24,79 @@ export function formatThroughput(value: number | undefined | null) {
     return `${formatOneDecimal(value)} tok/s`;
 }
 
-export function formatLatencyMs(value: number | undefined | null) {
+/** Median time-to-first-token as seconds, always two decimal places (``3.11s``). */
+export function formatLatencySeconds(value: number | undefined | null): string {
     if (typeof value !== "number") {
         return "";
     }
-    return `${formatOneDecimal(value)} ms`;
+    return `${(value / 1000).toFixed(2)}s`;
+}
+
+/** Typed latency: seconds, optional trailing ``s``. Returns milliseconds. */
+export function parseLatencySeconds(text: string): number | undefined {
+    let normalized = text.trim().replaceAll(",", "");
+    if (normalized.endsWith("s") || normalized.endsWith("S")) {
+        normalized = normalized.slice(0, -1).trim();
+    }
+    if (normalized === "") {
+        return undefined;
+    }
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+        return undefined;
+    }
+    return parsed * 1000;
+}
+
+const CONTEXT_THOUSAND = 1000;
+const CONTEXT_MILLION = 1_000_000;
+/** Context lengths from this token count use millions; below it, thousands. */
+const CONTEXT_MILLIONS_FROM = 500_000;
+
+function trimTrailingZeros(fixed: string): string {
+    return fixed.replace(/\.?0+$/, "");
+}
+
+/**
+ * Context window: thousands under 500,000 tokens (``400k``), millions from
+ * 500,000 (``1.2M``). At most two decimal places; trailing zeros are dropped.
+ */
+export function formatContextLength(value: number | undefined | null): string {
+    if (typeof value !== "number") {
+        return "";
+    }
+    if (value >= CONTEXT_MILLIONS_FROM) {
+        return `${trimTrailingZeros((value / CONTEXT_MILLION).toFixed(2))}M`;
+    }
+    return `${trimTrailingZeros((value / CONTEXT_THOUSAND).toFixed(2))}k`;
+}
+
+/**
+ * Typed context length. ``k``/``K`` is thousands, ``m``/``M`` is millions.
+ * A bare number is the token count.
+ */
+export function parseContextLength(text: string): number | undefined {
+    let normalized = text.trim().replaceAll(",", "");
+    if (normalized === "") {
+        return undefined;
+    }
+    const suffix = normalized.at(-1);
+    let multiplier = 1;
+    if (suffix === "k" || suffix === "K") {
+        multiplier = CONTEXT_THOUSAND;
+        normalized = normalized.slice(0, -1).trim();
+    } else if (suffix === "m" || suffix === "M") {
+        multiplier = CONTEXT_MILLION;
+        normalized = normalized.slice(0, -1).trim();
+    }
+    if (normalized === "") {
+        return undefined;
+    }
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+        return undefined;
+    }
+    return parsed * multiplier;
 }
 
 export function formatNumber(value: number | undefined) {

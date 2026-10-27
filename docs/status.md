@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — `@preset` models stay out of the table
-**Latest change:** Ids containing `@preset` are dropped at ingest and omitted from `GET /models`.
+**Last updated:** 2026-10-27 — latency in seconds, context length in k or M
+**Latest change:** Latency shows as seconds (`3.11s`). Context length shows as thousands under 500k (`400k`) and millions from 500k (`1.2M`). Filters still store milliseconds and tokens.
 
 ## Pickup
 
@@ -26,11 +26,11 @@ A full-width reset button is first in the left column, then Clear pins, then the
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
-| Context length | yes | yes | [QRY-04](requirements.md#qry-04) |
+| Context length | yes (thousands under 500k, e.g. `400k`; millions from 500k, e.g. `1.2M`) | yes | [QRY-04](requirements.md#qry-04) |
 | Usage cost | yes, when a positive token count is entered (left of input cost) | token-count box, then a cost range | [UI-11](requirements.md#ui-11) |
 | Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
 | Throughput | yes (chosen provider p50, last 30 minutes) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
-| Latency | yes (chosen provider p50, ms, last 30 minutes) | yes | [UI-06](requirements.md#ui-06) |
+| Latency | yes (chosen provider p50, seconds, last 30 minutes) | yes | [UI-06](requirements.md#ui-06) |
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
 | Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
 | Creator | yes (`Author:` prefix, else a leading word that starts the slug, else the title-cased slug) | yes | [QRY-06](requirements.md#qry-06) |

@@ -14,6 +14,13 @@ interface NumberRangeFilterProperties {
     step?: number;
     /** Label formatter for the slider thumb and the range text under the control. */
     formatValue?: (value: number) => string;
+    /** Text shown when an endpoint is clicked. Defaults to the raw stored number. */
+    formatDraft?: (value: number) => string;
+    /**
+     * Parse a typed endpoint into the stored unit. Defaults to a plain number
+     * (optional ``$`` or trailing ``B``). Empty input still restores the bound.
+     */
+    parseDraft?: (text: string) => number | undefined;
 }
 
 type RangeEndpointName = "start" | "end";
@@ -58,6 +65,7 @@ interface RangeEndpointEditorProperties {
     ariaLabel: string;
     /** Value used when the field is cleared. */
     emptyValue: number;
+    parseDraft?: (text: string) => number | undefined;
     onCommit: (next: number) => void;
     onClose: () => void;
 }
@@ -72,11 +80,13 @@ function RangeEndpointEditor(
         if (cancelled.current) {
             return;
         }
-        const parsed = parseTypedNumber(text);
-        if (parsed !== undefined) {
-            properties.onCommit(parsed);
-        } else if (text.trim() === "") {
+        if (text.trim() === "") {
             properties.onCommit(properties.emptyValue);
+        } else {
+            const parsed = (properties.parseDraft ?? parseTypedNumber)(text);
+            if (parsed !== undefined) {
+                properties.onCommit(parsed);
+            }
         }
         properties.onClose();
     }
@@ -127,9 +137,10 @@ function RangeEndpointEditor(
 
 interface RangeEndpointProperties {
     label: string;
-    value: number;
     emptyValue: number;
     ariaLabel: string;
+    draft: string;
+    parseDraft?: (text: string) => number | undefined;
     active: boolean;
     onActivate: () => void;
     onCommit: (next: number) => void;
@@ -167,9 +178,10 @@ function RangeEndpoint(properties: Readonly<RangeEndpointProperties>) {
 
     return (
         <RangeEndpointEditor
-            initialDraft={formatDraft(properties.value)}
+            initialDraft={properties.draft}
             ariaLabel={properties.ariaLabel}
             emptyValue={properties.emptyValue}
+            parseDraft={properties.parseDraft}
             onCommit={properties.onCommit}
             onClose={properties.onClose}
         />
@@ -182,6 +194,7 @@ export default function NumberRangeFilter(
     const initialStart = properties.defaultStart ?? properties.minValue;
     const initialEnd = properties.defaultEnd ?? properties.maxValue;
     const formatValue = properties.formatValue ?? formatNumber;
+    const formatDraftValue = properties.formatDraft ?? formatDraft;
 
     const [value, setValue] = useState<number[]>([initialStart, initialEnd]);
     const [activeEndpoint, setActiveEndpoint] = useState<
@@ -242,9 +255,10 @@ export default function NumberRangeFilter(
                 >
                     <RangeEndpoint
                         label={String(formatValue(value[0]) ?? "")}
-                        value={value[0]}
                         emptyValue={properties.minValue}
                         ariaLabel={`${properties.name} minimum, click to type a value`}
+                        draft={formatDraftValue(value[0])}
+                        parseDraft={properties.parseDraft}
                         active={activeEndpoint === "start"}
                         onActivate={() => {
                             setActiveEndpoint("start");
@@ -259,9 +273,10 @@ export default function NumberRangeFilter(
                     <span aria-hidden="true">–</span>
                     <RangeEndpoint
                         label={String(formatValue(value[1]) ?? "")}
-                        value={value[1]}
                         emptyValue={properties.maxValue}
                         ariaLabel={`${properties.name} maximum, click to type a value`}
+                        draft={formatDraftValue(value[1])}
+                        parseDraft={properties.parseDraft}
                         active={activeEndpoint === "end"}
                         onActivate={() => {
                             setActiveEndpoint("end");

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — container timezone from `TZ`
-**Latest change:** `TZ` (IANA, default `Etc/UTC`) sets container log timestamps. Stored refresh and enrichment instants stay UTC.
+**Last updated:** 2026-10-27 — `@preset` models stay out of the table
+**Latest change:** Ids containing `@preset` are dropped at ingest and omitted from `GET /models`.
 
 ## Pickup
 

@@ -9,6 +9,7 @@ from pydantic_sqlite._core import TableBaseModel
 
 from llm_rankings.clean_data import get_and_clean_data
 from llm_rankings.combined_models import CombinedModel
+from llm_rankings.or_models import is_preset_model_id
 from llm_rankings.provider_endpoints import ModelProviderEndpoint
 from llm_rankings.util import get_data_dir
 
@@ -124,7 +125,11 @@ def get_all_models() -> list[CombinedModel]:
         return []
     db: DataBase = initialize_database(path)
     try:
-        return list(db("models"))
+        return [
+            model
+            for model in db("models")
+            if not is_preset_model_id(model.id)
+        ]
     finally:
         _close_database(db)
 

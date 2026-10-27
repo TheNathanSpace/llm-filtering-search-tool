@@ -142,7 +142,7 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         )
     if skipped_preset:
         logger.info(
-            "Skipping %s OpenRouter preset model(s) (ids starting with '@preset/')",
+            "Skipping %s OpenRouter preset model(s) (ids containing '@preset')",
             skipped_preset,
         )
     with _refresh_stage("models.dev open weights"):

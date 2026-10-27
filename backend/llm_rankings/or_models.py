@@ -145,6 +145,11 @@ class ORBenchmarks(ORBaseModel):
     artificial_analysis: ORArtificialAnalysisBenchmarks | None = None
 
 
+def is_preset_model_id(model_id: str) -> bool:
+    """True for OpenRouter account presets (``@preset/...`` and any id containing ``@preset``)."""
+    return "@preset" in model_id
+
+
 class OpenRouterModel(ORBaseModel):
     id: str
     canonical_slug: str
@@ -207,8 +212,8 @@ class OpenRouterModel(ORBaseModel):
         return self.id.endswith("-latest")
 
     def is_preset(self) -> bool:
-        """Account presets (``@preset/...``). OpenRouter has no endpoints route for them."""
-        return self.get_provider() == "@preset"
+        """Account presets (ids containing ``@preset``). OpenRouter has no endpoints route for them."""
+        return is_preset_model_id(self.id)
 
     def get_created_date(self) -> datetime.datetime | None:
         if self.created:

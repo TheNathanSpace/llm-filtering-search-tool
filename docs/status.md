@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — latency in seconds, context length in k or M
-**Latest change:** Latency shows as seconds (`3.11s`). Context length shows as thousands under 500k (`400k`) and millions from 500k (`1.2M`). Filters still store milliseconds and tokens.
+**Last updated:** 2026-10-27 — enrichment batch id survives restart
+**Latest change:** The OpenRouter enrichment batch id is saved before polling and resumed after a restart. A pending batch is not submitted again.
 
 ## Pickup
 

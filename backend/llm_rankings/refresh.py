@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Iterator, Literal
 
 from llm_rankings.database import get_database_path, populate_with_models
+from llm_rankings.web_enrichment import ACTIVE_BATCH_FILENAME
 from llm_rankings.util import (
     REFRESH_MAX_AGE_SECONDS,
     bootstrap_env_from_argv,
@@ -40,7 +41,9 @@ _ATOMIC_SOURCES: frozenset[str] = frozenset(
     {"models", "providers", "models-dev", "hf", "enrichment"}
 )
 
-_WEB_ENRICHMENT_KEEP = frozenset({"cost_ledger.jsonl", "cost_summary.json"})
+_WEB_ENRICHMENT_KEEP = frozenset(
+    {"cost_ledger.jsonl", "cost_summary.json", ACTIVE_BATCH_FILENAME}
+)
 
 
 @dataclass(frozen=True)
@@ -241,7 +244,7 @@ def invalidate_sources(sources: frozenset[str]) -> None:
                     removed += 1
             logger.info(
                 "Invalidated %d web enrichment result cache file(s) under %s "
-                "(kept cost ledger/summary)",
+                "(kept cost ledger/summary and active_batch.json)",
                 removed,
                 web_dir,
             )

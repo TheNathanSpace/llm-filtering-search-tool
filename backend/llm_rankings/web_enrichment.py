@@ -4,7 +4,9 @@ Opt-in with ``OR_WEB_ENRICHMENT=1``. Uses hardcoded OpenAI GPT-6 Luna batch
 (``openai/gpt-6-luna:batch``) on ``POST /batches`` with the Responses wire and
 provider-native ``web_search`` (Exa / OpenRouter-orchestrated search is not
 available in batch). The refresh job waits for the batch; the live DB keeps
-serving until staging swap. A failed batch is logged and skipped, and the
+serving until staging swap. The batch id is written to ``active_batch.json``
+before polling and resumed after a restart, so a new batch is not submitted
+on top of a pending one. A failed batch is logged and skipped, and the
 refresh continues. Never overwrites non-null OpenRouter, models.dev, or
 Hugging Face values. Durable cache and cost ledger live under
 ``DATA_DIR/cache/web_enrichment/``.
@@ -46,6 +48,7 @@ POLL_NOT_FOUND_GRACE_SECONDS = 120.0
 POLL_MAX_WAIT_SECONDS = 24 * 60 * 60
 # Bump when cache payload fields change so older entries are re-fetched when needed.
 CACHE_SCHEMA_VERSION = 2
+ACTIVE_BATCH_FILENAME = "active_batch.json"
 
 TERMINAL_BATCH_STATUSES = frozenset({"completed", "failed", "expired", "cancelled"})
 
@@ -244,6 +247,86 @@ def _ledger_path() -> Path:
 
 def _summary_path() -> Path:
     return _web_cache_dir() / "cost_summary.json"
+
+
+def _active_batch_path() -> Path:
+    return _web_cache_dir() / ACTIVE_BATCH_FILENAME
+
+
+def _read_active_batch() -> dict[str, Any] | None:
+    """Return the saved batch, ``{"corrupt": True}`` when the file cannot be resumed, or None."""
+    path = _active_batch_path()
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text())
+    except json.JSONDecodeError:
+        logger.error(
+            "Web enrichment active_batch.json is corrupt; not submitting a new batch"
+        )
+        return {"corrupt": True}
+    if not isinstance(payload, dict):
+        logger.error(
+            "Web enrichment active_batch.json is unusable; not submitting a new batch"
+        )
+        return {"corrupt": True}
+    batch_id = payload.get("batch_id")
+    custom = payload.get("custom_id_to_model")
+    pass_number = payload.get("pass_number")
+    if not isinstance(batch_id, str) or not batch_id:
+        logger.error(
+            "Web enrichment active_batch.json has no batch id; not submitting a new batch"
+        )
+        return {"corrupt": True}
+    if pass_number not in (1, 2) or not isinstance(custom, dict) or not custom:
+        logger.error(
+            "Web enrichment active_batch.json is unusable; not submitting a new batch"
+        )
+        return {"corrupt": True}
+    custom_id_to_model = {
+        str(key): value
+        for key, value in custom.items()
+        if isinstance(key, str) and isinstance(value, str)
+    }
+    if not custom_id_to_model:
+        logger.error(
+            "Web enrichment active_batch.json has no model ids; not submitting a new batch"
+        )
+        return {"corrupt": True}
+    return {
+        "batch_id": batch_id,
+        "pass_number": pass_number,
+        "submitted_at": payload.get("submitted_at"),
+        "custom_id_to_model": custom_id_to_model,
+    }
+
+
+def _write_active_batch(
+    *,
+    batch_id: str,
+    pass_number: int,
+    custom_id_to_model: dict[str, str],
+) -> None:
+    path = _active_batch_path()
+    payload = {
+        "batch_id": batch_id,
+        "pass_number": pass_number,
+        "submitted_at": datetime.now(timezone.utc).isoformat(),
+        "custom_id_to_model": custom_id_to_model,
+    }
+    temporary = path.with_name(f"{path.name}.tmp")
+    temporary.write_text(json.dumps(payload, indent=2) + "\n")
+    os.replace(temporary, path)
+    logger.info(
+        "Web enrichment: saved active batch %s (pass %d, %d model(s))",
+        batch_id,
+        pass_number,
+        len(custom_id_to_model),
+    )
+
+
+def _clear_active_batch() -> None:
+    _active_batch_path().unlink(missing_ok=True)
 
 
 _ledger_lock = threading.Lock()
@@ -800,6 +883,36 @@ def _parse_batch_results(
     return parsed
 
 
+def _terminal_batch_failure(exc: BaseException) -> bool:
+    return "ended with status=" in str(exc)
+
+
+def _await_saved_batch(
+    *,
+    api_key: str,
+    costs: _CostTracker,
+    batch_id: str,
+    custom_id_to_model: dict[str, str],
+) -> dict[str, tuple[WebEnrichmentResult, dict[str, Any]]]:
+    """Poll ``batch_id``. A terminal non-completed status clears the saved id."""
+    try:
+        completed = _wait_for_batch(api_key=api_key, batch_id=batch_id)
+    except RuntimeError as exc:
+        if _terminal_batch_failure(exc):
+            logger.warning(
+                "Web enrichment batch %s ended without results; clearing active batch",
+                batch_id,
+            )
+            _clear_active_batch()
+        raise
+    _record_batch_costs(
+        batch=completed,
+        custom_id_to_model=custom_id_to_model,
+        costs=costs,
+    )
+    return _parse_batch_results(completed, custom_id_to_model=custom_id_to_model)
+
+
 def _run_enrichment_batch(
     models: list[CombinedModel],
     *,
@@ -808,7 +921,7 @@ def _run_enrichment_batch(
     pass_number: int,
     prompt_template: str,
 ) -> dict[str, tuple[WebEnrichmentResult, dict[str, Any]]]:
-    """Submit one batch for ``models``, block until complete, return per-model results."""
+    """Submit one batch for ``models``, persist its id, block until complete."""
     if not models:
         return {}
 
@@ -830,19 +943,23 @@ def _run_enrichment_batch(
         )
 
     logger.info(
-        "Web enrichment: pass %d submitting %d model(s) (blocking until batch completes)",
+        "Web enrichment: pass %d submitting %d model(s)",
         pass_number,
         len(models),
     )
     submitted = _submit_batch(api_key=api_key, requests_payload=requests_payload)
     batch_id = submitted["id"]
-    completed = _wait_for_batch(api_key=api_key, batch_id=batch_id)
-    _record_batch_costs(
-        batch=completed,
+    _write_active_batch(
+        batch_id=batch_id,
+        pass_number=pass_number,
         custom_id_to_model=custom_id_to_model,
-        costs=costs,
     )
-    return _parse_batch_results(completed, custom_id_to_model=custom_id_to_model)
+    return _await_saved_batch(
+        api_key=api_key,
+        costs=costs,
+        batch_id=batch_id,
+        custom_id_to_model=custom_id_to_model,
+    )
 
 
 def enrich_combined_models(models: list[CombinedModel]) -> None:
@@ -868,11 +985,223 @@ def enrich_combined_models(models: list[CombinedModel]) -> None:
         )
 
 
+def _remember_pass(
+    parsed: dict[str, tuple[WebEnrichmentResult, dict[str, Any]]],
+    *,
+    model_ids: list[str],
+    pass_number: int,
+    results_by_id: dict[str, WebEnrichmentResult],
+    attempts_by_id: dict[str, list[dict[str, Any]]],
+    merge: bool,
+) -> None:
+    for model_id in model_ids:
+        result, meta = parsed.get(
+            model_id, (WebEnrichmentResult(), {"error": "missing from batch"})
+        )
+        if merge and model_id in results_by_id:
+            results_by_id[model_id] = _merge_parsed_passes(
+                results_by_id[model_id], result
+            )
+            attempts_by_id.setdefault(model_id, []).append(
+                {"pass": pass_number, **meta}
+            )
+        else:
+            results_by_id[model_id] = result
+            attempts_by_id[model_id] = [{"pass": pass_number, **meta}]
+
+
+def _write_result_caches(
+    model_ids: list[str],
+    *,
+    results_by_id: dict[str, WebEnrichmentResult],
+    attempts_by_id: dict[str, list[dict[str, Any]]],
+) -> None:
+    for model_id in model_ids:
+        parsed = results_by_id.get(model_id, WebEnrichmentResult())
+        _write_cache(
+            model_id,
+            {
+                "model_id": model_id,
+                "is_open_weights": parsed.is_open_weights,
+                "parameters_b": parsed.parameters_b,
+                "notes": parsed.notes,
+                "enrichment_model": ENRICHMENT_MODEL,
+                "attempts": attempts_by_id.get(model_id, []),
+                "cached_at": datetime.now(timezone.utc).isoformat(),
+                "_cache_miss": (
+                    parsed.is_open_weights is None and parsed.parameters_b is None
+                ),
+            },
+        )
+
+
+def _maybe_pass_two(
+    retry_models: list[CombinedModel],
+    *,
+    api_key: str,
+    costs: _CostTracker,
+    results_by_id: dict[str, WebEnrichmentResult],
+    attempts_by_id: dict[str, list[dict[str, Any]]],
+) -> None:
+    if not retry_models:
+        _clear_active_batch()
+        return
+    logger.info(
+        "Web enrichment: %d model(s) still have gaps; submitting retry batch",
+        len(retry_models),
+    )
+    try:
+        second_pass = _run_enrichment_batch(
+            retry_models,
+            api_key=api_key,
+            costs=costs,
+            pass_number=2,
+            prompt_template=RETRY_USER_PROMPT_TEMPLATE,
+        )
+    except Exception:
+        logger.exception("Web enrichment pass 2 failed; keeping pass 1 results")
+        return
+    retry_ids = [model.id for model in retry_models]
+    _remember_pass(
+        second_pass,
+        model_ids=retry_ids,
+        pass_number=2,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+        merge=True,
+    )
+    _write_result_caches(
+        retry_ids,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+    )
+    _clear_active_batch()
+
+
+def _submit_passes(
+    to_fetch: list[CombinedModel],
+    *,
+    api_key: str,
+    costs: _CostTracker,
+    results_by_id: dict[str, WebEnrichmentResult],
+    attempts_by_id: dict[str, list[dict[str, Any]]],
+) -> None:
+    try:
+        first_pass = _run_enrichment_batch(
+            to_fetch,
+            api_key=api_key,
+            costs=costs,
+            pass_number=1,
+            prompt_template=USER_PROMPT_TEMPLATE,
+        )
+    except Exception:
+        logger.exception(
+            "Web enrichment pass 1 failed; continuing without new enrichment results"
+        )
+        return
+    fetch_ids = [model.id for model in to_fetch]
+    _remember_pass(
+        first_pass,
+        model_ids=fetch_ids,
+        pass_number=1,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+        merge=False,
+    )
+    _write_result_caches(
+        fetch_ids,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+    )
+    retry_models = [
+        model
+        for model in to_fetch
+        if _gaps_remain(model, results_by_id[model.id])
+    ]
+    _maybe_pass_two(
+        retry_models,
+        api_key=api_key,
+        costs=costs,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+    )
+
+
+def _resume_or_block_submit(
+    active: dict[str, Any],
+    *,
+    models: list[CombinedModel],
+    api_key: str,
+    costs: _CostTracker,
+    results_by_id: dict[str, WebEnrichmentResult],
+    attempts_by_id: dict[str, list[dict[str, Any]]],
+) -> None:
+    """Poll the saved batch. Do not submit a different batch in this run."""
+    if active.get("corrupt"):
+        logger.error(
+            "Web enrichment active batch file is unusable; not submitting a new batch"
+        )
+        return
+    batch_id = active["batch_id"]
+    pass_number = active["pass_number"]
+    custom_id_to_model: dict[str, str] = active["custom_id_to_model"]
+    logger.info(
+        "Web enrichment: resuming batch %s (pass %s); not submitting a new batch",
+        batch_id,
+        pass_number,
+    )
+    try:
+        resumed = _await_saved_batch(
+            api_key=api_key,
+            costs=costs,
+            batch_id=batch_id,
+            custom_id_to_model=custom_id_to_model,
+        )
+    except Exception:
+        logger.exception(
+            "Web enrichment resume of batch %s failed; not submitting a new batch",
+            batch_id,
+        )
+        return
+    batch_ids = list(dict.fromkeys(custom_id_to_model.values()))
+    _remember_pass(
+        resumed,
+        model_ids=batch_ids,
+        pass_number=pass_number,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+        merge=pass_number == 2,
+    )
+    _write_result_caches(
+        batch_ids,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+    )
+    if pass_number == 2:
+        _clear_active_batch()
+        return
+    by_model = {model.id: model for model in models}
+    retry_models = [
+        by_model[model_id]
+        for model_id in batch_ids
+        if model_id in by_model
+        and _gaps_remain(by_model[model_id], results_by_id[model_id])
+    ]
+    _maybe_pass_two(
+        retry_models,
+        api_key=api_key,
+        costs=costs,
+        results_by_id=results_by_id,
+        attempts_by_id=attempts_by_id,
+    )
+
+
 def _apply_web_enrichment(models: list[CombinedModel]) -> None:
     api_key = get_env_var("OR_API_KEY")
 
     candidates = [m for m in models if _needs_enrichment(m)]
-    if not candidates:
+    active = _read_active_batch()
+    if not candidates and active is None:
         logger.info("Web enrichment: no models with open-weights or size gaps")
         return
 
@@ -905,84 +1234,23 @@ def _apply_web_enrichment(models: list[CombinedModel]) -> None:
             )
         to_fetch.append(model)
 
-    if to_fetch:
-        try:
-            first_pass = _run_enrichment_batch(
-                to_fetch,
-                api_key=api_key,
-                costs=costs,
-                pass_number=1,
-                prompt_template=USER_PROMPT_TEMPLATE,
-            )
-        except Exception:
-            logger.exception(
-                "Web enrichment pass 1 failed; continuing without new enrichment results"
-            )
-            first_pass = None
-
-        if first_pass is not None:
-            for model in to_fetch:
-                result, meta = first_pass.get(
-                    model.id, (WebEnrichmentResult(), {"error": "missing from batch"})
-                )
-                results_by_id[model.id] = result
-                attempts_by_id[model.id] = [{"pass": 1, **meta}]
-
-            retry_models = [
-                model
-                for model in to_fetch
-                if _gaps_remain(model, results_by_id[model.id])
-            ]
-            if retry_models:
-                logger.info(
-                    "Web enrichment: %d model(s) still have gaps; submitting retry batch",
-                    len(retry_models),
-                )
-                try:
-                    second_pass = _run_enrichment_batch(
-                        retry_models,
-                        api_key=api_key,
-                        costs=costs,
-                        pass_number=2,
-                        prompt_template=RETRY_USER_PROMPT_TEMPLATE,
-                    )
-                except Exception:
-                    logger.exception(
-                        "Web enrichment pass 2 failed; keeping pass 1 results"
-                    )
-                    second_pass = None
-                if second_pass is not None:
-                    for model in retry_models:
-                        retry_result, retry_meta = second_pass.get(
-                            model.id,
-                            (
-                                WebEnrichmentResult(),
-                                {"error": "missing from retry batch"},
-                            ),
-                        )
-                        attempts_by_id.setdefault(model.id, []).append(
-                            {"pass": 2, **retry_meta}
-                        )
-                        results_by_id[model.id] = _merge_parsed_passes(
-                            results_by_id[model.id], retry_result
-                        )
-
-            for model in to_fetch:
-                parsed = results_by_id[model.id]
-                cache_payload = {
-                    "model_id": model.id,
-                    "is_open_weights": parsed.is_open_weights,
-                    "parameters_b": parsed.parameters_b,
-                    "notes": parsed.notes,
-                    "enrichment_model": ENRICHMENT_MODEL,
-                    "attempts": attempts_by_id.get(model.id, []),
-                    "cached_at": datetime.now(timezone.utc).isoformat(),
-                    "_cache_miss": (
-                        parsed.is_open_weights is None
-                        and parsed.parameters_b is None
-                    ),
-                }
-                _write_cache(model.id, cache_payload)
+    if active is not None:
+        _resume_or_block_submit(
+            active,
+            models=models,
+            api_key=api_key,
+            costs=costs,
+            results_by_id=results_by_id,
+            attempts_by_id=attempts_by_id,
+        )
+    elif to_fetch:
+        _submit_passes(
+            to_fetch,
+            api_key=api_key,
+            costs=costs,
+            results_by_id=results_by_id,
+            attempts_by_id=attempts_by_id,
+        )
 
     for model in candidates:
         parsed = results_by_id.get(model.id, WebEnrichmentResult())

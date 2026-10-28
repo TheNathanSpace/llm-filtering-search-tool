@@ -14,6 +14,7 @@ import {
 } from "@/app/filters/filter-query";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 import { useSyncTableQuery } from "@/app/filters/use-sync-table-query";
+import Titles from "@/app/titles";
 import { useCallback, useMemo, useState } from "react";
 
 const POPULATING_MESSAGE =
@@ -123,50 +124,89 @@ export default function ModelTable({
     );
 
     return (
-        <div style={{ width: "100%", height: "100%" }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <div style={{ height: "50%", overflow: "auto" }}>
-                    <ModelFilters
-                        bounds={bounds}
-                        filters={filters}
-                        setFilters={setFilters}
-                        tokenMillions={tokenMillionsText}
-                        onTokenMillionsChange={(value) => {
-                            setTokenMillionsText(value);
-                            setSortModel((previous) =>
-                                sortModelForTokenCount(
-                                    previous,
-                                    parseTokenMillions(value),
-                                ),
-                            );
-                        }}
-                        onClearPins={clearPins}
-                    />
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                minHeight: 0,
+                rowGap: "0.75rem",
+            }}
+        >
+            <div
+                style={{
+                    flex: "1 1 0",
+                    minHeight: 0,
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "stretch",
+                    containerType: "size",
+                }}
+            >
+                <div
+                    style={{
+                        flex: "0 0 30%",
+                        width: "30%",
+                        minWidth: 0,
+                        height: "100%",
+                    }}
+                >
+                    <Titles />
                 </div>
-                <MuiFontSans style={{ height: "50%", width: "100%" }}>
-                    <DataGrid
-                        rows={filteredModels}
-                        columns={columns}
-                        getRowId={(row) => row.id}
-                        autoHeight={false}
-                        disableVirtualization
-                        sx={{
-                            "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within":
-                                {
-                                    outline: "none !important",
-                                },
-                        }}
-                        sortModel={sortModel}
-                        onSortModelChange={(model) => {
-                            setSortModel(toTableSort(model));
-                        }}
-                        slots={{
-                            noRowsOverlay: noRowsOverlay,
-                            noResultsOverlay: noRowsOverlay,
-                        }}
-                    />
-                </MuiFontSans>
-            </LocalizationProvider>
+                <div
+                    style={{
+                        flex: "1 1 70%",
+                        width: "70%",
+                        minWidth: 0,
+                        height: "100%",
+                        overflow: "auto",
+                    }}
+                >
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                        <ModelFilters
+                            bounds={bounds}
+                            filters={filters}
+                            setFilters={setFilters}
+                            tokenMillions={tokenMillionsText}
+                            onTokenMillionsChange={(value) => {
+                                setTokenMillionsText(value);
+                                setSortModel((previous) =>
+                                    sortModelForTokenCount(
+                                        previous,
+                                        parseTokenMillions(value),
+                                    ),
+                                );
+                            }}
+                            onClearPins={clearPins}
+                        />
+                    </LocalizationProvider>
+                </div>
+            </div>
+            <MuiFontSans style={{ flex: "1 1 0", minHeight: 0, width: "100%" }}>
+                <DataGrid
+                    rows={filteredModels}
+                    columns={columns}
+                    getRowId={(row) => row.id}
+                    autoHeight={false}
+                    disableVirtualization
+                    sx={{
+                        height: "100%",
+                        "& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within, & .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within":
+                            {
+                                outline: "none !important",
+                            },
+                    }}
+                    sortModel={sortModel}
+                    onSortModelChange={(model) => {
+                        setSortModel(toTableSort(model));
+                    }}
+                    slots={{
+                        noRowsOverlay: noRowsOverlay,
+                        noResultsOverlay: noRowsOverlay,
+                    }}
+                />
+            </MuiFontSans>
         </div>
     );
 }

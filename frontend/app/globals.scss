@@ -16,6 +16,12 @@ body {
     width: 100%;
 }
 
+.side-brand-link svg {
+    width: 1.15em;
+    height: 1.15em;
+    flex: 0 0 auto;
+}
+
 .vertically-centered {
     display: flex;
     flex-direction: row;

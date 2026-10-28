@@ -72,7 +72,7 @@ function refreshTooltip(
         : "Last enrichment: none";
     const waitingLine = enrichmentInProgress
         ? "Enrichment in progress."
-        : "Enrichment is not running.";
+        : "Not waiting for enrichment.";
     const lines = [
         refreshUtc ? `Refresh (UTC): ${refreshUtc}` : undefined,
         enrichmentLine,

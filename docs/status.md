@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-27 — refresh no longer waits on enrichment
-**Latest change:** Refresh swaps using the enrichment cache. One background batch fills open-weights and size afterward, then waits 24h. The refresh-time tooltip shows the last enrichment time and whether a batch is in progress.
+**Last updated:** 2026-10-28 — rotated title rail beside the filters
+**Latest change:** The title, tagline, and GitHub link are a rotated rail on the left 30% of the filter row. The refresh tooltip says “Not waiting for enrichment.” when no batch is in progress.
 
 ## Pickup
 

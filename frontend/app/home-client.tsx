@@ -9,7 +9,6 @@ import {
 } from "@/app/client";
 import { client } from "@/app/client/client.gen";
 import type { PageSearchQuery } from "@/app/filters/filter-query";
-import Titles from "@/app/titles";
 import MetadataNote from "@/app/metadata-note";
 import ExportBanner from "@/app/export-banner";
 
@@ -152,22 +151,9 @@ export default function Home({
             <div
                 style={{
                     width: "100%",
-                    flex: "0 0 25%",
-                    overflow: "auto",
-                }}
-                className={"flex-center-everything"}
-            >
-                <Titles />
-            </div>
-            <div
-                style={{
-                    width: "80%",
                     flex: "1 1 0",
                     minHeight: 0,
-                    overflow: "auto",
-                    alignSelf: "center",
                 }}
-                className={"p-5"}
             >
                 <ModelTable
                     models={models}

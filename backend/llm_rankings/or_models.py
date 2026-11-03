@@ -1,16 +1,43 @@
 import datetime
+from contextvars import ContextVar
 from enum import StrEnum
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
+
+_unknown_attribute_names: ContextVar[set[str] | None] = ContextVar("or_unknown_attribute_names", default=None)
 
 
 class ORBaseModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    """OpenRouter payload. Unknown keys are ignored, not rejected."""
+
+    model_config = ConfigDict(extra="ignore")
 
     @staticmethod
     def optional_field(key: str, value: Any) -> dict[str, Any]:
         return {key: value} if value else {}
+
+    @model_validator(mode="before")
+    @classmethod
+    def _note_unknown_attributes(cls, data: Any) -> Any:
+        noted = _unknown_attribute_names.get()
+        if noted is not None and isinstance(data, dict):
+            known = set(cls.model_fields)
+            for key in data:
+                if key not in known:
+                    noted.add(f"{cls.__name__}.{key}")
+        return data
+
+
+def model_validate_noting_unknown[ModelT: ORBaseModel](model_cls: type[ModelT], data: Any) -> tuple[ModelT, list[str]]:
+    """Validate ``data`` and return sorted ``Class.field`` names that were ignored."""
+    noted: set[str] = set()
+    token = _unknown_attribute_names.set(noted)
+    try:
+        parsed = model_cls.model_validate(data)
+    finally:
+        _unknown_attribute_names.reset(token)
+    return parsed, sorted(noted)
 
 
 # https://openrouter.ai/docs/api/api-reference/models/get-models
@@ -164,6 +191,8 @@ class OpenRouterModel(ORBaseModel):
     default_parameters: dict[str, Any] | None
     supported_voices: list[str] | None
     links: ORLinks
+    # Request paths that serve this model, such as ``/api/v1/chat/completions``.
+    endpoints: list[str] = []
     description: str | None = None
     knowledge_cutoff: str | None = None
     expiration_date: str | None = None
@@ -223,9 +252,7 @@ class OpenRouterModel(ORBaseModel):
 
     def get_cutoff_date(self) -> datetime.datetime | None:
         if self.knowledge_cutoff:
-            return datetime.datetime.strptime(self.knowledge_cutoff, "%Y-%m-%d").replace(
-                tzinfo=datetime.UTC
-            )
+            return datetime.datetime.strptime(self.knowledge_cutoff, "%Y-%m-%d").replace(tzinfo=datetime.UTC)
         else:
             return None
 

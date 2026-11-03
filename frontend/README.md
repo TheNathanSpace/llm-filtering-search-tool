@@ -79,6 +79,10 @@ Reuse `MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`,
 
 `model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`. Pins do too: the pin set lives next to the sort model and is passed into `useModelFilters` and `columnsForTokenMillions`.
 
+## Footer
+
+Last refresh and enrichment cost sit at the bottom left ([UI-10](../docs/requirements.md#ui-10)). A warning icon beside the refresh time lists OpenRouter attributes the last live fetch ignored ([UI-15](../docs/requirements.md#ui-15)).
+
 ## Running
 
 Commands: [root README](../README.md).

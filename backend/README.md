@@ -37,7 +37,7 @@ Vendored upstream OpenAPI: [`../api-docs/README.md`](../api-docs/README.md). Ref
 | Provider rows | `model_provider_endpoints` ([SRC-10](../docs/requirements.md#src-10)) |
 | This project's OpenAPI | `DATA_DIR/openapi.json` from `bin/generate-openapi-docs.sh` (default `./data/openapi.json`) |
 
-Shapes match `api-docs/openapi-openrouter.json`.
+Shapes match `api-docs/openapi-openrouter.json`. Unknown attributes are ignored. A live models or endpoints fetch writes unrecognized `Class.field` names to `DATA_DIR/cache/openrouter/unknown_attributes.json`. A cache hit leaves that file unchanged. `GET /meta` returns the names as `openrouter_unknown_attributes`. Each catalog model's `endpoints` list is request paths (for example `/api/v1/chat/completions`) and is not copied onto `CombinedModel`.
 
 ## Pipeline
 

@@ -36,6 +36,7 @@ export default function Home({
     );
     const [enrichmentInProgress, setEnrichmentInProgress] = useState(false);
     const [exportBaseUrl, setExportBaseUrl] = useState<string | undefined>();
+    const [unknownAttributes, setUnknownAttributes] = useState<string[]>([]);
     const pollTimerReference = useRef<
         ReturnType<typeof setTimeout> | undefined
     >(undefined);
@@ -90,6 +91,9 @@ export default function Home({
                     setLastEnrichmentAt(meta.last_enrichment_completed_at);
                     setEnrichmentInProgress(meta.enrichment_in_progress);
                     setExportBaseUrl(meta.export_base_url || undefined);
+                    setUnknownAttributes(
+                        meta.openrouter_unknown_attributes ?? [],
+                    );
                     if (
                         (refreshChanged || enrichmentChanged) &&
                         !includeModels
@@ -168,6 +172,7 @@ export default function Home({
                     lastRefreshAt={lastRefreshAt}
                     lastEnrichmentAt={lastEnrichmentAt}
                     enrichmentInProgress={enrichmentInProgress}
+                    unknownAttributes={unknownAttributes}
                 />
             </div>
         </div>

@@ -11,7 +11,12 @@ from llm_rankings.or_endpoints import (
     ORListEndpointsData,
     endpoints_path_for_model,
 )
-from llm_rankings.or_models import OpenRouterAPIResponse, OpenRouterModel
+from llm_rankings.or_models import (
+    OpenRouterAPIResponse,
+    OpenRouterModel,
+    model_validate_noting_unknown,
+)
+from llm_rankings.or_unknown import record_openrouter_unknown
 from llm_rankings.util import (
     bootstrap_env_from_argv,
     cache_file_is_fresh,
@@ -53,9 +58,7 @@ def validate_response(response: requests.Response):
     :param response: The response object to validate.
     """
     if response.status_code != 200:
-        raise ValueError(
-            f"Failed to retrieve models from {response.url}: {response.status_code} - {response.text}"
-        )
+        raise ValueError(f"Failed to retrieve models from {response.url}: {response.status_code} - {response.text}")
 
 
 def _openrouter_models_cache_path() -> Path:
@@ -77,9 +80,7 @@ def _validate_openrouter_payload(response_json: object) -> OpenRouterAPIResponse
         exit(-1)
 
 
-def _fetch_openrouter_models(
-    or_api_key: str, root: str = OR_API_ROOT
-) -> OpenRouterAPIResponse:
+def _fetch_openrouter_models(or_api_key: str, root: str = OR_API_ROOT) -> OpenRouterAPIResponse:
     logger.info("Getting OpenRouter model catalog from %s", form_endpoint(root, "/models"))
     endpoint = "/models"
     url = form_endpoint(root, endpoint)
@@ -87,14 +88,13 @@ def _fetch_openrouter_models(
     headers = {"Authorization": f"Bearer {or_api_key}"}
     response = requests.get(url, headers=headers)
     validate_response(response)
-    payload = _validate_openrouter_payload(response.json())
+    payload, unknown = model_validate_noting_unknown(OpenRouterAPIResponse, response.json())
+    record_openrouter_unknown("models", unknown)
     logger.info("Retrieved OpenRouter model catalog (%d models)", len(payload.data))
     return payload
 
 
-def get_openrouter_models(
-    or_api_key: str, root: str = OR_API_ROOT
-) -> OpenRouterAPIResponse:
+def get_openrouter_models(or_api_key: str, root: str = OR_API_ROOT) -> OpenRouterAPIResponse:
     """
     Retrieves LLM models from OpenRouter, reusing a ≤24h disk cache when fresh.
 
@@ -124,9 +124,11 @@ def _fetch_one_model_endpoints(
     session: requests.Session,
     model_id: str,
     root: str,
-) -> ORListEndpointsData:
+) -> tuple[ORListEndpointsData, list[str]]:
     """
     GET endpoints for one model with retries on 429 / transient errors.
+
+    The second item is unrecognized attribute names ignored on this response.
     """
     url = form_endpoint(root, endpoints_path_for_model(model_id))
     backoff = ENDPOINTS_INITIAL_BACKOFF_SECONDS
@@ -149,15 +151,13 @@ def _fetch_one_model_endpoints(
             continue
 
         if response.status_code == 200:
-            parsed = OREndpointsAPIResponse.model_validate(response.json())
-            return parsed.data
+            parsed, unknown = model_validate_noting_unknown(OREndpointsAPIResponse, response.json())
+            return parsed.data, unknown
 
         if response.status_code == 429:
             retry_after = response.headers.get("Retry-After")
             wait = (
-                float(retry_after)
-                if retry_after is not None and retry_after.replace(".", "", 1).isdigit()
-                else backoff
+                float(retry_after) if retry_after is not None and retry_after.replace(".", "", 1).isdigit() else backoff
             )
             logger.warning(
                 "OpenRouter rate-limited endpoints for %s; sleeping %.1fs (attempt %d/%d)",
@@ -211,19 +211,19 @@ def _fetch_openrouter_endpoints(
     session.headers.update({"Authorization": f"Bearer {or_api_key}"})
 
     results: list[ORListEndpointsData] = []
+    unknown_names: set[str] = set()
     failures = 0
     done = 0
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {
-            executor.submit(_fetch_one_model_endpoints, session, model_id, root): model_id
-            for model_id in ids
-        }
+        futures = {executor.submit(_fetch_one_model_endpoints, session, model_id, root): model_id for model_id in ids}
         for future in as_completed(futures):
             model_id = futures[future]
             done += 1
             try:
-                results.append(future.result())
+                data, unknown = future.result()
+                results.append(data)
+                unknown_names.update(unknown)
                 logger.info(
                     "Getting OpenRouter endpoints for %s (%d/%d)",
                     model_id,
@@ -240,6 +240,8 @@ def _fetch_openrouter_endpoints(
                 )
 
     session.close()
+    if results:
+        record_openrouter_unknown("endpoints", sorted(unknown_names))
     logger.info(
         "Retrieved endpoints for %d/%d models (%d failed)",
         len(results),
@@ -272,9 +274,7 @@ def get_openrouter_endpoints(
         raw_list = json.loads(cache_path.read_text())
         return [ORListEndpointsData.model_validate(item) for item in raw_list]
 
-    results = _fetch_openrouter_endpoints(
-        model_ids, or_api_key, root=root, max_workers=max_workers
-    )
+    results = _fetch_openrouter_endpoints(model_ids, or_api_key, root=root, max_workers=max_workers)
     cache_path.write_text(json.dumps([item.model_dump() for item in results]))
     logger.debug("Wrote OpenRouter endpoints cache to %s", cache_path.as_posix())
     return results

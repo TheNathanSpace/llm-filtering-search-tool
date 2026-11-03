@@ -2,6 +2,7 @@
 
 Field required/optional (and nullability) follow OpenRouter OpenAPI schemas
 ``ListEndpointsResponse`` / ``PublicEndpoint`` in ``api-docs/openapi-openrouter.json``.
+Unknown attributes are ignored.
 """
 
 from __future__ import annotations

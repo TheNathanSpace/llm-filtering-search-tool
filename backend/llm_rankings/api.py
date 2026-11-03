@@ -17,6 +17,7 @@ from llm_rankings.export import (
     build_export_response,
     configured_export_base_url,
 )
+from llm_rankings.or_unknown import read_openrouter_unknown_attributes
 from llm_rankings.refresh import (
     database_ready,
     is_refresh_in_progress,
@@ -96,9 +97,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         asyncio.to_thread(startup_data_load),
         name="startup-data-load",
     )
-    startup_load.add_done_callback(
-        lambda task: _log_background_refresh(task, label="Startup data load")
-    )
+    startup_load.add_done_callback(lambda task: _log_background_refresh(task, label="Startup data load"))
 
     checker = asyncio.create_task(_periodic_refresh_loop(), name="refresh-checker")
     try:
@@ -170,10 +169,7 @@ def _begin_export() -> None:
         if _export_in_flight:
             logger.warning("Rejected GET /export: another export is in progress")
             raise HTTPException(status_code=429, detail="Export already in progress")
-        if (
-            _export_completed_at > 0
-            and now - _export_completed_at < _EXPORT_INTERVAL_SECONDS
-        ):
+        if _export_completed_at > 0 and now - _export_completed_at < _EXPORT_INTERVAL_SECONDS:
             logger.warning("Rejected GET /export: cooldown")
             raise HTTPException(
                 status_code=429,
@@ -191,31 +187,27 @@ def _finish_export(*, completed: bool) -> None:
 
 
 class AppMeta(BaseModel):
-    enrichment_cost_usd: float = Field(
-        description="Lifetime USD spent on opt-in OpenRouter batch web enrichment"
-    )
-    last_refresh_at: str | None = Field(
-        description="ISO-8601 UTC timestamp of the last successful model data refresh"
-    )
+    enrichment_cost_usd: float = Field(description="Lifetime USD spent on opt-in OpenRouter batch web enrichment")
+    last_refresh_at: str | None = Field(description="ISO-8601 UTC timestamp of the last successful model data refresh")
     last_enrichment_completed_at: str | None = Field(
         description=(
             "ISO-8601 UTC timestamp of the last web enrichment run that reached "
             "a terminal status. A new batch waits 24h after this time."
         )
     )
-    enrichment_in_progress: bool = Field(
-        description="True while a saved OpenRouter enrichment batch has not finished"
-    )
-    database_ready: bool = Field(
-        description="True when the live model SQLite file exists"
-    )
-    refresh_in_progress: bool = Field(
-        description="True while a background or CLI refresh is rebuilding the database"
-    )
+    enrichment_in_progress: bool = Field(description="True while a saved OpenRouter enrichment batch has not finished")
+    database_ready: bool = Field(description="True when the live model SQLite file exists")
+    refresh_in_progress: bool = Field(description="True while a background or CLI refresh is rebuilding the database")
     export_base_url: str | None = Field(
         description=(
             "EXPORT_BASE_URL when set. Startup replaces local data from that "
             "instance, and the page warns until the process restarts without it."
+        )
+    )
+    openrouter_unknown_attributes: list[str] = Field(
+        description=(
+            "OpenRouter response attributes ignored on the last live models or "
+            "endpoints fetch. Empty when those fetches matched this build."
         )
     )
 
@@ -236,6 +228,7 @@ def get_meta():
             database_ready=database_ready(),
             refresh_in_progress=is_refresh_in_progress(),
             export_base_url=configured_export_base_url(),
+            openrouter_unknown_attributes=read_openrouter_unknown_attributes(),
         )
     except Exception as e:
         logger.exception("Failed to read app metadata")

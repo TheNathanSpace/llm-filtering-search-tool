@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-10-28 — rotated title rail beside the filters
-**Latest change:** The title, tagline, and GitHub link are a rotated rail on the left 30% of the filter row. The refresh tooltip says “Not waiting for enrichment.” when no batch is in progress.
+**Last updated:** 2026-11-03 — OpenRouter unknown attributes warn in the footer
+**Latest change:** `GET /models` accepts each model's `endpoints` list. Unknown OpenRouter attributes are ignored, and a warning icon beside the last-refresh time lists them.
 
 ## Pickup
 
@@ -9,7 +9,7 @@
 | --- | --- |
 | Data fetch (OR + models.dev + HF + opt-in batch web) | Implemented ([SRC-01](requirements.md#src-01), [SRC-05](requirements.md#src-05)–[SRC-06](requirements.md#src-06), [SRC-09](requirements.md#src-09)–[SRC-12](requirements.md#src-12)) |
 | SQLite + FastAPI | Implemented ([PLT-01](requirements.md#plt-01), [PLT-10](requirements.md#plt-10), [SRC-02](requirements.md#src-02), [SRC-05](requirements.md#src-05), [SRC-11](requirements.md#src-11)) |
-| Next.js table + filters | Implemented ([QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13), [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-14](requirements.md#ui-14)) |
+| Next.js table + filters | Implemented ([QRY-01](requirements.md#qry-01)–[QRY-13](requirements.md#qry-13), [UI-01](requirements.md#ui-01), [UI-03](requirements.md#ui-03)–[UI-06](requirements.md#ui-06), [UI-09](requirements.md#ui-09)–[UI-15](requirements.md#ui-15)) |
 | Plots | Not started ([UI-02](requirements.md#ui-02)) |
 | Docker / env / logging / proxy | Implemented ([PLT-02](requirements.md#plt-02)–[PLT-06](requirements.md#plt-06), [PLT-09](requirements.md#plt-09)) |
 | External + project OpenAPI tooling | Implemented ([PLT-07](requirements.md#plt-07), [PLT-08](requirements.md#plt-08)) |

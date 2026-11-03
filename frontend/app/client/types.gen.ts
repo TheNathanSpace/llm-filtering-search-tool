@@ -50,6 +50,12 @@ export type AppMeta = {
      * EXPORT_BASE_URL when set. Startup replaces local data from that instance, and the page warns until the process restarts without it.
      */
     export_base_url: string | null;
+    /**
+     * Openrouter Unknown Attributes
+     *
+     * OpenRouter response attributes ignored on the last live models or endpoints fetch. Empty when those fetches matched this build.
+     */
+    openrouter_unknown_attributes: Array<string>;
 };
 
 /**

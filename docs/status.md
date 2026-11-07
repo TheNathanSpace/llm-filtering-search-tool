@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Context length uses millions only above 900,000 tokens
-**Latest change:** Context length displays as whole thousands through 900,000 tokens and whole millions above that. Tooltips show the full token count and the latency millisecond count with commas.
+**Last updated:** 2026-11-07 — Range thumbs stay inside the filter panel
+**Latest change:** Range slider thumbs stay inside the filter columns, so the panel no longer scrolls sideways.
 
 ## Pickup
 

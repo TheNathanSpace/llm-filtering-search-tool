@@ -23,6 +23,7 @@ Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/sta
 | `model-filters.tsx` | Filter panel layout |
 | `token-count-field.tsx` | Token-count box for the usage-cost column and range |
 | `filter-option.tsx` | Shared label + control row |
+| `range-slider.tsx` | Shared range slider; thumbs stay inside the column |
 | `multi-select-filter.tsx` / `date-range-filter.tsx` / `number-range-filter.tsx` / `text-filter.tsx` | Range, select, and text controls |
 | `checkbox-row-filter.tsx` | Checkbox row; label under each box |
 | `modality-options.ts` | Input and output modality options |

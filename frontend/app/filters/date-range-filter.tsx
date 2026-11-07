@@ -1,5 +1,6 @@
 import FilterOption from "@/app/filters/filter-option";
-import { Slider, Typography } from "@mui/material";
+import RangeSlider from "@/app/filters/range-slider";
+import { Typography } from "@mui/material";
 import { MuiFontSans } from "@/app/mui-font";
 import dayjs, { Dayjs } from "dayjs";
 import { useState } from "react";
@@ -58,7 +59,7 @@ export default function DateRangeFilter(
     return (
         <FilterOption name={name}>
             <MuiFontSans>
-                <Slider
+                <RangeSlider
                     value={value}
                     onChange={handleChange}
                     valueLabelDisplay="auto"

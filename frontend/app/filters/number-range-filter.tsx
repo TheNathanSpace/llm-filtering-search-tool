@@ -1,5 +1,6 @@
 import FilterOption from "@/app/filters/filter-option";
-import { Slider, TextField, Typography } from "@mui/material";
+import RangeSlider from "@/app/filters/range-slider";
+import { TextField, Typography } from "@mui/material";
 import { MuiFontSans } from "@/app/mui-font";
 import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { formatNumber } from "@/app/utility";
@@ -235,7 +236,7 @@ export default function NumberRangeFilter(
     return (
         <FilterOption name={properties.name} help={properties.help}>
             <MuiFontSans>
-                <Slider
+                <RangeSlider
                     value={value}
                     onChange={handleChange}
                     valueLabelDisplay="auto"

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Title column reads upright
-**Latest change:** The title, goal, and GitHub link sit upright in the left column beside the filters.
+**Last updated:** 2026-11-07 — Missing-values switch follows active filters
+**Latest change:** Off drops a model missing a value only when that filter is narrowed, selected, or filled in. A full-span range is not active, so with no active filters off changes nothing. A ? beside the switch states this. Tooltip popups use a solid background.
 
 ## Pickup
 
@@ -17,7 +17,7 @@
 
 ## UI map (filters vs columns)
 
-Reset all of these dang modifiers is first in the left column. Pin filtered and Clear pins share the next row, each half that column. The missing-values switch follows. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
+Reset all of these dang modifiers is first in the left column. Pin filtered and Clear pins share the next row, each half that column. The missing-values switch follows. Off drops a model missing a value only when that filter is narrowed, selected, or filled in. A full-span range is not active. With no active filters, off changes nothing. A ? beside the switch states this. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |

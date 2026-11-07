@@ -1,5 +1,6 @@
 import CheckboxRowFilter from "@/app/filters/checkbox-row-filter";
 import DateRangeFilter from "@/app/filters/date-range-filter";
+import { FilterHelp } from "@/app/filters/filter-option";
 import {
     createInitialUserChoices,
     FilterBounds,
@@ -109,6 +110,12 @@ function PanelButton({
 const fullButtonClass = "w-full break-inside-avoid px-1 pt-2 pb-4";
 const halfButtonClass = "w-1/2 min-w-0 break-inside-avoid px-1 pt-2 pb-4";
 
+const MISSING_VALUES_HELP =
+    "On: a model missing a value still matches that filter.\n" +
+    "Off: a missing value removes the model only when that filter is narrowed, selected, or filled in.\n" +
+    "A range left at its full span is not active.\n" +
+    "With no active filters, turning this off changes nothing.";
+
 export default function ModelFilters(
     properties: Readonly<ModelFiltersProperties>,
 ) {
@@ -172,7 +179,16 @@ export default function ModelFilters(
                                 }}
                             />
                         }
-                        label="Treat entries with missing values as included in filters"
+                        label={
+                            <>
+                                Treat entries with missing values as included in
+                                filters{" "}
+                                <FilterHelp
+                                    label="How missing values are filtered"
+                                    help={MISSING_VALUES_HELP}
+                                />
+                            </>
+                        }
                     />
                 </FormGroup>
             </div>

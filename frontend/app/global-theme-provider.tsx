@@ -43,6 +43,16 @@ const theme = createTheme({
         overline: {},
     },
     components: {
+        MuiTooltip: {
+            styleOverrides: {
+                tooltip: ({ theme }) => ({
+                    backgroundColor: theme.palette.grey[700],
+                }),
+                arrow: ({ theme }) => ({
+                    color: theme.palette.grey[700],
+                }),
+            },
+        },
         MuiDataGrid: {
             // https://github.com/mui/mui-x/issues/2754#issuecomment-1712564721
             styleOverrides: {

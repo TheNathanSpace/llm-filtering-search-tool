@@ -1,4 +1,6 @@
-import { ThemeProvider, createTheme } from "@mui/material/styles";
+"use client";
+
+import { ThemeProvider, createTheme, useTheme } from "@mui/material/styles";
 
 export enum FontName {
     SANS = "sans",
@@ -13,9 +15,14 @@ interface MuiFontParameters {
 }
 
 export default function MuiFont(parameters: Readonly<MuiFontParameters>) {
+    const parent = useTheme();
     const theme = createTheme({
         typography: {
             fontFamily: `var(--font-${parameters.font.toString().toLowerCase()})`,
+        },
+        components: {
+            // Font wrappers replace the theme. Keep hover popups from the parent.
+            MuiTooltip: parent.components?.MuiTooltip,
         },
     });
 

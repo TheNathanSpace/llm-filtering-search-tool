@@ -105,8 +105,8 @@ export function useModelFilters(
     );
 
     const filteredModels = useMemo(
-        () => filterModels(models, filters, tokenMillions, pinnedIds),
-        [models, filters, tokenMillions, pinnedIds],
+        () => filterModels(models, filters, tokenMillions, pinnedIds, bounds),
+        [models, filters, tokenMillions, pinnedIds, bounds],
     );
 
     return { bounds, filters, setFilters, filteredModels, userChoices };

@@ -1,8 +1,30 @@
 import { CombinedModel } from "@/app/client";
-import { ModelFiltersState, NumberRange } from "@/app/filters/filter-types";
+import {
+    FilterBounds,
+    ModelFiltersState,
+    NumberRange,
+} from "@/app/filters/filter-types";
 import { passesNameQuery } from "@/app/filters/name-query";
 import { usageCost } from "@/app/usage-cost";
 import { creatorLabel } from "@/app/utility";
+
+/** A span that still covers every present value is not an active filter. */
+function constrainingRange(
+    range: NumberRange | undefined,
+    bounds: NumberRange | undefined,
+): NumberRange | undefined {
+    if (range === undefined) {
+        return undefined;
+    }
+    if (
+        bounds !== undefined &&
+        range[0] === bounds[0] &&
+        range[1] === bounds[1]
+    ) {
+        return undefined;
+    }
+    return range;
+}
 
 function passesRange(
     value: number | null | undefined,
@@ -65,7 +87,22 @@ export function filterModels(
     filters: ModelFiltersState,
     tokenMillions: number | undefined,
     pinnedIds: ReadonlySet<string>,
+    bounds: FilterBounds,
 ): CombinedModel[] {
+    const includeMissing = filters.includeMissing;
+
+    function passesBoundedRange(
+        value: number | null | undefined,
+        range: NumberRange | undefined,
+        fieldBounds: NumberRange | undefined,
+    ): boolean {
+        return passesRange(
+            value,
+            constrainingRange(range, fieldBounds),
+            includeMissing,
+        );
+    }
+
     return models.filter((model) => {
         if (filters.pinnedOnly && !pinnedIds.has(model.id)) {
             return false;
@@ -99,28 +136,28 @@ export function filterModels(
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.benchmark_or_intelligence_index,
                 filters.intelligenceIndex,
-                filters.includeMissing,
+                bounds.intelligenceIndex,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.benchmark_or_coding_index,
                 filters.codingIndex,
-                filters.includeMissing,
+                bounds.codingIndex,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.benchmark_or_agentic_index,
                 filters.agenticIndex,
-                filters.includeMissing,
+                bounds.agenticIndex,
             )
         ) {
             return false;
@@ -133,77 +170,77 @@ export function filterModels(
                       model.pricing_input,
                       model.pricing_output,
                   );
-        if (!passesRange(cost, filters.usageCost, filters.includeMissing)) {
+        if (!passesBoundedRange(cost, filters.usageCost, bounds.usageCost)) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.pricing_input,
                 filters.pricingInput,
-                filters.includeMissing,
+                bounds.pricingInput,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.pricing_output,
                 filters.pricingOutput,
-                filters.includeMissing,
+                bounds.pricingOutput,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.throughput,
                 filters.throughput,
-                filters.includeMissing,
+                bounds.throughput,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.latency_ms,
                 filters.latencyMs,
-                filters.includeMissing,
+                bounds.latencyMs,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.created,
                 filters.creationDate,
-                filters.includeMissing,
+                bounds.creationDate,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.knowledge_cutoff,
                 filters.knowledgeCutoff,
-                filters.includeMissing,
+                bounds.knowledgeCutoff,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.context_length,
                 filters.contextLength,
-                filters.includeMissing,
+                bounds.contextLength,
             )
         ) {
             return false;
         }
         if (
-            !passesRange(
+            !passesBoundedRange(
                 model.parameters_b,
                 filters.parametersB,
-                filters.includeMissing,
+                bounds.parametersB,
             )
         ) {
             return false;

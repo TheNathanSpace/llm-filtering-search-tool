@@ -25,7 +25,7 @@ Help a user pick an LLM by filtering and sorting on the dimensions that matter f
 | <a id="qry-07"></a>QRY-07 | Filter by knowledge cutoff date range | must | done |
 | <a id="qry-08"></a>QRY-08 | Filter by input modalities (model must include every checked type) | must | done |
 | <a id="qry-09"></a>QRY-09 | Filter by output modalities (model must include every checked type) | must | done |
-| <a id="qry-10"></a>QRY-10 | Option to treat missing values as included when filters would otherwise drop them | must | done |
+| <a id="qry-10"></a>QRY-10 | Switch to keep models missing a value for an active filter. Off drops those models only. A full-span range, an empty selection, and an empty name are not active, so with no active filters off changes nothing. A ? beside the switch states this | must | done |
 | <a id="qry-11"></a>QRY-11 | Filter and sort by open weights (boolean from models.dev) | must | done |
 | <a id="qry-12"></a>QRY-12 | Filter and sort by parameter size (stored in billions; display thousands e.g. `400k`, millions e.g. `500M`, billions e.g. `410B`, trillions e.g. `1T`; a coefficient from 100 through 900 rounds to the nearest 10) | must | done |
 | <a id="qry-13"></a>QRY-13 | Filter by name (case-insensitive; names and slugs; punctuation ignored except a decimal point between digits; a number matches that whole numeric span, including inside a word such as `v4.1`; comma = OR; leading `-` excludes) | must | done |

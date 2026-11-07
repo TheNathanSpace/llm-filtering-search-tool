@@ -11,6 +11,45 @@ interface FilterOptionParameters {
     help?: ReactNode;
 }
 
+export function FilterHelp({
+    label,
+    help,
+}: Readonly<{
+    label: string;
+    help: ReactNode;
+}>) {
+    return (
+        <Tooltip
+            title={help}
+            enterDelay={200}
+            slotProps={{
+                tooltip: {
+                    sx: {
+                        maxWidth: 320,
+                        whiteSpace: "pre-line",
+                    },
+                },
+            }}
+        >
+            <IconButton
+                size="small"
+                aria-label={label}
+                sx={{ p: 0.25 }}
+                onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }}
+                onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }}
+            >
+                <HelpOutlineIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+        </Tooltip>
+    );
+}
+
 export default function FilterOption(
     parameters: Readonly<FilterOptionParameters>,
 ) {
@@ -34,28 +73,10 @@ export default function FilterOption(
                                 {formatName()}
                             </Typography>
                             {parameters.help !== undefined && (
-                                <Tooltip
-                                    title={parameters.help}
-                                    enterDelay={200}
-                                    slotProps={{
-                                        tooltip: {
-                                            sx: {
-                                                maxWidth: 320,
-                                                whiteSpace: "pre-line",
-                                            },
-                                        },
-                                    }}
-                                >
-                                    <IconButton
-                                        size="small"
-                                        aria-label={`${toTitleCase(parameters.name)} search help`}
-                                        sx={{ p: 0.25 }}
-                                    >
-                                        <HelpOutlineIcon
-                                            sx={{ fontSize: 16 }}
-                                        />
-                                    </IconButton>
-                                </Tooltip>
+                                <FilterHelp
+                                    label={`${toTitleCase(parameters.name)} search help`}
+                                    help={parameters.help}
+                                />
                             )}
                         </div>
                     </MuiFontCasual>

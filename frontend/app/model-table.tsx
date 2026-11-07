@@ -7,6 +7,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import ModelFilters from "@/app/filters/model-filters";
 import {
+    DEFAULT_TABLE_SORT,
     PageSearchQuery,
     parseTableQuery,
     sortModelForTokenCount,
@@ -70,6 +71,7 @@ export default function ModelTable({
     );
     const [sortModel, setSortModel] = useState(initialSetup.sortModel);
     const [pinnedIds, setPinnedIds] = useState(initialSetup.pinnedIds);
+    const [gridRevision, setGridRevision] = useState(0);
     const tokenMillions = parseTokenMillions(tokenMillionsText);
     const pinnedIdSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
     const { bounds, filters, setFilters, filteredModels, userChoices } =
@@ -99,6 +101,12 @@ export default function ModelTable({
             pinnedOnly: false,
         }));
     }, [setFilters]);
+    const resetModifiers = useCallback(() => {
+        setTokenMillionsText("");
+        setSortModel(DEFAULT_TABLE_SORT.map((item) => ({ ...item })));
+        setPinnedIds([]);
+        setGridRevision((revision) => revision + 1);
+    }, []);
     const columns = useMemo(
         () =>
             columnsForTokenMillions(tokenMillions, {
@@ -178,6 +186,7 @@ export default function ModelTable({
                                     ),
                                 );
                             }}
+                            onResetModifiers={resetModifiers}
                             onClearPins={clearPins}
                         />
                     </LocalizationProvider>
@@ -185,6 +194,7 @@ export default function ModelTable({
             </div>
             <MuiFontSans style={{ flex: "1 1 0", minHeight: 0, width: "100%" }}>
                 <DataGrid
+                    key={gridRevision}
                     rows={filteredModels}
                     columns={columns}
                     getRowId={(row) => row.id}

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-03 — OpenRouter unknown attributes warn in the footer
-**Latest change:** `GET /models` accepts each model's `endpoints` list. Unknown OpenRouter attributes are ignored, and a warning icon beside the last-refresh time lists them.
+**Last updated:** 2026-11-07 — Reset restores filters, sort, pins, and table layout
+**Latest change:** Reset all of these dang modifiers restores default filters, an empty token count and pin set, the intelligence sort, a one-line name field, and default table column layout.
 
 ## Pickup
 
@@ -17,7 +17,7 @@
 
 ## UI map (filters vs columns)
 
-A full-width reset button is first in the left column, then Clear pins, then the missing-values switch. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
+Reset all of these dang modifiers is first in the left column, then Clear pins, then the missing-values switch. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |

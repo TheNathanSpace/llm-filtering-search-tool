@@ -58,6 +58,7 @@ interface ModelFiltersProperties {
     setFilters: Dispatch<SetStateAction<ModelFiltersState>>;
     tokenMillions: string;
     onTokenMillionsChange: (value: string) => void;
+    onResetModifiers: () => void;
     onClearPins: () => void;
 }
 
@@ -107,6 +108,7 @@ export default function ModelFilters(
         setFilters,
         tokenMillions,
         onTokenMillionsChange,
+        onResetModifiers,
         onClearPins,
     } = properties;
     const [rangeRevision, setRangeRevision] = useState(0);
@@ -115,14 +117,14 @@ export default function ModelFilters(
 
     function resetFilters() {
         setFilters(resolveFilters(createInitialUserChoices(), bounds));
-        onTokenMillionsChange("");
         setRangeRevision((revision) => revision + 1);
+        onResetModifiers();
     }
 
     return (
         <div className="w-full columns-2 gap-x-16">
             <PanelButton
-                label="Reset all of these dang filters"
+                label="Reset all of these dang modifiers"
                 onClick={resetFilters}
             />
             <PanelButton label="Clear pins" onClick={onClearPins} />
@@ -177,6 +179,7 @@ export default function ModelFilters(
                 </FormGroup>
             </div>
             <TextFilter
+                key={`name-${rangeRevision}`}
                 name="Name"
                 label="Search names or slugs"
                 value={filters.nameQuery}
@@ -457,6 +460,7 @@ export default function ModelFilters(
                 />
             )}
             <MultiSelectFilter
+                key={`creator-${rangeRevision}`}
                 name="Creator"
                 label="Pick creators"
                 options={bounds.creators}

@@ -20,11 +20,14 @@ import { MuiFontCasual } from "@/app/mui-font";
 import {
     formatContextLength,
     formatLatencySeconds,
+    formatParameterCount,
+    formatParametersB,
     formatPrice,
     formatReadableNumber,
     formatThroughput,
     parseContextLength,
     parseLatencySeconds,
+    parseParameterCount,
 } from "@/app/utility";
 import { Button, FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
@@ -246,11 +249,15 @@ export default function ModelFilters(
             {bounds.parametersB && (
                 <NumberRangeFilter
                     key={`parametersB-${rangeRevision}`}
-                    name="Size (B params)"
+                    name="Size"
                     minValue={bounds.parametersB[0]}
                     maxValue={bounds.parametersB[1]}
                     {...rangeDefaults(filters.parametersB, bounds.parametersB)}
                     step={0.1}
+                    formatValue={formatParametersB}
+                    formatTooltip={formatParameterCount}
+                    formatDraft={formatParameterCount}
+                    parseDraft={parseParameterCount}
                     onChange={(parametersB) => {
                         setFilters((previous) => ({
                             ...previous,

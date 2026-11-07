@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Pinned models stay in the table through filters
-**Latest change:** Pinned models stay in the table when they fail the filters, and stay at the top unless a non-default sort is active.
+**Last updated:** 2026-11-07 — Size and context length share magnitude rounding
+**Latest change:** Size and context length round to one magnitude, and a coefficient from 100 through 900 rounds to the nearest 10. The size tooltip is the parameter count.
 
 ## Pickup
 
@@ -24,9 +24,9 @@ Reset all of these dang modifiers is first in the left column. Pin filtered and 
 | Pin | yes (pin control; not sortable) | yes (hide unpinned; Pin filtered adds the current rows; Clear pins empties the set). Pins stay in the table through other filters, and stay first unless a non-default sort is active | [UI-14](requirements.md#ui-14) |
 | Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; whole numbers; comma OR; `-` exclude; resizable field) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
-| Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
+| Size | yes (thousands through 900k, e.g. `400k`; millions through 900M, e.g. `500M`; billions through 900B, e.g. `410B`; trillions above that, e.g. `1T`; 100–900 of a unit rounds to the nearest 10; tooltip is the parameter count) | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
-| Context length | yes (whole thousands through 900k, e.g. `500k`; whole millions above 900k, e.g. `1M`; tooltip is the token count) | yes | [QRY-04](requirements.md#qry-04) |
+| Context length | yes (thousands through 900k, e.g. `130k`; millions above that, e.g. `1M`; 100–900 of a unit rounds to the nearest 10; tooltip is the token count) | yes | [QRY-04](requirements.md#qry-04) |
 | Usage cost | yes, when a positive token count is entered (left of input cost) | token-count box, then a cost range | [UI-11](requirements.md#ui-11) |
 | Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
 | Throughput | yes (chosen provider p50, last 30 minutes) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |

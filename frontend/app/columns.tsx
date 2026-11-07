@@ -5,6 +5,7 @@ import {
     formatContextLength,
     formatLatencySeconds,
     formatNumber,
+    formatParameterCount,
     formatParametersB,
     formatPrice,
     formatReadableNumber,
@@ -58,26 +59,33 @@ function pinColumn(pins: PinColumnControls): GridColDef {
     };
 }
 
-/** Cell text stays the formatted value; the tooltip is the full stored number. */
-function renderFullValueTooltip(parameters: GridRenderCellParams) {
-    const title = formatReadableNumber(
-        typeof parameters.value === "number" ? parameters.value : undefined,
-    );
-    return (
-        <span
-            title={title === "" ? undefined : title}
-            style={{
-                display: "block",
-                width: "100%",
-                height: "100%",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-            }}
-        >
-            {parameters.formattedValue}
-        </span>
-    );
+/** Cell text stays the formatted value; the tooltip is `formatExact` of the stored number. */
+function renderExactTooltip(
+    formatExact: (value: number | undefined) => string,
+) {
+    return function renderTooltip(parameters: GridRenderCellParams) {
+        const title = formatExact(
+            typeof parameters.value === "number" ? parameters.value : undefined,
+        );
+        return (
+            <span
+                title={title === "" ? undefined : title}
+                style={{
+                    display: "block",
+                    width: "100%",
+                    height: "100%",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                }}
+            >
+                {parameters.formattedValue}
+            </span>
+        );
+    };
 }
+
+const renderFullValueTooltip = renderExactTooltip(formatReadableNumber);
+const renderParameterCountTooltip = renderExactTooltip(formatParameterCount);
 
 export const columns: GridColDef[] = [
     {
@@ -106,10 +114,12 @@ export const columns: GridColDef[] = [
     {
         field: "parameters_b",
         headerName: "Size",
-        description: "Parameter count (billions)",
+        description:
+            "Thousands through 900,000 parameters (400k); millions through 900 million (500M); billions through 900 billion (410B); trillions above that (1T). 100-900 of a unit rounds to the nearest 10",
         type: "number",
         width: 90,
         valueFormatter: formatParametersB,
+        renderCell: renderParameterCountTooltip,
     },
     {
         field: "benchmark_or_intelligence_index",
@@ -139,7 +149,7 @@ export const columns: GridColDef[] = [
         field: "context_length",
         headerName: "Context Length",
         description:
-            "Whole thousands through 900,000 tokens (500k); whole millions above that (1M)",
+            "Thousands through 900,000 tokens (130k; 100-900 of the unit rounds to the nearest 10); millions above that (1M)",
         type: "number",
         width: 130,
         valueFormatter: formatContextLength,

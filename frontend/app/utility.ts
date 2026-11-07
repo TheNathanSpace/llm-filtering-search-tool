@@ -50,25 +50,29 @@ export function parseLatencySeconds(text: string): number | undefined {
 
 const CONTEXT_THOUSAND = 1000;
 const CONTEXT_MILLION = 1_000_000;
-/** Context lengths from this token count use millions; below it, thousands. */
-const CONTEXT_MILLIONS_FROM = 500_000;
-
-function trimTrailingZeros(fixed: string): string {
-    return fixed.replace(/\.?0+$/, "");
-}
+/** Context lengths above this token count use millions; this count and below use thousands. */
+const CONTEXT_MILLIONS_ABOVE = 900_000;
 
 /**
- * Context window: thousands under 500,000 tokens (``400k``), millions from
- * 500,000 (``1.2M``). At most two decimal places; trailing zeros are dropped.
+ * Context window, rounded to a whole unit: thousands through 900,000 tokens
+ * (``500k``), millions above that (``1M``).
  */
 export function formatContextLength(value: number | undefined | null): string {
-    if (typeof value !== "number") {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
         return "";
     }
-    if (value >= CONTEXT_MILLIONS_FROM) {
-        return `${trimTrailingZeros((value / CONTEXT_MILLION).toFixed(2))}M`;
+    if (value > CONTEXT_MILLIONS_ABOVE) {
+        return `${Math.round(value / CONTEXT_MILLION)}M`;
     }
-    return `${trimTrailingZeros((value / CONTEXT_THOUSAND).toFixed(2))}k`;
+    return `${Math.round(value / CONTEXT_THOUSAND)}k`;
+}
+
+/** Full number with thousands separators (``1,234,567``). */
+export function formatReadableNumber(value: number | undefined | null): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "";
+    }
+    return value.toLocaleString("en-US", { maximumFractionDigits: 20 });
 }
 
 /**

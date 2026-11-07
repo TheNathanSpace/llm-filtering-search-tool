@@ -12,8 +12,13 @@ interface NumberRangeFilterProperties {
     defaultEnd?: number;
     onChange?: (range: [number, number]) => void;
     step?: number;
-    /** Label formatter for the slider thumb and the range text under the control. */
+    /** Label formatter for the range text under the control. */
     formatValue?: (value: number) => string;
+    /**
+     * Slider thumb tooltip, and the title on each endpoint.
+     * Defaults to ``formatValue``.
+     */
+    formatTooltip?: (value: number) => string;
     /** Text shown when an endpoint is clicked. Defaults to the raw stored number. */
     formatDraft?: (value: number) => string;
     /**
@@ -142,6 +147,8 @@ interface RangeEndpointProperties {
     emptyValue: number;
     ariaLabel: string;
     draft: string;
+    /** Hover text. Falls back to the click-to-type hint. */
+    tooltip?: string;
     parseDraft?: (text: string) => number | undefined;
     active: boolean;
     onActivate: () => void;
@@ -157,7 +164,7 @@ function RangeEndpoint(properties: Readonly<RangeEndpointProperties>) {
                 type="button"
                 variant="body2"
                 aria-label={properties.ariaLabel}
-                title="Click to type a value"
+                title={properties.tooltip || "Click to type a value"}
                 onClick={properties.onActivate}
                 sx={{
                     border: 0,
@@ -232,7 +239,7 @@ export default function NumberRangeFilter(
                     value={value}
                     onChange={handleChange}
                     valueLabelDisplay="auto"
-                    valueLabelFormat={formatValue}
+                    valueLabelFormat={properties.formatTooltip ?? formatValue}
                     min={properties.minValue}
                     max={properties.maxValue}
                     step={properties.step ?? 100}
@@ -260,6 +267,7 @@ export default function NumberRangeFilter(
                         emptyValue={properties.minValue}
                         ariaLabel={`${properties.name} minimum, click to type a value`}
                         draft={formatDraftValue(value[0])}
+                        tooltip={properties.formatTooltip?.(value[0])}
                         parseDraft={properties.parseDraft}
                         active={activeEndpoint === "start"}
                         onActivate={() => {
@@ -278,6 +286,7 @@ export default function NumberRangeFilter(
                         emptyValue={properties.maxValue}
                         ariaLabel={`${properties.name} maximum, click to type a value`}
                         draft={formatDraftValue(value[1])}
+                        tooltip={properties.formatTooltip?.(value[1])}
                         parseDraft={properties.parseDraft}
                         active={activeEndpoint === "end"}
                         onActivate={() => {

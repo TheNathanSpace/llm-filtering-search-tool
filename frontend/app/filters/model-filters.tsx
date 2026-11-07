@@ -21,6 +21,7 @@ import {
     formatContextLength,
     formatLatencySeconds,
     formatPrice,
+    formatReadableNumber,
     formatThroughput,
     parseContextLength,
     parseLatencySeconds,
@@ -304,7 +305,8 @@ export default function ModelFilters(
                         bounds.contextLength,
                     )}
                     formatValue={formatContextLength}
-                    formatDraft={formatContextLength}
+                    formatTooltip={formatReadableNumber}
+                    formatDraft={formatReadableNumber}
                     parseDraft={parseContextLength}
                     onChange={(contextLength) => {
                         setFilters((previous) => ({
@@ -416,6 +418,7 @@ export default function ModelFilters(
                     {...rangeDefaults(filters.latencyMs, bounds.latencyMs)}
                     step={1}
                     formatValue={formatLatencySeconds}
+                    formatTooltip={formatReadableNumber}
                     formatDraft={formatLatencySeconds}
                     parseDraft={parseLatencySeconds}
                     onChange={(latencyMs) => {

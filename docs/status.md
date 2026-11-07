@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Reset restores filters, sort, pins, and table layout
-**Latest change:** Reset all of these dang modifiers restores default filters, an empty token count and pin set, the intelligence sort, a one-line name field, and default table column layout.
+**Last updated:** 2026-11-07 — Context length uses millions only above 900,000 tokens
+**Latest change:** Context length displays as whole thousands through 900,000 tokens and whole millions above that. Tooltips show the full token count and the latency millisecond count with commas.
 
 ## Pickup
 
@@ -26,11 +26,11 @@ Reset all of these dang modifiers is first in the left column, then Clear pins, 
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
 | Intelligence | yes (Intelligence / Coding / Agentic) | yes (three range filters) | [QRY-01](requirements.md#qry-01) |
-| Context length | yes (thousands under 500k, e.g. `400k`; millions from 500k, e.g. `1.2M`) | yes | [QRY-04](requirements.md#qry-04) |
+| Context length | yes (whole thousands through 900k, e.g. `500k`; whole millions above 900k, e.g. `1M`; tooltip is the token count) | yes | [QRY-04](requirements.md#qry-04) |
 | Usage cost | yes, when a positive token count is entered (left of input cost) | token-count box, then a cost range | [UI-11](requirements.md#ui-11) |
 | Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
 | Throughput | yes (chosen provider p50, last 30 minutes) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
-| Latency | yes (chosen provider p50, seconds, last 30 minutes) | yes | [UI-06](requirements.md#ui-06) |
+| Latency | yes (chosen provider p50, seconds, last 30 minutes; tooltip is milliseconds) | yes | [UI-06](requirements.md#ui-06) |
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
 | Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
 | Creator | yes (`Author:` prefix, else a leading word that starts the slug, else the title-cased slug) | yes | [QRY-06](requirements.md#qry-06) |

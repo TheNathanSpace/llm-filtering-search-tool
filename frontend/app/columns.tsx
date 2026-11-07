@@ -7,12 +7,13 @@ import {
     formatNumber,
     formatParametersB,
     formatPrice,
+    formatReadableNumber,
     formatTimestamp,
 } from "@/app/utility";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import { IconButton, Link } from "@mui/material";
-import { GridColDef } from "@mui/x-data-grid";
+import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 export type PinColumnControls = {
     pinnedIds: ReadonlySet<string>;
@@ -55,6 +56,27 @@ function pinColumn(pins: PinColumnControls): GridColDef {
             );
         },
     };
+}
+
+/** Cell text stays the formatted value; the tooltip is the full stored number. */
+function renderFullValueTooltip(parameters: GridRenderCellParams) {
+    const title = formatReadableNumber(
+        typeof parameters.value === "number" ? parameters.value : undefined,
+    );
+    return (
+        <span
+            title={title === "" ? undefined : title}
+            style={{
+                display: "block",
+                width: "100%",
+                height: "100%",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+            }}
+        >
+            {parameters.formattedValue}
+        </span>
+    );
 }
 
 export const columns: GridColDef[] = [
@@ -117,10 +139,11 @@ export const columns: GridColDef[] = [
         field: "context_length",
         headerName: "Context Length",
         description:
-            "Thousands under 500,000 tokens (400k); millions from 500,000 (1.2M)",
+            "Whole thousands through 900,000 tokens (500k); whole millions above that (1M)",
         type: "number",
         width: 130,
         valueFormatter: formatContextLength,
+        renderCell: renderFullValueTooltip,
     },
     {
         field: "pricing_input",
@@ -157,6 +180,7 @@ export const columns: GridColDef[] = [
         type: "number",
         width: 120,
         valueFormatter: formatLatencySeconds,
+        renderCell: renderFullValueTooltip,
     },
     {
         field: "created",

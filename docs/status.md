@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Size and context length share magnitude rounding
-**Latest change:** Size and context length round to one magnitude, and a coefficient from 100 through 900 rounds to the nearest 10. The size tooltip is the parameter count.
+**Last updated:** 2026-11-07 — Title column reads upright
+**Latest change:** The title, goal, and GitHub link sit upright in the left column beside the filters.
 
 ## Pickup
 

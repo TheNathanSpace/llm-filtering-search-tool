@@ -7,26 +7,29 @@ import GithubLogo from "@/app/github-logo";
 
 const railStyle: CSSProperties = {
     display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: "column",
+    alignItems: "flex-start",
     justifyContent: "space-between",
+    boxSizing: "border-box",
     width: "100%",
     height: "100%",
-    gap: "0.45rem",
+    gap: "0.75rem",
     margin: 0,
-    paddingInline: "2.25rem",
+    padding: "1.25rem 1.5rem",
     minWidth: 0,
+    minHeight: 0,
     overflow: "hidden",
 };
 
 const lineStyle: CSSProperties = {
-    writingMode: "sideways-lr",
-    maxHeight: "100%",
+    maxWidth: "100%",
     minHeight: 0,
     minWidth: 0,
     flex: "0 0 auto",
     margin: 0,
-    lineHeight: 1.05,
+    lineHeight: 1.35,
+    overflow: "hidden",
+    textAlign: "left",
 };
 
 const textSx: SxProps<Theme> = {
@@ -41,10 +44,10 @@ type FontSizes = {
     link: number;
 };
 
-/** Tagline stays smaller than the largest size that fits the rail. */
+/** Tagline stays smaller than the largest size that fits the column. */
 const TAGLINE_SCALE = 2 / 3;
 
-/** Largest integer px size whose box stays inside the rail. */
+/** Largest integer px size whose box stays inside the given limits. */
 function largestFit(
     element: HTMLElement,
     maxHeight: number,
@@ -57,6 +60,10 @@ function largestFit(
     const apply = (size: number) => {
         element.style.fontSize = `${size}px`;
         element.style.whiteSpace = wrap ? "normal" : "nowrap";
+        element.style.boxSizing = "border-box";
+        element.style.width = `${maxWidth}px`;
+        element.style.maxWidth = `${maxWidth}px`;
+        element.style.minWidth = "0";
         element.style.maxHeight = wrap ? `${maxHeight}px` : "none";
         element.style.height = wrap ? `${maxHeight}px` : "auto";
         element.style.overflow = "hidden";
@@ -66,9 +73,9 @@ function largestFit(
         apply(mid);
         const rect = element.getBoundingClientRect();
         const tooTall = wrap
-            ? element.scrollHeight > element.clientHeight + 1
-            : rect.height > maxHeight + 1;
-        const tooWide = rect.width > maxWidth + 1;
+            ? element.scrollHeight > element.clientHeight
+            : rect.height > maxHeight;
+        const tooWide = element.scrollWidth > element.clientWidth;
         if (!tooTall && !tooWide) {
             best = mid;
             low = mid + 1;
@@ -97,31 +104,48 @@ export default function Titles() {
         }
 
         const fit = () => {
-            const maxHeight = rail.clientHeight;
             const computed = getComputedStyle(rail);
-            const gap = Number.parseFloat(computed.columnGap) || 0;
-            const pad =
+            const gap = Number.parseFloat(computed.rowGap) || 0;
+            const padX =
                 (Number.parseFloat(computed.paddingLeft) || 0) +
                 (Number.parseFloat(computed.paddingRight) || 0);
-            const inner = rail.clientWidth - pad;
-            if (maxHeight < 8 || inner < 8) {
+            const padY =
+                (Number.parseFloat(computed.paddingTop) || 0) +
+                (Number.parseFloat(computed.paddingBottom) || 0);
+            const innerWidth = rail.clientWidth - padX;
+            const innerHeight = rail.clientHeight - padY;
+            if (innerWidth < 8 || innerHeight < 8) {
                 return;
             }
 
-            const titleSize = largestFit(title, maxHeight, inner, false);
-            const linkSize = largestFit(link, maxHeight, inner, false);
-            const used =
-                title.getBoundingClientRect().width +
-                link.getBoundingClientRect().width +
-                gap * 2;
-            const goalFit = largestFit(
-                goal,
-                maxHeight,
-                Math.max(8, inner - used),
+            const titleSize = largestFit(
+                title,
+                innerHeight * 0.42,
+                innerWidth,
                 true,
             );
+            title.style.height = "auto";
+            title.style.maxHeight = "none";
+            const linkFit = largestFit(
+                link,
+                innerHeight * 0.22,
+                innerWidth,
+                false,
+            );
+            const linkSize = Math.min(titleSize, linkFit);
+            link.style.fontSize = `${linkSize}px`;
+            link.style.height = "auto";
+            link.style.maxHeight = "none";
+            const used =
+                title.getBoundingClientRect().height +
+                link.getBoundingClientRect().height +
+                gap * 2;
+            const goalRoom = Math.max(8, innerHeight - used);
+            const goalFit = largestFit(goal, goalRoom, innerWidth, true);
             const goalSize = Math.max(8, Math.round(goalFit * TAGLINE_SCALE));
             goal.style.fontSize = `${goalSize}px`;
+            goal.style.height = "auto";
+            goal.style.maxHeight = "none";
             setSizes((previous) =>
                 previous?.title === titleSize &&
                 previous.goal === goalSize &&
@@ -137,9 +161,9 @@ export default function Titles() {
         return () => observer.disconnect();
     }, []);
 
-    const titleFont = sizes ? `${sizes.title}px` : "13.1cqh";
-    const goalFont = sizes ? `${sizes.goal}px` : "8.3cqh";
-    const linkFont = sizes ? `${sizes.link}px` : "6.3cqh";
+    const titleFont = sizes ? `${sizes.title}px` : "2.6rem";
+    const goalFont = sizes ? `${sizes.goal}px` : "1.15rem";
+    const linkFont = sizes ? `${sizes.link}px` : "1.05rem";
 
     return (
         <header ref={railRef} style={railStyle}>
@@ -150,7 +174,9 @@ export default function Titles() {
                 style={{
                     ...lineStyle,
                     fontSize: titleFont,
-                    whiteSpace: "nowrap",
+                    lineHeight: 1.45,
+                    width: "100%",
+                    whiteSpace: "normal",
                 }}
                 sx={textSx}
             >
@@ -163,8 +189,8 @@ export default function Titles() {
                 style={{
                     ...lineStyle,
                     fontSize: goalFont,
-                    lineHeight: 1.12,
-                    height: "100%",
+                    lineHeight: 1.45,
+                    width: "100%",
                     whiteSpace: "normal",
                 }}
                 sx={textSx}
@@ -185,6 +211,8 @@ export default function Titles() {
                     display: "inline-flex",
                     alignItems: "center",
                     columnGap: "0.35em",
+                    width: "max-content",
+                    maxWidth: "100%",
                     whiteSpace: "nowrap",
                 }}
             >

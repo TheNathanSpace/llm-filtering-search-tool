@@ -184,6 +184,7 @@ export default function ModelTable({
                         width: "30%",
                         minWidth: 0,
                         height: "100%",
+                        overflow: "hidden",
                     }}
                 >
                     <Titles />

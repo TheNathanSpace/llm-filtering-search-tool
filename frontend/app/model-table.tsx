@@ -13,6 +13,7 @@ import {
     sortModelForTokenCount,
     TableSortItem,
 } from "@/app/filters/filter-query";
+import { orderFilteredModels } from "@/app/filters/order-models";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 import { useSyncTableQuery } from "@/app/filters/use-sync-table-query";
 import Titles from "@/app/titles";
@@ -107,6 +108,31 @@ export default function ModelTable({
         setPinnedIds([]);
         setGridRevision((revision) => revision + 1);
     }, []);
+    const pinFiltered = useCallback(() => {
+        setPinnedIds((previous) => {
+            const seen = new Set(previous);
+            const next = [...previous];
+            for (const model of filteredModels) {
+                if (seen.has(model.id)) {
+                    continue;
+                }
+                seen.add(model.id);
+                next.push(model.id);
+            }
+            return next.length === previous.length ? previous : next;
+        });
+    }, [filteredModels]);
+    const rows = useMemo(
+        () =>
+            orderFilteredModels(
+                models,
+                filteredModels,
+                pinnedIdSet,
+                sortModel,
+                tokenMillions,
+            ),
+        [models, filteredModels, pinnedIdSet, sortModel, tokenMillions],
+    );
     const columns = useMemo(
         () =>
             columnsForTokenMillions(tokenMillions, {
@@ -187,6 +213,7 @@ export default function ModelTable({
                                 );
                             }}
                             onResetModifiers={resetModifiers}
+                            onPinFiltered={pinFiltered}
                             onClearPins={clearPins}
                         />
                     </LocalizationProvider>
@@ -195,7 +222,8 @@ export default function ModelTable({
             <MuiFontSans style={{ flex: "1 1 0", minHeight: 0, width: "100%" }}>
                 <DataGrid
                     key={gridRevision}
-                    rows={filteredModels}
+                    rows={rows}
+                    sortingMode="server"
                     columns={columns}
                     getRowId={(row) => row.id}
                     autoHeight={false}

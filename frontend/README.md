@@ -30,14 +30,15 @@ Filter UI and logic live under `app/filters/`. Column and filter map: [`docs/sta
 | `filter-types.ts` | Filter state and bounds types |
 | `filter-bounds.ts` | Min/max and unique creators from models |
 | `apply-filters.ts` | Pure `filterModels()` |
+| `order-models.ts` | Table rows. Pins stay in despite filters, and lead unless the sort is not the default |
 | `name-query.ts` | Name and slug matching |
 | `use-model-filters.ts` | State and filtered rows |
 | `filter-query.ts` | Read and write the page query string |
 | `use-sync-table-query.ts` | Keep the address bar aligned with that state |
 
 - The panel uses two columns of about the same height. A control is not split across the break.
-- **Reset all of these dang modifiers** is first in the left column, above **Clear pins**, and fills that column. The label uses the filter text size and color; the outline stays blue. It restores default filter choices, including turning hide-unpinned off, and clears the token count and the pin set. The name field returns to one line. Range sliders remount so the thumbs match those defaults. Sort returns to intelligence descending. Table column width, order, visibility, column filters, and pagination return to their defaults ([UI-13](../docs/requirements.md#ui-13)).
-- **Clear pins** sits under reset and uses the same button. It empties the pin set and turns hide-unpinned off ([UI-14](../docs/requirements.md#ui-14)).
+- **Reset all of these dang modifiers** is first in the left column, above **Pin filtered** and **Clear pins**, and fills that column. The label uses the filter text size and color; the outline stays blue. It restores default filter choices, including turning hide-unpinned off, and clears the token count and the pin set. The name field returns to one line. Range sliders remount so the thumbs match those defaults. Sort returns to intelligence descending. Table column width, order, visibility, column filters, and pagination return to their defaults ([UI-13](../docs/requirements.md#ui-13)).
+- **Pin filtered** and **Clear pins** share the next row. Each is half that column. Pin filtered adds every model in the current filtered list and leaves pins outside that list in place. Clear pins empties the pin set and turns hide-unpinned off. Pinned models stay in the table when they fail the other filters. They stay above the other rows while the sort is intelligence descending or cleared. Any other sort orders them with the rows that match the filters ([UI-14](../docs/requirements.md#ui-14)).
 - `model-table.tsx` composes the filter panel and Data Grid. The title, goal, and GitHub link are a rotated rail on the left of the panel ([UI-08](../docs/requirements.md#ui-08)). That row is 30% rail and 70% filters. The grid uses the full content width. Pagination stays on. Virtualization is off, so every row and column on the current page is in the document and browser find can reach them. Column definitions: `app/columns.tsx`. Cells and column headers do not show a focus outline. The first column is a pin control.
 - Column-backed filters follow that column order. The missing-values switch is first, then hide unpinned. Modality filters have no column, so they come after the column-aligned controls.
 - **Millions of tokens** sits just before the price ranges. A positive count inserts a **Cost (NM)** column left of Input Cost and a **Cost** range under the box: `tokens × (0.90 × input $/1M + 0.10 × output $/1M)` for the chosen provider. The range keeps models inside it. Missing prices follow the missing-values switch. Changing or clearing the count resets that range. Clearing the count removes the column. The blend matches `backend/llm_rankings/provider_choice.py`. A help icon on the token field and on the Cost range states the count, the column, and the blend.
@@ -78,7 +79,7 @@ Reuse `MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`,
 4. **`model-filters.tsx`** — Render the control and wire `onChange` (and `value` when controlled) into `setFilters`. Pass `defaultStart` / `defaultEnd` from the resolved filter when the control keeps its own state, so a shared URL shows the restored range.
 5. **`filter-query.ts`** — Parse and serialize the field. Omit it when it matches `createInitialUserChoices`.
 
-`model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`. Pins do too: the pin set lives next to the sort model and is passed into `useModelFilters` and `columnsForTokenMillions`.
+`model-table.tsx` changes only when the filter depends on something outside the model list. Usage cost does: pass the parsed token count into `useModelFilters`. Pins do too: the pin set lives next to the sort model and is passed into `useModelFilters` and `columnsForTokenMillions`. `orderFilteredModels` puts pinned models back into those rows, then orders them before the grid. The grid uses that order (`sortingMode="server"`) and still reports header clicks through `sortModel`.
 
 ## Footer
 

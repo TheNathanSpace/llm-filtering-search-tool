@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Range thumbs stay inside the filter panel
-**Latest change:** Range slider thumbs stay inside the filter columns, so the panel no longer scrolls sideways.
+**Last updated:** 2026-11-07 — Pinned models stay in the table through filters
+**Latest change:** Pinned models stay in the table when they fail the filters, and stay at the top unless a non-default sort is active.
 
 ## Pickup
 
@@ -17,11 +17,11 @@
 
 ## UI map (filters vs columns)
 
-Reset all of these dang modifiers is first in the left column, then Clear pins, then the missing-values switch. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
+Reset all of these dang modifiers is first in the left column. Pin filtered and Clear pins share the next row, each half that column. The missing-values switch follows. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
-| Pin | yes (pin control; not sortable) | yes (hide unpinned; Clear pins empties the set) | [UI-14](requirements.md#ui-14) |
+| Pin | yes (pin control; not sortable) | yes (hide unpinned; Pin filtered adds the current rows; Clear pins empties the set). Pins stay in the table through other filters, and stay first unless a non-default sort is active | [UI-14](requirements.md#ui-14) |
 | Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; whole numbers; comma OR; `-` exclude; resizable field) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size (B params) | yes | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |

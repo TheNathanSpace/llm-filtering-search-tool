@@ -60,6 +60,7 @@ interface ModelFiltersProperties {
     tokenMillions: string;
     onTokenMillionsChange: (value: string) => void;
     onResetModifiers: () => void;
+    onPinFiltered: () => void;
     onClearPins: () => void;
 }
 
@@ -79,12 +80,14 @@ const panelButtonSx = {
 function PanelButton({
     label,
     onClick,
+    className,
 }: {
     label: string;
     onClick: () => void;
+    className: string;
 }) {
     return (
-        <div className="w-full break-inside-avoid px-1 pt-2 pb-4">
+        <div className={className}>
             <MuiFontCasual style={{ width: "100%" }}>
                 <Button
                     variant="outlined"
@@ -100,6 +103,9 @@ function PanelButton({
     );
 }
 
+const fullButtonClass = "w-full break-inside-avoid px-1 pt-2 pb-4";
+const halfButtonClass = "w-1/2 min-w-0 break-inside-avoid px-1 pt-2 pb-4";
+
 export default function ModelFilters(
     properties: Readonly<ModelFiltersProperties>,
 ) {
@@ -110,6 +116,7 @@ export default function ModelFilters(
         tokenMillions,
         onTokenMillionsChange,
         onResetModifiers,
+        onPinFiltered,
         onClearPins,
     } = properties;
     const [rangeRevision, setRangeRevision] = useState(0);
@@ -127,8 +134,20 @@ export default function ModelFilters(
             <PanelButton
                 label="Reset all of these dang modifiers"
                 onClick={resetFilters}
+                className={fullButtonClass}
             />
-            <PanelButton label="Clear pins" onClick={onClearPins} />
+            <div className="flex w-full break-inside-avoid">
+                <PanelButton
+                    label="Pin filtered"
+                    onClick={onPinFiltered}
+                    className={halfButtonClass}
+                />
+                <PanelButton
+                    label="Clear pins"
+                    onClick={onClearPins}
+                    className={halfButtonClass}
+                />
+            </div>
             <div className="w-full break-inside-avoid">
                 <FormGroup sx={{ width: "100%" }}>
                     <FormControlLabel

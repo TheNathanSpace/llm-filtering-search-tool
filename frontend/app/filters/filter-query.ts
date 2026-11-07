@@ -177,20 +177,38 @@ function parseSort(value: string | undefined): TableSortItem[] {
     return items;
 }
 
+/** True when the sort is the implicit intelligence-descending default. */
+export function isDefaultTableSort(
+    sortModel: readonly TableSortItem[],
+): boolean {
+    if (sortModel.length !== DEFAULT_TABLE_SORT.length) {
+        return false;
+    }
+    return sortModel.every((item, index) => {
+        const fallback = DEFAULT_TABLE_SORT[index];
+        return (
+            fallback !== undefined &&
+            item.field === fallback.field &&
+            item.sort === fallback.sort
+        );
+    });
+}
+
+/**
+ * Pinned rows lead the filtered list when no column sort is chosen.
+ * The default intelligence sort counts as that case. Any other sort does not.
+ */
+export function pinsLeadTable(sortModel: readonly TableSortItem[]): boolean {
+    return sortModel.length === 0 || isDefaultTableSort(sortModel);
+}
+
 function serializeSort(
     sortModel: readonly TableSortItem[],
 ): string | undefined {
     if (sortModel.length === 0) {
         return "none";
     }
-    const [only] = sortModel;
-    const [defaultSort] = DEFAULT_TABLE_SORT;
-    if (
-        sortModel.length === 1 &&
-        only !== undefined &&
-        only.field === defaultSort.field &&
-        only.sort === defaultSort.sort
-    ) {
+    if (isDefaultTableSort(sortModel)) {
         return undefined;
     }
     return sortModel

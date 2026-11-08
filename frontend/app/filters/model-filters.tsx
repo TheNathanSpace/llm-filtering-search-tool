@@ -85,10 +85,12 @@ function PanelButton({
     label,
     onClick,
     className,
+    wrap = false,
 }: {
     label: string;
     onClick: () => void;
     className: string;
+    wrap?: boolean;
 }) {
     return (
         <div className={className}>
@@ -98,7 +100,10 @@ function PanelButton({
                     color="primary"
                     fullWidth
                     onClick={onClick}
-                    sx={panelButtonSx}
+                    sx={{
+                        ...panelButtonSx,
+                        whiteSpace: wrap ? "normal" : panelButtonSx.whiteSpace,
+                    }}
                 >
                     {label}
                 </Button>
@@ -148,9 +153,10 @@ export default function ModelFilters(
             />
             <div className="flex w-full break-inside-avoid">
                 <PanelButton
-                    label="Pin filtered"
+                    label="Pin all filtered models"
                     onClick={onPinFiltered}
                     className={halfButtonClass}
+                    wrap
                 />
                 <PanelButton
                     label="Clear pins"

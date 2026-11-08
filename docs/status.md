@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Missing-values switch follows active filters
-**Latest change:** Off drops a model missing a value only when that filter is narrowed, selected, or filled in. A full-span range is not active, so with no active filters off changes nothing. A ? beside the switch states this. Tooltip popups use a solid background.
+**Last updated:** 2026-11-07 — Pin button label
+**Latest change:** The pin-all control is labeled Pin all filtered models. That label wraps inside the half-width button.
 
 ## Pickup
 
@@ -17,11 +17,11 @@
 
 ## UI map (filters vs columns)
 
-Reset all of these dang modifiers is first in the left column. Pin filtered and Clear pins share the next row, each half that column. The missing-values switch follows. Off drops a model missing a value only when that filter is narrowed, selected, or filled in. A full-span range is not active. With no active filters, off changes nothing. A ? beside the switch states this. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
+Reset all of these dang modifiers is first in the left column. Pin all filtered models and Clear pins share the next row, each half that column. The missing-values switch follows. Off drops a model missing a value only when that filter is narrowed, selected, or filled in. A full-span range is not active. With no active filters, off changes nothing. A ? beside the switch states this. Panel filters follow this column order. The missing-values switch stays first. Modality filters have no column, so they stay after the column-aligned controls.
 
 | Dimension | Column | Dedicated filter | Requirement |
 | --- | --- | --- | --- |
-| Pin | yes (pin control; not sortable) | yes (hide unpinned; Pin filtered adds the current rows; Clear pins empties the set). Pins stay in the table through other filters, and stay first unless a non-default sort is active | [UI-14](requirements.md#ui-14) |
+| Pin | yes (pin control; not sortable) | yes (hide unpinned; Pin all filtered models adds the current rows; Clear pins empties the set). Pins stay in the table through other filters, and stay first unless a non-default sort is active | [UI-14](requirements.md#ui-14) |
 | Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; whole numbers; comma OR; `-` exclude; resizable field) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size | yes (thousands through 900k, e.g. `400k`; millions through 900M, e.g. `500M`; billions through 900B, e.g. `410B`; trillions above that, e.g. `1T`; 100–900 of a unit rounds to the nearest 10; tooltip is the parameter count) | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-07 — Coding is a FrontierCode and Terminal-Bench blend
-**Latest change:** Coding is 60% FrontierCode 2.0 and 40% Terminal-Bench 4.0 for the effort that matches the catalog intelligence score. The Agentic column and filter are gone. A failed fetch keeps the stored scores and shows on the Last refresh warning.
+**Last updated:** 2026-11-07 — Primary color `#917aff` and title reset
+**Latest change:** Button outlines, switches, checkboxes, and filter ranges use `#917aff`. Links stay `#1976d2`. Clicking the product title clears filters, sort, pins, and the query string.
 
 ## Pickup
 

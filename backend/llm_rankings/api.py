@@ -117,7 +117,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 _api_docs_enabled = is_truthy_env("ENABLE_API_DOCS")
 app = FastAPI(
-    title="LLM Rankings API",
+    title="AI Model Metrics!!",
     lifespan=lifespan,
     docs_url="/docs" if _api_docs_enabled else None,
     redoc_url="/redoc" if _api_docs_enabled else None,

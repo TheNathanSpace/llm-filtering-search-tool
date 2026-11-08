@@ -36,7 +36,7 @@ from llm_rankings.util import get_cache_dir, get_env_var
 
 logger = logging.getLogger(__name__)
 
-USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/llm-filtering-search-tool)"
+USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/AI-Model-Metrics)"
 # Hardcoded: OpenRouter Batch + OpenAI native web search (see product decision).
 ENRICHMENT_MODEL = "openai/gpt-6-luna:batch"
 BATCH_API_ENDPOINT = "/v1/responses"
@@ -609,7 +609,7 @@ def _auth_headers(api_key: str) -> dict[str, str]:
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT,
-        "HTTP-Referer": "https://github.com/TheNathanSpace/llm-filtering-search-tool",
+        "HTTP-Referer": "https://github.com/TheNathanSpace/AI-Model-Metrics",
         "X-Title": "llm-filtering-search-tool",
     }
 

@@ -1,7 +1,13 @@
 "use client";
 
 import { Link, Typography } from "@mui/material";
-import { type CSSProperties, useLayoutEffect, useRef, useState } from "react";
+import {
+    type CSSProperties,
+    type MouseEvent,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from "react";
 import type { SxProps, Theme } from "@mui/material/styles";
 import GithubLogo from "@/app/github-logo";
 
@@ -87,9 +93,9 @@ function largestFit(
     return best;
 }
 
-export default function Titles() {
+export default function Titles({ onReset }: { onReset: () => void }) {
     const railRef = useRef<HTMLElement>(null);
-    const titleRef = useRef<HTMLHeadingElement>(null);
+    const titleRef = useRef<HTMLAnchorElement>(null);
     const goalRef = useRef<HTMLParagraphElement>(null);
     const linkRef = useRef<HTMLAnchorElement>(null);
     const [sizes, setSizes] = useState<FontSizes | null>(null);
@@ -169,18 +175,36 @@ export default function Titles() {
         <header ref={railRef} style={railStyle}>
             <Typography
                 ref={titleRef}
-                component="h1"
+                component="a"
+                href="/"
                 variant="h1"
+                onClick={(event: MouseEvent<HTMLAnchorElement>) => {
+                    if (
+                        event.button !== 0 ||
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey
+                    ) {
+                        return;
+                    }
+                    event.preventDefault();
+                    onReset();
+                }}
                 style={{
                     ...lineStyle,
                     fontSize: titleFont,
                     lineHeight: 1.45,
                     width: "100%",
                     whiteSpace: "normal",
+                    display: "block",
+                    color: "inherit",
+                    textDecoration: "none",
+                    cursor: "pointer",
                 }}
                 sx={textSx}
             >
-                LLM rankings app
+                Tool that lets you sort and filter and analyze AI models!!
             </Typography>
             <Typography
                 ref={goalRef}
@@ -200,7 +224,7 @@ export default function Titles() {
             </Typography>
             <Link
                 ref={linkRef}
-                href="https://github.com/TheNathanSpace/llm-filtering-search-tool"
+                href="https://github.com/TheNathanSpace/AI-Model-Metrics"
                 color="inherit"
                 className="side-brand-link font-mono!"
                 target="_blank"

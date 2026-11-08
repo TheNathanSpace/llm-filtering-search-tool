@@ -17,12 +17,16 @@ interface MuiFontParameters {
 export default function MuiFont(parameters: Readonly<MuiFontParameters>) {
     const parent = useTheme();
     const theme = createTheme({
+        palette: {
+            primary: parent.palette.primary,
+        },
         typography: {
             fontFamily: `var(--font-${parameters.font.toString().toLowerCase()})`,
         },
         components: {
-            // Font wrappers replace the theme. Keep hover popups from the parent.
+            // Font wrappers replace the theme. Keep hover popups and link color.
             MuiTooltip: parent.components?.MuiTooltip,
+            MuiLink: parent.components?.MuiLink,
         },
     });
 

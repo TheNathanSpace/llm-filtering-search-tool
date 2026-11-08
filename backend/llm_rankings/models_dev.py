@@ -14,7 +14,7 @@ from llm_rankings.util import cache_file_is_fresh, get_cache_dir, get_raw_data_d
 logger = logging.getLogger(__name__)
 
 MODELS_DEV_API_URL = "https://models.dev/api.json"
-USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/llm-filtering-search-tool)"
+USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/AI-Model-Metrics)"
 
 
 class ModelsDevModel(BaseModel):

@@ -2,11 +2,9 @@ import CheckboxRowFilter from "@/app/filters/checkbox-row-filter";
 import DateRangeFilter from "@/app/filters/date-range-filter";
 import { FilterHelp } from "@/app/filters/filter-option";
 import {
-    createInitialUserChoices,
     FilterBounds,
     ModelFiltersState,
     NumberRange,
-    resolveFilters,
 } from "@/app/filters/filter-types";
 import {
     INPUT_MODALITY_OPTIONS,
@@ -32,7 +30,7 @@ import {
 } from "@/app/utility";
 import { Button, FormControlLabel, FormGroup, Switch } from "@mui/material";
 import dayjs from "dayjs";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Dispatch, SetStateAction } from "react";
 
 /** Keep a shared range inside the slider's min/max so a restored URL cannot break it. */
 function rangeDefaults(
@@ -64,6 +62,8 @@ interface ModelFiltersProperties {
     tokenMillions: string;
     onTokenMillionsChange: (value: string) => void;
     onResetModifiers: () => void;
+    /** Bumped by a full reset so sliders and the name field remount at defaults. */
+    resetKey: number;
     onPinFiltered: () => void;
     onClearPins: () => void;
 }
@@ -131,24 +131,18 @@ export default function ModelFilters(
         tokenMillions,
         onTokenMillionsChange,
         onResetModifiers,
+        resetKey,
         onPinFiltered,
         onClearPins,
     } = properties;
-    const [rangeRevision, setRangeRevision] = useState(0);
     const parsedTokenMillions = parseTokenMillions(tokenMillions);
     const usageCostBounds = bounds.usageCost;
-
-    function resetFilters() {
-        setFilters(resolveFilters(createInitialUserChoices(), bounds));
-        setRangeRevision((revision) => revision + 1);
-        onResetModifiers();
-    }
 
     return (
         <div className="w-full columns-2 gap-x-16">
             <PanelButton
                 label="Reset all of these dang modifiers"
-                onClick={resetFilters}
+                onClick={onResetModifiers}
                 className={fullButtonClass}
             />
             <div className="flex w-full break-inside-avoid">
@@ -224,7 +218,7 @@ export default function ModelFilters(
                 </FormGroup>
             </div>
             <TextFilter
-                key={`name-${rangeRevision}`}
+                key={`name-${resetKey}`}
                 name="Name"
                 label="Search names or slugs"
                 value={filters.nameQuery}
@@ -270,7 +264,7 @@ export default function ModelFilters(
             </div>
             {bounds.parametersB && (
                 <NumberRangeFilter
-                    key={`parametersB-${rangeRevision}`}
+                    key={`parametersB-${resetKey}`}
                     name="Size"
                     minValue={bounds.parametersB[0]}
                     maxValue={bounds.parametersB[1]}
@@ -290,7 +284,7 @@ export default function ModelFilters(
             )}
             {bounds.intelligenceIndex && (
                 <NumberRangeFilter
-                    key={`intelligence-${rangeRevision}`}
+                    key={`intelligence-${resetKey}`}
                     name="Intelligence"
                     minValue={bounds.intelligenceIndex[0]}
                     maxValue={bounds.intelligenceIndex[1]}
@@ -309,7 +303,7 @@ export default function ModelFilters(
             )}
             {bounds.codingIndex && (
                 <NumberRangeFilter
-                    key={`coding-${rangeRevision}`}
+                    key={`coding-${resetKey}`}
                     name="Coding"
                     minValue={bounds.codingIndex[0]}
                     maxValue={bounds.codingIndex[1]}
@@ -325,7 +319,7 @@ export default function ModelFilters(
             )}
             {bounds.contextLength && (
                 <NumberRangeFilter
-                    key={`context-${rangeRevision}`}
+                    key={`context-${resetKey}`}
                     name="Context length"
                     minValue={bounds.contextLength[0]}
                     maxValue={bounds.contextLength[1]}
@@ -361,7 +355,7 @@ export default function ModelFilters(
                 />
                 {parsedTokenMillions !== undefined && usageCostBounds && (
                     <NumberRangeFilter
-                        key={`cost-${parsedTokenMillions}-${rangeRevision}`}
+                        key={`cost-${parsedTokenMillions}-${resetKey}`}
                         name="Cost"
                         minValue={usageCostBounds[0]}
                         maxValue={usageCostBounds[1]}
@@ -383,7 +377,7 @@ export default function ModelFilters(
             </div>
             {bounds.pricingInput && (
                 <NumberRangeFilter
-                    key={`pricingInput-${rangeRevision}`}
+                    key={`pricingInput-${resetKey}`}
                     name="Pricing input ($/1M)"
                     minValue={bounds.pricingInput[0]}
                     maxValue={bounds.pricingInput[1]}
@@ -403,7 +397,7 @@ export default function ModelFilters(
             )}
             {bounds.pricingOutput && (
                 <NumberRangeFilter
-                    key={`pricingOutput-${rangeRevision}`}
+                    key={`pricingOutput-${resetKey}`}
                     name="Pricing output ($/1M)"
                     minValue={bounds.pricingOutput[0]}
                     maxValue={bounds.pricingOutput[1]}
@@ -423,7 +417,7 @@ export default function ModelFilters(
             )}
             {bounds.throughput && (
                 <NumberRangeFilter
-                    key={`throughput-${rangeRevision}`}
+                    key={`throughput-${resetKey}`}
                     name="Throughput (tok/s)"
                     minValue={bounds.throughput[0]}
                     maxValue={bounds.throughput[1]}
@@ -440,7 +434,7 @@ export default function ModelFilters(
             )}
             {bounds.latencyMs && (
                 <NumberRangeFilter
-                    key={`latency-${rangeRevision}`}
+                    key={`latency-${resetKey}`}
                     name="Latency"
                     minValue={bounds.latencyMs[0]}
                     maxValue={bounds.latencyMs[1]}
@@ -460,7 +454,7 @@ export default function ModelFilters(
             )}
             {bounds.creationDate && (
                 <DateRangeFilter
-                    key={`created-${rangeRevision}`}
+                    key={`created-${resetKey}`}
                     name="Created"
                     minDate={dayjs(bounds.creationDate[0])}
                     maxDate={dayjs(bounds.creationDate[1])}
@@ -475,7 +469,7 @@ export default function ModelFilters(
             )}
             {bounds.knowledgeCutoff && (
                 <DateRangeFilter
-                    key={`cutoff-${rangeRevision}`}
+                    key={`cutoff-${resetKey}`}
                     name="Knowledge cutoff"
                     minDate={dayjs(bounds.knowledgeCutoff[0])}
                     maxDate={dayjs(bounds.knowledgeCutoff[1])}
@@ -492,7 +486,7 @@ export default function ModelFilters(
                 />
             )}
             <MultiSelectFilter
-                key={`creator-${rangeRevision}`}
+                key={`creator-${resetKey}`}
                 name="Creator"
                 label="Pick creators"
                 options={bounds.creators}

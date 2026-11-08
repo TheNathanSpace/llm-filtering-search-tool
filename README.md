@@ -1,4 +1,4 @@
-# LLM Filtering Search Tool
+# AI Model Metrics!!
 
 Consolidate multidimensional LLM metrics and benchmarks into a searchable platform.
 

@@ -13,6 +13,10 @@ import {
     sortModelForTokenCount,
     TableSortItem,
 } from "@/app/filters/filter-query";
+import {
+    createInitialUserChoices,
+    resolveFilters,
+} from "@/app/filters/filter-types";
 import { orderFilteredModels } from "@/app/filters/order-models";
 import { useModelFilters } from "@/app/filters/use-model-filters";
 import { useSyncTableQuery } from "@/app/filters/use-sync-table-query";
@@ -73,6 +77,7 @@ export default function ModelTable({
     const [sortModel, setSortModel] = useState(initialSetup.sortModel);
     const [pinnedIds, setPinnedIds] = useState(initialSetup.pinnedIds);
     const [gridRevision, setGridRevision] = useState(0);
+    const [filterResetKey, setFilterResetKey] = useState(0);
     const tokenMillions = parseTokenMillions(tokenMillionsText);
     const pinnedIdSet = useMemo(() => new Set(pinnedIds), [pinnedIds]);
     const { bounds, filters, setFilters, filteredModels, userChoices } =
@@ -103,11 +108,13 @@ export default function ModelTable({
         }));
     }, [setFilters]);
     const resetModifiers = useCallback(() => {
+        setFilters(resolveFilters(createInitialUserChoices(), bounds));
         setTokenMillionsText("");
         setSortModel(DEFAULT_TABLE_SORT.map((item) => ({ ...item })));
         setPinnedIds([]);
         setGridRevision((revision) => revision + 1);
-    }, []);
+        setFilterResetKey((key) => key + 1);
+    }, [bounds, setFilters]);
     const pinFiltered = useCallback(() => {
         setPinnedIds((previous) => {
             const seen = new Set(previous);
@@ -187,7 +194,7 @@ export default function ModelTable({
                         overflow: "hidden",
                     }}
                 >
-                    <Titles />
+                    <Titles onReset={resetModifiers} />
                 </div>
                 <div
                     style={{
@@ -214,6 +221,7 @@ export default function ModelTable({
                                 );
                             }}
                             onResetModifiers={resetModifiers}
+                            resetKey={filterResetKey}
                             onPinFiltered={pinFiltered}
                             onClearPins={clearPins}
                         />

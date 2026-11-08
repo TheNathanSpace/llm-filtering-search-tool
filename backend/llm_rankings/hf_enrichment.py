@@ -17,7 +17,7 @@ from llm_rankings.util import get_cache_dir
 logger = logging.getLogger(__name__)
 
 HF_API_ROOT = "https://huggingface.co/api/models"
-USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/llm-filtering-search-tool)"
+USER_AGENT = "llm-filtering-search-tool/0.1 (+https://github.com/TheNathanSpace/AI-Model-Metrics)"
 # Polite pacing for unauthenticated Hub lookups (seconds between network requests).
 REQUEST_INTERVAL_SECONDS = 1.0
 MAX_RETRIES = 4

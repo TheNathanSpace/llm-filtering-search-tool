@@ -20,7 +20,7 @@ const sixtyFour = Sixtyfour({
 });
 
 export const metadata: Metadata = {
-    title: "LLM Rankings",
+    title: "ai model metrics!!",
     description:
         "The goal is to consolidate multidimensional LLM metrics and benchmarks into a searchable platform.",
 };

@@ -1,11 +1,17 @@
 "use client";
 
+import { blue } from "@mui/material/colors";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 // eslint-disable-next-line unicorn/require-module-specifiers
 import type {} from "@mui/x-data-grid/themeAugmentation";
 
 const theme = createTheme({
+    palette: {
+        primary: {
+            main: "#917aff",
+        },
+    },
     typography: {
         fontFamily: "var(--font-casual)",
         h1: {
@@ -43,6 +49,11 @@ const theme = createTheme({
         overline: {},
     },
     components: {
+        MuiLink: {
+            defaultProps: {
+                color: blue[700],
+            },
+        },
         MuiTooltip: {
             styleOverrides: {
                 tooltip: ({ theme }) => ({

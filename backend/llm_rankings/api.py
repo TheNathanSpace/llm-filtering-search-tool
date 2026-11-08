@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from llm_rankings.coding_benchmarks import read_coding_benchmark_error
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.database import get_all_models
 from llm_rankings.export import (
@@ -210,6 +211,12 @@ class AppMeta(BaseModel):
             "endpoints fetch. Empty when those fetches matched this build."
         )
     )
+    coding_benchmark_error: str | None = Field(
+        description=(
+            "Short error from the last coding-benchmark fetch that failed. "
+            "Null after a successful fetch. A skipped fetch leaves this as it is."
+        )
+    )
 
 
 @app.get("/health")
@@ -229,6 +236,7 @@ def get_meta():
             refresh_in_progress=is_refresh_in_progress(),
             export_base_url=configured_export_base_url(),
             openrouter_unknown_attributes=read_openrouter_unknown_attributes(),
+            coding_benchmark_error=read_coding_benchmark_error(),
         )
     except Exception as e:
         logger.exception("Failed to read app metadata")

@@ -146,18 +146,9 @@ export function filterModels(
         }
         if (
             !passesBoundedRange(
-                model.benchmark_or_coding_index,
+                model.benchmark_coding,
                 filters.codingIndex,
                 bounds.codingIndex,
-            )
-        ) {
-            return false;
-        }
-        if (
-            !passesBoundedRange(
-                model.benchmark_or_agentic_index,
-                filters.agenticIndex,
-                bounds.agenticIndex,
             )
         ) {
             return false;

@@ -56,6 +56,12 @@ export type AppMeta = {
      * OpenRouter response attributes ignored on the last live models or endpoints fetch. Empty when those fetches matched this build.
      */
     openrouter_unknown_attributes: Array<string>;
+    /**
+     * Coding Benchmark Error
+     *
+     * Short error from the last coding-benchmark fetch that failed. Null after a successful fetch. A skipped fetch leaves this as it is.
+     */
+    coding_benchmark_error: string | null;
 };
 
 /**
@@ -127,13 +133,9 @@ export type CombinedModel = {
      */
     benchmark_or_intelligence_index?: number | null;
     /**
-     * Benchmark Or Coding Index
+     * Benchmark Coding
      */
-    benchmark_or_coding_index?: number | null;
-    /**
-     * Benchmark Or Agentic Index
-     */
-    benchmark_or_agentic_index?: number | null;
+    benchmark_coding?: number | null;
     /**
      * Is Open Weights
      */
@@ -205,7 +207,7 @@ export type ExportedCacheFile = {
  *
  * OpenAPI `InputModality`.
  */
-export type InputModality = 'text' | 'image' | 'file' | 'audio' | 'video';
+export type InputModality = "text" | "image" | "file" | "audio" | "video";
 
 /**
  * ModelProviderEndpoint
@@ -300,13 +302,21 @@ export type ModelProviderEndpoint = {
  *
  * OpenAPI `OutputModality`.
  */
-export type OutputModality = 'text' | 'image' | 'embeddings' | 'audio' | 'video' | 'rerank' | 'speech' | 'transcription';
+export type OutputModality =
+    | "text"
+    | "image"
+    | "embeddings"
+    | "audio"
+    | "video"
+    | "rerank"
+    | "speech"
+    | "transcription";
 
 export type HealthCheckHealthGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/health';
+    url: "/health";
 };
 
 export type HealthCheckHealthGetResponses = {
@@ -320,7 +330,7 @@ export type GetMetaMetaGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/meta';
+    url: "/meta";
 };
 
 export type GetMetaMetaGetResponses = {
@@ -330,13 +340,14 @@ export type GetMetaMetaGetResponses = {
     200: AppMeta;
 };
 
-export type GetMetaMetaGetResponse = GetMetaMetaGetResponses[keyof GetMetaMetaGetResponses];
+export type GetMetaMetaGetResponse =
+    GetMetaMetaGetResponses[keyof GetMetaMetaGetResponses];
 
 export type GetModelsModelsGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/models';
+    url: "/models";
 };
 
 export type GetModelsModelsGetResponses = {
@@ -348,13 +359,14 @@ export type GetModelsModelsGetResponses = {
     200: Array<CombinedModel>;
 };
 
-export type GetModelsModelsGetResponse = GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];
+export type GetModelsModelsGetResponse =
+    GetModelsModelsGetResponses[keyof GetModelsModelsGetResponses];
 
 export type ExportExportGetData = {
     body?: never;
     path?: never;
     query?: never;
-    url: '/export';
+    url: "/export";
 };
 
 export type ExportExportGetResponses = {
@@ -364,4 +376,5 @@ export type ExportExportGetResponses = {
     200: ExportResponse;
 };
 
-export type ExportExportGetResponse = ExportExportGetResponses[keyof ExportExportGetResponses];
+export type ExportExportGetResponse =
+    ExportExportGetResponses[keyof ExportExportGetResponses];

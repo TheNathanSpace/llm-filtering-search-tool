@@ -84,11 +84,20 @@ function refreshTooltip(
     return lines.join("\n");
 }
 
-function unknownAttributeTooltip(attributes: string[]): string {
-    return [
-        "OpenRouter returned attributes this app does not model. They were ignored.",
+function refreshWarningTooltip(
+    attributes: string[],
+    codingBenchmarkError: string | null,
+): string {
+    const lines = [
+        codingBenchmarkError ?? undefined,
+        attributes.length > 0
+            ? "OpenRouter returned attributes this app does not model. They were ignored."
+            : undefined,
         ...attributes,
-    ].join("\n");
+    ];
+    return lines
+        .filter((line): line is string => line !== undefined)
+        .join("\n");
 }
 
 function isRefreshOlderThanTwoDays(iso: string | null, nowMs: number): boolean {
@@ -106,6 +115,7 @@ export default function MetadataNote({
     lastEnrichmentAt,
     enrichmentInProgress,
     unknownAttributes,
+    codingBenchmarkError,
 }: {
     loaded: boolean;
     costUsd: number;
@@ -113,6 +123,7 @@ export default function MetadataNote({
     lastEnrichmentAt: string | null;
     enrichmentInProgress: boolean;
     unknownAttributes: string[];
+    codingBenchmarkError: string | null;
 }) {
     const refreshStale =
         loaded && isRefreshOlderThanTwoDays(lastRefreshAt, Date.now());
@@ -148,30 +159,34 @@ export default function MetadataNote({
                 <span className="font-mono" title={refreshUtcTitle}>
                     {refreshDisplay}.
                 </span>
-                {loaded && unknownAttributes.length > 0 && (
-                    <Tooltip
-                        title={unknownAttributeTooltip(unknownAttributes)}
-                        enterDelay={200}
-                        slotProps={{
-                            tooltip: {
-                                sx: {
-                                    maxWidth: 360,
-                                    whiteSpace: "pre-line",
+                {loaded &&
+                    (unknownAttributes.length > 0 || codingBenchmarkError) && (
+                        <Tooltip
+                            title={refreshWarningTooltip(
+                                unknownAttributes,
+                                codingBenchmarkError,
+                            )}
+                            enterDelay={200}
+                            slotProps={{
+                                tooltip: {
+                                    sx: {
+                                        maxWidth: 360,
+                                        whiteSpace: "pre-line",
+                                    },
                                 },
-                            },
-                        }}
-                    >
-                        <IconButton
-                            size="small"
-                            aria-label="Unrecognized OpenRouter attributes"
-                            sx={{ p: 0.25, alignSelf: "center" }}
+                            }}
                         >
-                            <WarningAmberIcon
-                                sx={{ fontSize: 16, color: "#e67e22" }}
-                            />
-                        </IconButton>
-                    </Tooltip>
-                )}
+                            <IconButton
+                                size="small"
+                                aria-label="Refresh warning"
+                                sx={{ p: 0.25, alignSelf: "center" }}
+                            >
+                                <WarningAmberIcon
+                                    sx={{ fontSize: 16, color: "#e67e22" }}
+                                />
+                            </IconButton>
+                        </Tooltip>
+                    )}
             </span>
             <span style={metaPairStyle}>
                 <span className="font-casual" style={{ fontSize: "1.1rem" }}>

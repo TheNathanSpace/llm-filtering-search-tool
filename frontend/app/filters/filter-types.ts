@@ -10,7 +10,6 @@ export type ModelFiltersState = {
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
-    agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
     throughput: NumberRange | undefined;
@@ -33,7 +32,6 @@ export type UserFilterChoices = {
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
-    agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
     throughput: NumberRange | undefined;
@@ -51,7 +49,6 @@ export type FilterBounds = {
     creators: string[];
     intelligenceIndex: NumberRange | undefined;
     codingIndex: NumberRange | undefined;
-    agenticIndex: NumberRange | undefined;
     pricingInput: NumberRange | undefined;
     pricingOutput: NumberRange | undefined;
     throughput: NumberRange | undefined;
@@ -72,7 +69,6 @@ export function createInitialUserChoices(): UserFilterChoices {
         creators: [],
         intelligenceIndex: undefined,
         codingIndex: undefined,
-        agenticIndex: undefined,
         pricingInput: undefined,
         pricingOutput: undefined,
         throughput: undefined,
@@ -112,7 +108,6 @@ export function resolveFilters(
             bounds.intelligenceIndex,
         ),
         codingIndex: resolveRange(choices.codingIndex, bounds.codingIndex),
-        agenticIndex: resolveRange(choices.agenticIndex, bounds.agenticIndex),
         pricingInput: resolveRange(choices.pricingInput, bounds.pricingInput),
         pricingOutput: resolveRange(
             choices.pricingOutput,

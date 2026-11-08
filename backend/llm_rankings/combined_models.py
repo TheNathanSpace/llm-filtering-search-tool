@@ -34,10 +34,10 @@ class CombinedModel(CombinedModelBase):
     throughput: float | None = None  # output tokens/sec
     latency_ms: float | None = None  # time to first token
 
-    # OpenRouter-embedded Artificial Analysis indices (`ORArtificialAnalysisBenchmarks`).
+    # OpenRouter-embedded Artificial Analysis intelligence index.
     benchmark_or_intelligence_index: float | None = None
-    benchmark_or_coding_index: float | None = None
-    benchmark_or_agentic_index: float | None = None
+    # 60% FrontierCode 2.0 + 40% Terminal-Bench 4.0, one decimal, for the matching effort.
+    benchmark_coding: float | None = None
 
     # models.dev + Hugging Face Hub (+ opt-in OpenRouter batch web gap-fill for open weights and size).
     is_open_weights: bool | None = None

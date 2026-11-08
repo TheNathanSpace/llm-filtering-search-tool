@@ -13,7 +13,7 @@ Record a choice in this table when it is made.
 | ID | Decision | Options / notes |
 | --- | --- | --- |
 | D-01 | Primary data source | **Decided: OpenRouter-only.** Artificial Analysis fetch/match/`AA_API_KEY`/`benchmark_aa_*` removed. |
-| D-02 | Benchmark set for “intelligence” UX | **Decided:** use OpenRouter-embedded AA indices: `benchmark_or_intelligence_index`, `benchmark_or_coding_index`, `benchmark_or_agentic_index` (general / coding / agentic). No dedicated “reasoning” index on OR yet — treat intelligence as the general proxy unless a later source appears. |
+| D-02 | Benchmark set for “intelligence” UX | **Decided:** Intelligence is the OpenRouter Artificial Analysis index (`benchmark_or_intelligence_index`). Coding (`benchmark_coding`) is 60% FrontierCode 2.0 and 40% Terminal-Bench 4.0 from the effort whose intelligence index matches that catalog value. Agentic is not a column. |
 | D-03 | OpenRouter `GET /benchmarks` | **Decided: do not fetch.** Unused raw dump removed. Intelligence scores come from embedded `OpenRouterModel.benchmarks.artificial_analysis` only. |
 
 ## Active backlog

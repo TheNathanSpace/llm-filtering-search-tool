@@ -323,25 +323,6 @@ export default function ModelFilters(
                     }}
                 />
             )}
-            {bounds.agenticIndex && (
-                <NumberRangeFilter
-                    key={`agentic-${rangeRevision}`}
-                    name="Agentic"
-                    minValue={bounds.agenticIndex[0]}
-                    maxValue={bounds.agenticIndex[1]}
-                    {...rangeDefaults(
-                        filters.agenticIndex,
-                        bounds.agenticIndex,
-                    )}
-                    step={0.1}
-                    onChange={(agenticIndex) => {
-                        setFilters((previous) => ({
-                            ...previous,
-                            agenticIndex,
-                        }));
-                    }}
-                />
-            )}
             {bounds.contextLength && (
                 <NumberRangeFilter
                     key={`context-${rangeRevision}`}

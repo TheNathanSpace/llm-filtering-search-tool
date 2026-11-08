@@ -61,10 +61,7 @@ export function getFilterBounds(
         models.map((model) => model.benchmark_or_intelligence_index),
     );
     const [minCoding, maxCoding] = getMinMax(
-        models.map((model) => model.benchmark_or_coding_index),
-    );
-    const [minAgentic, maxAgentic] = getMinMax(
-        models.map((model) => model.benchmark_or_agentic_index),
+        models.map((model) => model.benchmark_coding),
     );
     const [minParametersB, maxParametersB] = getMinMax(
         models.map((model) => model.parameters_b),
@@ -98,7 +95,6 @@ export function getFilterBounds(
         creators: getUniqueCreators(models),
         intelligenceIndex: toRange(minIntelligence, maxIntelligence),
         codingIndex: toRange(minCoding, maxCoding),
-        agenticIndex: toRange(minAgentic, maxAgentic),
         pricingInput: toRange(minPricingInput, maxPricingInput),
         pricingOutput: toRange(minPricingOutput, maxPricingOutput),
         throughput: toRange(minThroughput, maxThroughput),

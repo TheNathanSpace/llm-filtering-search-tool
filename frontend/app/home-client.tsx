@@ -37,6 +37,9 @@ export default function Home({
     const [enrichmentInProgress, setEnrichmentInProgress] = useState(false);
     const [exportBaseUrl, setExportBaseUrl] = useState<string | undefined>();
     const [unknownAttributes, setUnknownAttributes] = useState<string[]>([]);
+    const [codingBenchmarkError, setCodingBenchmarkError] = useState<
+        string | null
+    >(null);
     const pollTimerReference = useRef<
         ReturnType<typeof setTimeout> | undefined
     >(undefined);
@@ -93,6 +96,9 @@ export default function Home({
                     setExportBaseUrl(meta.export_base_url || undefined);
                     setUnknownAttributes(
                         meta.openrouter_unknown_attributes ?? [],
+                    );
+                    setCodingBenchmarkError(
+                        meta.coding_benchmark_error ?? null,
                     );
                     if (
                         (refreshChanged || enrichmentChanged) &&
@@ -173,6 +179,7 @@ export default function Home({
                     lastEnrichmentAt={lastEnrichmentAt}
                     enrichmentInProgress={enrichmentInProgress}
                     unknownAttributes={unknownAttributes}
+                    codingBenchmarkError={codingBenchmarkError}
                 />
             </div>
         </div>

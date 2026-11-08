@@ -3,16 +3,17 @@ import json
 import logging
 import os
 from pathlib import Path
+from typing import get_origin
 
 from pydantic_sqlite import DataBase
 from pydantic_sqlite._core import TableBaseModel
 
 from llm_rankings.clean_data import get_and_clean_data
-from llm_rankings.web_enrichment import apply_cached_enrichment
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.or_models import is_preset_model_id
 from llm_rankings.provider_endpoints import ModelProviderEndpoint
 from llm_rankings.util import get_data_dir
+from llm_rankings.web_enrichment import apply_cached_enrichment
 
 logger = logging.getLogger(__name__)
 
@@ -34,14 +35,9 @@ def initialize_database(path: Path | None = None) -> DataBase:
 
     if already_exists:
         # Annoying workarounds for https://github.com/Phil997/pydantic-sqlite/issues/36
-        table_names = [
-            n[0]
-            for n in db._db.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()
-        ]
+        table_names = [n[0] for n in db._db.execute("SELECT name FROM sqlite_master WHERE type='table';").fetchall()]
         logger.debug(f"Database tables: {table_names}")
-        base_models = db._db.execute(
-            'SELECT "table", modulename, pks FROM __basemodels__;'
-        ).fetchall()
+        base_models = db._db.execute('SELECT "table", modulename, pks FROM __basemodels__;').fetchall()
         for base_model in base_models:
             table: str = base_model[0]
             modulename: str = base_model[1]
@@ -53,9 +49,7 @@ def initialize_database(path: Path | None = None) -> DataBase:
 
             db._primary_keys[table] = pks[0]
 
-            tablebasemodel = TableBaseModel(
-                table=table, basemodel_cls=getattr(my_module, classname), pks=pks
-            )
+            tablebasemodel = TableBaseModel(table=table, basemodel_cls=getattr(my_module, classname), pks=pks)
             db._basemodels[table] = tablebasemodel
 
     return db
@@ -123,6 +117,29 @@ def populate_with_models() -> None:
     replace_database(models, provider_endpoints)
 
 
+def combined_model_from_row(row: dict) -> CombinedModel:
+    """Build a model from a SQLite row, ignoring columns this build dropped."""
+    payload: dict[str, object] = {}
+    for name, info in CombinedModel.model_fields.items():
+        if name not in row:
+            continue
+        value = row[name]
+        if get_origin(info.annotation) is list and isinstance(value, str):
+            value = json.loads(value)
+        payload[name] = value
+    return CombinedModel.model_validate(payload)
+
+
+def _load_models(db: DataBase) -> list[CombinedModel]:
+    if "models" not in db._db.table_names():
+        return []
+    return [combined_model_from_row(row) for row in db._db["models"].rows]
+
+
+def _model_columns(db: DataBase) -> set[str]:
+    return {row[1] for row in db._db.execute("PRAGMA table_info(models)").fetchall()}
+
+
 def update_enrichment_fields(models: list[CombinedModel]) -> None:
     """
     Fill null ``is_open_weights`` / ``parameters_b`` on the live database.
@@ -137,7 +154,9 @@ def update_enrichment_fields(models: list[CombinedModel]) -> None:
     db = initialize_database(path)
     updated = 0
     try:
-        for row in list(db("models")):
+        columns = _model_columns(db)
+        modern = "benchmark_coding" in columns
+        for row in _load_models(db):
             source = incoming.get(row.id)
             if source is None:
                 continue
@@ -145,20 +164,33 @@ def update_enrichment_fields(models: list[CombinedModel]) -> None:
             if row.is_open_weights is None and source.is_open_weights is not None:
                 row.is_open_weights = source.is_open_weights
                 changed = True
-            if (
-                row.parameters_b is None
-                and row.is_open_weights is True
-                and source.parameters_b is not None
-            ):
+            if row.parameters_b is None and row.is_open_weights is True and source.parameters_b is not None:
                 row.parameters_b = source.parameters_b
                 changed = True
-            if changed:
+            if not changed:
+                continue
+            if modern:
                 row.add_to_database(db)
-                updated += 1
+            else:
+                _update_enrichment_columns(db, row)
+            updated += 1
     finally:
         _close_database(db)
     if updated:
         logger.info("Patched enrichment fields on %d live model row(s)", updated)
+
+
+def _update_enrichment_columns(db: DataBase, row: CombinedModel) -> None:
+    """Patch open-weights and size on a snapshot that predates ``benchmark_coding``."""
+    db._db.execute(
+        "UPDATE models SET is_open_weights = ?, parameters_b = ? WHERE id = ?",
+        [
+            None if row.is_open_weights is None else int(row.is_open_weights),
+            row.parameters_b,
+            row.id,
+        ],
+    )
+    db._db.conn.commit()
 
 
 def get_all_models() -> list[CombinedModel]:
@@ -168,11 +200,7 @@ def get_all_models() -> list[CombinedModel]:
         return []
     db: DataBase = initialize_database(path)
     try:
-        return [
-            model
-            for model in db("models")
-            if not is_preset_model_id(model.id)
-        ]
+        return [model for model in _load_models(db) if not is_preset_model_id(model.id)]
     finally:
         _close_database(db)
 

@@ -53,7 +53,6 @@ function toUserChoices(
             bounds.intelligenceIndex,
         ),
         codingIndex: choiceRange(filters.codingIndex, bounds.codingIndex),
-        agenticIndex: choiceRange(filters.agenticIndex, bounds.agenticIndex),
         pricingInput: choiceRange(filters.pricingInput, bounds.pricingInput),
         pricingOutput: choiceRange(filters.pricingOutput, bounds.pricingOutput),
         throughput: choiceRange(filters.throughput, bounds.throughput),

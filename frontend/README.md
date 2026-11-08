@@ -63,11 +63,11 @@ The address bar stores filter choices that differ from the defaults, the token-c
 | `pin` | One parameter per pinned OpenRouter id |
 | `name` | Name and slug search text |
 | `creator` | One parameter per selected creator |
-| `size`, `intelligence`, `coding`, `agentic`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency` | `min,max` |
+| `size`, `intelligence`, `coding`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency` | `min,max` |
 | `created`, `cutoff` | `startTimestamp,endTimestamp` (milliseconds) |
 | `tokens` | Token-count text |
 | `input`, `output` | One parameter per modality |
-| `sort` | `alias:asc` or `alias:desc`, comma-separated for several columns. Aliases: `name`, `openWeights`, `size`, `intelligence`, `coding`, `agentic`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency`, `created`, `cutoff`, `creator` |
+| `sort` | `alias:asc` or `alias:desc`, comma-separated for several columns. Aliases: `name`, `openWeights`, `size`, `intelligence`, `coding`, `context`, `cost`, `inputCost`, `outputCost`, `throughput`, `latency`, `created`, `cutoff`, `creator` |
 
 Example: `/?name=gpt+5&openWeights=1&intelligence=40,80&creator=OpenAI&sort=throughput:desc`
 
@@ -85,7 +85,7 @@ Reuse `MultiSelectFilter`, `DateRangeFilter`, `NumberRangeFilter`, `TextFilter`,
 
 ## Footer
 
-Last refresh and enrichment cost sit at the bottom left ([UI-10](../docs/requirements.md#ui-10)). A warning icon beside the refresh time lists OpenRouter attributes the last live fetch ignored ([UI-15](../docs/requirements.md#ui-15)).
+Last refresh and enrichment cost sit at the bottom left ([UI-10](../docs/requirements.md#ui-10)). A warning icon beside the refresh time lists OpenRouter attributes the last live fetch ignored, and a coding-benchmark fetch error when one is stored ([UI-15](../docs/requirements.md#ui-15)).
 
 ## Running
 

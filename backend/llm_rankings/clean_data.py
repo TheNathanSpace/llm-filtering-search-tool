@@ -3,6 +3,7 @@ import logging
 import time
 from contextlib import contextmanager
 
+from llm_rankings.coding_benchmarks import apply_coding_benchmarks
 from llm_rankings.combined_models import CombinedModel
 from llm_rankings.hf_enrichment import parameters_b_for_repo_ids
 from llm_rankings.models_dev import open_weights_by_openrouter_id
@@ -42,8 +43,13 @@ def _refresh_stage(name: str):
     )
 
 
+_OMITTED_OR_BENCHMARKS = frozenset({"coding_index", "agentic_index"})
+
+
 def _prefixed_scores(prefix: str, values: dict[str, object]) -> dict[str, float]:
-    return {f"{prefix}{key}": round(float(value), 4) for key, value in values.items()}
+    return {
+        f"{prefix}{key}": round(float(value), 4) for key, value in values.items() if key not in _OMITTED_OR_BENCHMARKS
+    }
 
 
 def openrouter_to_combined(
@@ -147,15 +153,10 @@ def combine_openrouter_models(or_models: OpenRouterAPIResponse) -> list[Combined
         )
     with _refresh_stage("models.dev open weights"):
         open_weights = open_weights_by_openrouter_id()
-    hf_ids = {
-        (model.hugging_face_id or "").strip() for model in kept if (model.hugging_face_id or "").strip()
-    }
+    hf_ids = {(model.hugging_face_id or "").strip() for model in kept if (model.hugging_face_id or "").strip()}
     with _refresh_stage(f"Hugging Face parameter sizes ({len(hf_ids)} repos)"):
         parameters_b = parameters_b_for_repo_ids(hf_ids)
-    combined = [
-        openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b)
-        for model in kept
-    ]
+    combined = [openrouter_to_combined(model, open_weights=open_weights, parameters_b=parameters_b) for model in kept]
     with _refresh_stage("web enrichment cache"):
         apply_cached_enrichment(combined)
     return combined
@@ -202,6 +203,8 @@ def get_and_clean_data() -> tuple[list[CombinedModel], list[ModelProviderEndpoin
     with _refresh_stage("provider choice"):
         provider_rows = combine_provider_endpoints(endpoint_lists, kept_model_ids=kept_ids)
         apply_provider_choice(combined_models, provider_rows)
+        with _refresh_stage("coding benchmarks"):
+            apply_coding_benchmarks(combined_models, kept_or_models)
         write_combined_models(combined_models)
         write_provider_endpoints(provider_rows)
     logger.info(

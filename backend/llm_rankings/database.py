@@ -155,7 +155,11 @@ def update_enrichment_fields(models: list[CombinedModel]) -> None:
     updated = 0
     try:
         columns = _model_columns(db)
-        modern = "benchmark_coding" in columns
+        modern = {
+            "benchmark_coding",
+            "benchmark_coding_frontier",
+            "benchmark_coding_terminal",
+        } <= columns
         for row in _load_models(db):
             source = incoming.get(row.id)
             if source is None:

@@ -81,7 +81,12 @@ class CodingScoreTests(unittest.TestCase):
         ]
         self.assertEqual(matching_effort(tied, 59.1).aa_id, "stronger-bench")
         self.assertIsNone(matching_effort(rows, None))
-        self.assertEqual(coding_for_slug("slug", 59.1, {"slug": rows}, {"higher-tied": 0.464}), 43.8)
+        score = coding_for_slug("slug", 59.1, {"slug": rows}, {"higher-tied": 0.464})
+        self.assertIsNotNone(score)
+        assert score is not None
+        self.assertEqual(score.blended, 43.8)
+        self.assertEqual(score.frontier, 46.4)
+        self.assertEqual(score.terminal, 40.0)
 
     def test_fetch_decision(self):
         live = [LiveCodingRow("a", 59.1, 51.7)]
@@ -104,6 +109,15 @@ class CodingScoreTests(unittest.TestCase):
             )
         )
         self.assertTrue(fetch_needed([], [_model("a", 59.1)], coding_column_present=False, retry_empty_failure=False))
+        self.assertTrue(
+            fetch_needed(
+                live,
+                same,
+                coding_column_present=True,
+                retry_empty_failure=False,
+                components_incomplete=True,
+            )
+        )
         self.assertTrue(
             fetch_needed(
                 [LiveCodingRow("a", 59.1, None)],
@@ -182,26 +196,46 @@ class ApplyCodingTests(unittest.TestCase):
 
     def test_skip_copies_stored_score(self):
         self._write_live(
-            "id TEXT, benchmark_or_intelligence_index REAL, benchmark_coding REAL",
-            ("a", 59.1, 51.7),
+            "id TEXT, benchmark_or_intelligence_index REAL, benchmark_coding REAL, "
+            "benchmark_coding_frontier REAL, benchmark_coding_terminal REAL",
+            ("a", 59.1, 51.7, 46.4, 59.6),
         )
         models = [_model("a", 40.0)]
         with patch("llm_rankings.coding_benchmarks._get_json") as get_json:
             apply_coding_benchmarks(models, [])
         get_json.assert_not_called()
         self.assertEqual(models[0].benchmark_coding, 51.7)
+        self.assertEqual(models[0].benchmark_coding_frontier, 46.4)
+        self.assertEqual(models[0].benchmark_coding_terminal, 59.6)
         self.assertIsNone(read_coding_benchmark_error())
 
-    def test_failure_keeps_stored_score_and_records_error(self):
+    def test_missing_components_fetches(self):
         self._write_live(
             "id TEXT, benchmark_or_intelligence_index REAL, benchmark_coding REAL",
             ("a", 59.1, 51.7),
+        )
+        models = [_model("a", 59.1)]
+        with patch("llm_rankings.coding_benchmarks._get_json", side_effect=ValueError("down")) as get_json:
+            apply_coding_benchmarks(models, [])
+        get_json.assert_called()
+        self.assertEqual(models[0].benchmark_coding, 51.7)
+        self.assertIsNone(models[0].benchmark_coding_frontier)
+        self.assertIsNone(models[0].benchmark_coding_terminal)
+
+    def test_failure_keeps_stored_score_and_records_error(self):
+        self._write_live(
+            "id TEXT, benchmark_or_intelligence_index REAL, benchmark_coding REAL, "
+            "benchmark_coding_frontier REAL, benchmark_coding_terminal REAL",
+            ("a", 59.1, 51.7, 46.4, 59.6),
         )
         models = [_model("a", 59.1), _model("b", 10)]
         with patch("llm_rankings.coding_benchmarks._get_json", side_effect=ValueError("down")):
             apply_coding_benchmarks(models, [])
         self.assertEqual(models[0].benchmark_coding, 51.7)
+        self.assertEqual(models[0].benchmark_coding_frontier, 46.4)
+        self.assertEqual(models[0].benchmark_coding_terminal, 59.6)
         self.assertIsNone(models[1].benchmark_coding)
+        self.assertIsNone(models[1].benchmark_coding_frontier)
         self.assertEqual(read_coding_benchmark_error(), "Coding benchmark fetch failed.")
 
     def test_success_replaces_scores_and_clears_error(self):
@@ -236,6 +270,8 @@ class ApplyCodingTests(unittest.TestCase):
         ):
             apply_coding_benchmarks(models, [or_model])
         self.assertEqual(models[0].benchmark_coding, 51.7)
+        self.assertEqual(models[0].benchmark_coding_frontier, 46.4)
+        self.assertEqual(models[0].benchmark_coding_terminal, 59.6)
         self.assertIsNone(read_coding_benchmark_error())
 
 

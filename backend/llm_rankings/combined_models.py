@@ -38,6 +38,9 @@ class CombinedModel(CombinedModelBase):
     benchmark_or_intelligence_index: float | None = None
     # 60% FrontierCode 2.0 + 40% Terminal-Bench 4.0, one decimal, for the matching effort.
     benchmark_coding: float | None = None
+    # Those same one-decimal inputs, in percent.
+    benchmark_coding_frontier: float | None = None
+    benchmark_coding_terminal: float | None = None
 
     # models.dev + Hugging Face Hub (+ opt-in OpenRouter batch web gap-fill for open weights and size).
     is_open_weights: bool | None = None

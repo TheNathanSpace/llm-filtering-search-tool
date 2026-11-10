@@ -56,12 +56,22 @@ const theme = createTheme({
         },
         MuiTooltip: {
             styleOverrides: {
-                tooltip: ({ theme }) => ({
-                    backgroundColor: theme.palette.grey[700],
-                }),
-                arrow: ({ theme }) => ({
-                    color: theme.palette.grey[700],
-                }),
+                tooltip: {
+                    backgroundColor: "#fff",
+                    color: "#000",
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "1rem",
+                    fontWeight: 400,
+                    lineHeight: 1.35,
+                    border: "1px solid #917aff",
+                    borderRadius: 4,
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.28)",
+                    padding: "6px 10px",
+                    maxWidth: 480,
+                },
+                arrow: {
+                    color: "#fff",
+                },
             },
         },
         MuiDataGrid: {

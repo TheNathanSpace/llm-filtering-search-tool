@@ -223,6 +223,7 @@ export default function ModelFilters(
                 label="Search names or slugs"
                 value={filters.nameQuery}
                 resizable
+                autoFocus={resetKey === 0}
                 help={
                     "Matches display names and OpenRouter slugs (e.g. gpt-5-nano).\n" +
                     "Punctuation is ignored, so gpt 5 matches GPT-5.\n" +

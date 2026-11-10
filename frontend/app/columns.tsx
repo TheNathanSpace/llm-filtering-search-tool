@@ -13,7 +13,7 @@ import {
 } from "@/app/utility";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
-import { IconButton, Link } from "@mui/material";
+import { IconButton, Link, Tooltip } from "@mui/material";
 import { GridColDef, GridRenderCellParams } from "@mui/x-data-grid";
 
 export type PinColumnControls = {
@@ -87,6 +87,24 @@ function renderExactTooltip(
 const renderFullValueTooltip = renderExactTooltip(formatReadableNumber);
 const renderParameterCountTooltip = renderExactTooltip(formatParameterCount);
 
+function formatIndexPart(value: number): string {
+    const formatted = formatNumber(value);
+    return formatted == undefined ? "" : String(formatted);
+}
+
+/** `FrontierCode 2.0 / Terminal-Bench 4.0: 46.4 / 59.6` when both inputs are stored. */
+function codingBreakdown(row: CombinedModel): string | undefined {
+    const frontier = row.benchmark_coding_frontier;
+    const terminal = row.benchmark_coding_terminal;
+    if (typeof frontier !== "number" || typeof terminal !== "number") {
+        return undefined;
+    }
+    return (
+        "FrontierCode 2.0 / Terminal-Bench 4.0: " +
+        `${formatIndexPart(frontier)} / ${formatIndexPart(terminal)}`
+    );
+}
+
 export const columns: GridColDef[] = [
     {
         field: "name",
@@ -136,6 +154,34 @@ export const columns: GridColDef[] = [
         type: "number",
         width: 100,
         valueFormatter: formatNumber,
+        renderCell: (parameters) => {
+            const title = codingBreakdown(parameters.row);
+            if (!title) {
+                return parameters.formattedValue;
+            }
+            return (
+                <Tooltip
+                    title={title}
+                    slotProps={{
+                        tooltip: {
+                            sx: { maxWidth: "none", whiteSpace: "nowrap" },
+                        },
+                    }}
+                >
+                    <span
+                        style={{
+                            display: "block",
+                            width: "100%",
+                            height: "100%",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                        }}
+                    >
+                        {parameters.formattedValue}
+                    </span>
+                </Tooltip>
+            );
+        },
     },
     {
         field: "context_length",

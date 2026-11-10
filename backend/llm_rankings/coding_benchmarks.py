@@ -1,18 +1,20 @@
 """Coding score: 60% FrontierCode 2.0 and 40% Terminal-Bench 4.0.
 
-Both upstream scores are fractions. The stored value is the blend in percent,
+Both upstream scores are fractions. The stored blend is that mix in percent,
 rounded to one decimal, for the effort whose intelligence index matches the
-catalog value at one decimal. A tie keeps the higher intelligence, then the
-higher Terminal-Bench score. The score is set only when both inputs exist.
+catalog value at one decimal. Those same rounded inputs are stored as
+``benchmark_coding_frontier`` and ``benchmark_coding_terminal``. A tie keeps
+the higher intelligence, then the higher Terminal-Bench score. The score is
+set only when both inputs exist.
 
 Fetches run when the live snapshot has no ``benchmark_coding`` column, the
 database is empty, a kept model id is new, a live intelligence value is null
-and the incoming row has one, or a previous fetch failed and every stored
-coding score is null. An intelligence change on an existing value does not
-fetch. A skipped run copies stored scores and leaves the error file alone.
-A failed fetch keeps stored scores and records a short error. A successful
-fetch replaces every score, including null where a model does not match, and
-clears the error.
+and the incoming row has one, a stored coding score is missing either input,
+or a previous fetch failed and every stored coding score is null. An
+intelligence change on an existing value does not fetch. A skipped run copies
+stored scores and leaves the error file alone. A failed fetch keeps stored
+scores and records a short error. A successful fetch replaces every score,
+including null where a model does not match, and clears the error.
 """
 
 from __future__ import annotations
@@ -51,6 +53,15 @@ class LiveCodingRow:
     id: str
     intelligence: float | None
     coding: float | None
+    frontier: float | None = None
+    terminal: float | None = None
+
+
+@dataclass(frozen=True)
+class CodingScore:
+    frontier: float
+    terminal: float
+    blended: float
 
 
 @dataclass(frozen=True)
@@ -64,12 +75,17 @@ def round_tenth(value: float) -> Decimal:
     return Decimal(str(value)).quantize(_TENTH, rounding=ROUND_HALF_UP)
 
 
-def coding_percent(frontier_fraction: float, terminal_fraction: float) -> float:
-    """Blend the two fraction scores into a one-decimal percentage."""
+def coding_score(frontier_fraction: float, terminal_fraction: float) -> CodingScore:
+    """Round both fraction scores to one-decimal percents and blend them."""
     frontier = round_tenth(frontier_fraction * 100)
     terminal = round_tenth(terminal_fraction * 100)
     blended = (Decimal("0.6") * frontier + Decimal("0.4") * terminal).quantize(_TENTH, rounding=ROUND_HALF_UP)
-    return float(blended)
+    return CodingScore(float(frontier), float(terminal), float(blended))
+
+
+def coding_percent(frontier_fraction: float, terminal_fraction: float) -> float:
+    """Blend the two fraction scores into a one-decimal percentage."""
+    return coding_score(frontier_fraction, terminal_fraction).blended
 
 
 def matching_effort(rows: list[EffortScore], intelligence: float | None) -> EffortScore | None:
@@ -98,7 +114,7 @@ def coding_for_slug(
     intelligence: float | None,
     efforts_by_slug: dict[str, list[EffortScore]],
     frontier_by_id: dict[str, float],
-) -> float | None:
+) -> CodingScore | None:
     if not slug:
         return None
     chosen = matching_effort(efforts_by_slug.get(slug, []), intelligence)
@@ -107,7 +123,7 @@ def coding_for_slug(
     frontier = frontier_by_id.get(chosen.aa_id)
     if frontier is None:
         return None
-    return coding_percent(frontier, chosen.terminal)
+    return coding_score(frontier, chosen.terminal)
 
 
 def fetch_needed(
@@ -116,8 +132,9 @@ def fetch_needed(
     *,
     coding_column_present: bool,
     retry_empty_failure: bool,
+    components_incomplete: bool = False,
 ) -> bool:
-    if not coding_column_present or not live or retry_empty_failure:
+    if not coding_column_present or not live or retry_empty_failure or components_incomplete:
         return True
     by_id = {row.id: row for row in live}
     for model in incoming:
@@ -130,9 +147,12 @@ def fetch_needed(
 
 
 def copy_stored_coding(models: list[CombinedModel], live: list[LiveCodingRow]) -> None:
-    by_id = {row.id: row.coding for row in live}
+    by_id = {row.id: row for row in live}
     for model in models:
-        model.benchmark_coding = by_id.get(model.id)
+        stored = by_id.get(model.id)
+        model.benchmark_coding = None if stored is None else stored.coding
+        model.benchmark_coding_frontier = None if stored is None else stored.frontier
+        model.benchmark_coding_terminal = None if stored is None else stored.terminal
 
 
 def terminal_rows(payload: dict) -> dict[str, list[EffortScore]]:
@@ -229,11 +249,13 @@ def apply_coding_benchmarks(models: list[CombinedModel], or_models: list[OpenRou
     slug_by_id = {model.id: model.canonical_slug for model in or_models}
     column_present, live = _read_live_coding_rows()
     retry_empty_failure = bool(read_coding_benchmark_error()) and all(row.coding is None for row in live)
+    incomplete = any(row.coding is not None and (row.frontier is None or row.terminal is None) for row in live)
     if not fetch_needed(
         live,
         models,
         coding_column_present=column_present,
         retry_empty_failure=retry_empty_failure,
+        components_incomplete=incomplete,
     ):
         copy_stored_coding(models, live)
         logger.info("Coding benchmark fetch skipped; kept %d stored score(s)", len(live))
@@ -252,7 +274,9 @@ def apply_coding_benchmarks(models: list[CombinedModel], or_models: list[OpenRou
                 efforts,
                 frontier,
             )
-            model.benchmark_coding = score
+            model.benchmark_coding = None if score is None else score.blended
+            model.benchmark_coding_frontier = None if score is None else score.frontier
+            model.benchmark_coding_terminal = None if score is None else score.terminal
             if score is not None:
                 scored += 1
         write_coding_benchmark_error(None)
@@ -287,10 +311,12 @@ def _read_live_coding_rows() -> tuple[bool, list[LiveCodingRow]]:
         columns = {row[1] for row in connection.execute("PRAGMA table_info(models)").fetchall()}
         present = "benchmark_coding" in columns
         coding_sql = "benchmark_coding" if present else "NULL"
-        query = f"SELECT id, benchmark_or_intelligence_index, {coding_sql} FROM models"
+        frontier_sql = "benchmark_coding_frontier" if "benchmark_coding_frontier" in columns else "NULL"
+        terminal_sql = "benchmark_coding_terminal" if "benchmark_coding_terminal" in columns else "NULL"
+        query = f"SELECT id, benchmark_or_intelligence_index, {coding_sql}, {frontier_sql}, {terminal_sql} FROM models"
         rows = [
-            LiveCodingRow(row_id, intelligence, coding)
-            for row_id, intelligence, coding in connection.execute(query)
+            LiveCodingRow(row_id, intelligence, coding, frontier, terminal)
+            for row_id, intelligence, coding, frontier, terminal in connection.execute(query)
             if isinstance(row_id, str)
         ]
         return present, rows

@@ -137,6 +137,14 @@ export type CombinedModel = {
      */
     benchmark_coding?: number | null;
     /**
+     * Benchmark Coding Frontier
+     */
+    benchmark_coding_frontier?: number | null;
+    /**
+     * Benchmark Coding Terminal
+     */
+    benchmark_coding_terminal?: number | null;
+    /**
      * Is Open Weights
      */
     is_open_weights?: boolean | null;

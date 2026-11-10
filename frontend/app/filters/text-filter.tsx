@@ -11,6 +11,8 @@ interface TextFilterProperties {
     help?: ReactNode;
     /** One-line textarea the user can drag taller. */
     resizable?: boolean;
+    /** Focus this field when it mounts. */
+    autoFocus?: boolean;
 }
 
 export default function TextFilter(properties: Readonly<TextFilterProperties>) {
@@ -21,12 +23,14 @@ export default function TextFilter(properties: Readonly<TextFilterProperties>) {
         onChange,
         help,
         resizable = false,
+        autoFocus = false,
     } = properties;
 
     return (
         <FilterOption name={name} help={help}>
             <MuiFontSans style={{ width: "100%" }}>
                 <TextField
+                    autoFocus={autoFocus}
                     label={label}
                     value={value}
                     onChange={(event) => {

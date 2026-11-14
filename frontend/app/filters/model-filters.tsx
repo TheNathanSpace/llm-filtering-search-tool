@@ -19,6 +19,7 @@ import { MuiFontCasual } from "@/app/mui-font";
 import {
     formatContextLength,
     formatExactPrice,
+    formatLatencyMilliseconds,
     formatLatencySeconds,
     formatParameterCount,
     formatParametersB,
@@ -444,7 +445,7 @@ export default function ModelFilters(
                     {...rangeDefaults(filters.latencyMs, bounds.latencyMs)}
                     step={1}
                     formatValue={formatLatencySeconds}
-                    formatTooltip={formatReadableNumber}
+                    formatTooltip={formatLatencyMilliseconds}
                     formatDraft={formatLatencySeconds}
                     parseDraft={parseLatencySeconds}
                     onChange={(latencyMs) => {

@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-13 — Compose can set the container user
-**Latest change:** Compose `user:` is `${COMPOSE_USER:-0:0}` (`uid:gid`). The data directory must be writable by that user. Supervisord starts as that user.
+**Last updated:** 2026-11-13 — Latency tooltip includes ms
+**Latest change:** Latency hover text is the millisecond count with commas and an `ms` suffix (`4,180 ms`), on the table cell and the filter slider.
 
 ## Pickup
 
@@ -30,7 +30,7 @@ Reset all of these dang modifiers is first in the left column. Pin all filtered 
 | Usage cost | yes, when a positive token count is entered (left of input cost; cell is cents; hover is the full fractional dollars) | token-count box, then a cost range (labels are cents; thumb and endpoint hover is the full fractional dollars) | [UI-11](requirements.md#ui-11) |
 | Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |
 | Throughput | yes (chosen provider p50, last 30 minutes) | yes | [QRY-03](requirements.md#qry-03), [UI-06](requirements.md#ui-06) |
-| Latency | yes (chosen provider p50, seconds, last 30 minutes; tooltip is milliseconds) | yes | [UI-06](requirements.md#ui-06) |
+| Latency | yes (chosen provider p50, seconds, last 30 minutes; tooltip is milliseconds, e.g. `4,180 ms`) | yes | [UI-06](requirements.md#ui-06) |
 | Creation date | yes | yes | [QRY-05](requirements.md#qry-05) |
 | Knowledge cutoff | yes | yes | [QRY-07](requirements.md#qry-07) |
 | Creator | yes (`Author:` prefix, else a leading word that starts the slug, else the title-cased slug) | yes | [QRY-06](requirements.md#qry-06) |

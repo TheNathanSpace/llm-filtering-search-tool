@@ -4,6 +4,7 @@ import {
     creatorLabel,
     formatContextLength,
     formatExactPrice,
+    formatLatencyMilliseconds,
     formatLatencySeconds,
     formatNumber,
     formatParameterCount,
@@ -229,7 +230,7 @@ export const columns: GridColDef[] = [
         type: "number",
         width: 120,
         valueFormatter: formatLatencySeconds,
-        renderCell: renderFullValueTooltip,
+        renderCell: renderExactTooltip(formatLatencyMilliseconds),
     },
     {
         field: "created",

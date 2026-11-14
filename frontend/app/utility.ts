@@ -144,6 +144,17 @@ export function formatReadableNumber(value: number | undefined | null): string {
     return value.toLocaleString("en-US", { maximumFractionDigits: 20 });
 }
 
+/** Millisecond count with thousands separators and an ``ms`` suffix (``4,180 ms``). */
+export function formatLatencyMilliseconds(
+    value: number | undefined | null,
+): string {
+    const readable = formatReadableNumber(value);
+    if (readable === "") {
+        return "";
+    }
+    return `${readable} ms`;
+}
+
 /**
  * Typed context length. ``k``/``K`` is thousands, ``m``/``M`` is millions.
  * A bare number is the token count.

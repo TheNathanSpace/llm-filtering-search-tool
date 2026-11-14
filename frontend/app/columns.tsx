@@ -156,6 +156,7 @@ export const columns: GridColDef[] = [
         type: "number",
         width: 100,
         valueFormatter: formatNumber,
+        cellClassName: "coding-breakdown-cell",
         renderCell: (parameters) => {
             const title = codingBreakdown(parameters.row);
             if (!title) {
@@ -164,7 +165,17 @@ export const columns: GridColDef[] = [
             return (
                 <Tooltip
                     title={title}
+                    describeChild
+                    placement="right"
                     slotProps={{
+                        popper: {
+                            modifiers: [
+                                {
+                                    name: "offset",
+                                    options: { offset: [0, 8] },
+                                },
+                            ],
+                        },
                         tooltip: {
                             sx: { maxWidth: "none", whiteSpace: "nowrap" },
                         },
@@ -172,9 +183,12 @@ export const columns: GridColDef[] = [
                 >
                     <span
                         style={{
-                            display: "block",
-                            width: "100%",
-                            height: "100%",
+                            position: "absolute",
+                            inset: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-end",
+                            padding: "0 10px",
                             overflow: "hidden",
                             textOverflow: "ellipsis",
                         }}

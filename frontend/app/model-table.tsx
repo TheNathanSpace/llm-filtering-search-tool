@@ -243,6 +243,9 @@ export default function ModelTable({
                             {
                                 outline: "none !important",
                             },
+                        "& .coding-breakdown-cell": {
+                            position: "relative",
+                        },
                     }}
                     sortModel={sortModel}
                     onSortModelChange={(model) => {

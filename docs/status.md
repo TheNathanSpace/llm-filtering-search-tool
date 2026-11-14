@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-13 — Latency tooltip includes ms
-**Latest change:** Latency hover text is the millisecond count with commas and an `ms` suffix (`4,180 ms`), on the table cell and the filter slider.
+**Last updated:** 2026-11-13 — Coding hover sits beside the cell
+**Latest change:** A Coding cell hover shows the FrontierCode and Terminal-Bench inputs beside that cell, across the whole cell, instead of covering the next row.
 
 ## Pickup
 
@@ -25,7 +25,7 @@ Reset all of these dang modifiers is first in the left column. Pin all filtered 
 | Name | yes (links to the OpenRouter page) | yes (name/slug search; punctuation ignored; whole numbers; comma OR; `-` exclude; resizable field) | [QRY-13](requirements.md#qry-13), [UI-05](requirements.md#ui-05) |
 | Open weights | yes | yes (switch) | [QRY-11](requirements.md#qry-11), [UI-09](requirements.md#ui-09) |
 | Size | yes (thousands through 900k, e.g. `400k`; millions through 900M, e.g. `500M`; billions through 900B, e.g. `410B`; trillions above that, e.g. `1T`; 100–900 of a unit rounds to the nearest 10; tooltip is the parameter count) | yes (range) | [QRY-12](requirements.md#qry-12), [UI-09](requirements.md#ui-09) |
-| Intelligence | yes (Intelligence / Coding). Coding is 60% FrontierCode 2.0 and 40% Terminal-Bench 4.0. The header tooltip states that blend. A Coding cell hover shows `FrontierCode 2.0 / Terminal-Bench 4.0: <frontier> / <terminal>` when both inputs are stored. Intelligence is the single OpenRouter index | yes (two range filters) | [QRY-01](requirements.md#qry-01) |
+| Intelligence | yes (Intelligence / Coding). Coding is 60% FrontierCode 2.0 and 40% Terminal-Bench 4.0. The header tooltip states that blend. A Coding cell hover shows `FrontierCode 2.0 / Terminal-Bench 4.0: <frontier> / <terminal>` beside that cell when both inputs are stored. Intelligence is the single OpenRouter index | yes (two range filters) | [QRY-01](requirements.md#qry-01) |
 | Context length | yes (thousands through 900k, e.g. `130k`; millions above that, e.g. `1M`; 100–900 of a unit rounds to the nearest 10; tooltip is the token count) | yes | [QRY-04](requirements.md#qry-04) |
 | Usage cost | yes, when a positive token count is entered (left of input cost; cell is cents; hover is the full fractional dollars) | token-count box, then a cost range (labels are cents; thumb and endpoint hover is the full fractional dollars) | [UI-11](requirements.md#ui-11) |
 | Input / output cost | yes (chosen provider; header tooltip: per million tokens) | yes | [QRY-02](requirements.md#qry-02), [UI-06](requirements.md#ui-06) |

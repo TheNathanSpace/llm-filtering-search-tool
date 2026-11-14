@@ -3,6 +3,7 @@ import { formatTokenMillions, usageCost } from "@/app/usage-cost";
 import {
     creatorLabel,
     formatContextLength,
+    formatExactPrice,
     formatLatencySeconds,
     formatNumber,
     formatParameterCount,
@@ -261,6 +262,7 @@ function usageCostColumn(tokenMillions: number): GridColDef<CombinedModel> {
         valueGetter: (_value, row) =>
             usageCost(tokenMillions, row.pricing_input, row.pricing_output),
         valueFormatter: formatPrice,
+        renderCell: renderExactTooltip(formatExactPrice),
     };
 }
 

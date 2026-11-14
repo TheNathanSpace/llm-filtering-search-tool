@@ -12,6 +12,23 @@ export function formatPrice(value: number | undefined | null) {
     return `$${value.toFixed(2)}`;
 }
 
+/**
+ * Dollar amount with the fraction kept. At least two decimal places;
+ * further digits stay when the amount is not a whole number of cents.
+ */
+export function formatExactPrice(value: number | undefined | null): string {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+        return "";
+    }
+    const precise = Number(value.toPrecision(12));
+    return precise.toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 12,
+    });
+}
+
 function formatOneDecimal(value: number): string {
     const rounded = Math.round((value + Number.EPSILON) * 10) / 10;
     return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);

@@ -18,6 +18,7 @@ import { parseTokenMillions, usageCostStep } from "@/app/usage-cost";
 import { MuiFontCasual } from "@/app/mui-font";
 import {
     formatContextLength,
+    formatExactPrice,
     formatLatencySeconds,
     formatParameterCount,
     formatParametersB,
@@ -366,6 +367,7 @@ export default function ModelFilters(
                             usageCostBounds[1],
                         )}
                         formatValue={formatPrice}
+                        formatTooltip={formatExactPrice}
                         help="Dollar cost of the token count above, using the 90% input / 10% output blend."
                         onChange={(usageCost) => {
                             setFilters((previous) => ({

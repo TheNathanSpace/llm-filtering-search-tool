@@ -17,6 +17,9 @@ services:
     pull_policy: always
     container_name: llm-filtering
     restart: unless-stopped
+    # uid:gid. Default is root. ./data must be writable by this user.
+    # Set COMPOSE_USER=1000:1000, or replace the default below.
+    user: "${COMPOSE_USER:-0:0}"
     ports:
       # host:container — the container side must match FRONTEND_PORT
       - "3030:3030"

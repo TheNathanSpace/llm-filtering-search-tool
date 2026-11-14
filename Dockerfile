@@ -22,9 +22,13 @@ RUN npm ci
 RUN apk add --no-cache tzdata
 
 # Source is bind-mounted at runtime; node_modules is kept via a named volume.
+# a+rwX so Compose `user:` can be any uid (the named volume keeps these modes).
+RUN chmod -R a+rwX node_modules
+
 ENV HOSTNAME=0.0.0.0
 ENV FRONTEND_PORT=3030
 ENV TZ=Etc/UTC
+ENV HOME=/tmp
 
 EXPOSE 3030
 
@@ -56,6 +60,7 @@ RUN pip install --no-cache-dir -e ./backend
 ENV BACKEND_HOST=0.0.0.0
 ENV BACKEND_PORT=8000
 ENV TZ=Etc/UTC
+ENV HOME=/tmp
 ENV WATCHFILES_FORCE_POLLING=true
 
 EXPOSE 8000
@@ -85,8 +90,13 @@ COPY --from=frontend-builder /app/frontend/.next/standalone ./frontend/
 COPY --from=frontend-builder /app/frontend/.next/static ./frontend/.next/static
 COPY --from=frontend-builder /app/frontend/public ./frontend/public
 
-# Supervisord configuration
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Standalone config. Debian's default binds /var/run/supervisor.sock,
+# which a non-root uid cannot create.
+COPY supervisord.conf /etc/supervisord.conf
+
+# .next/cache must be writable by whatever uid Compose `user:` selects.
+RUN mkdir -p /app/frontend/.next/cache \
+    && chmod -R a+rwX /app/frontend/.next
 
 # Defaults for supervisord: uvicorn on BACKEND_HOST:BACKEND_PORT; Next.js uses
 # FRONTEND_PORT (exported as PORT for the standalone server).
@@ -99,7 +109,8 @@ ENV BACKEND_HOST=0.0.0.0
 ENV BACKEND_PORT=8000
 ENV FRONTEND_PORT=3030
 ENV TZ=Etc/UTC
+ENV HOME=/tmp
 
 EXPOSE 3030
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]

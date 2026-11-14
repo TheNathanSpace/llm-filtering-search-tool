@@ -1,7 +1,7 @@
 # Status
 
-**Last updated:** 2026-11-13 — Usage-cost hover shows the full fraction
-**Latest change:** Hovering a usage-cost cell, or a Cost range thumb or endpoint, shows the full fractional dollars. The cell and range labels stay rounded to cents.
+**Last updated:** 2026-11-13 — Compose can set the container user
+**Latest change:** Compose `user:` is `${COMPOSE_USER:-0:0}` (`uid:gid`). The data directory must be writable by that user. Supervisord starts as that user.
 
 ## Pickup
 

@@ -42,7 +42,8 @@ UI: [http://localhost:3030](http://localhost:3030).
 | Item | Detail |
 | --- | --- |
 | Image | `ghcr.io/thenathanspace/llm-filtering-search-tool:latest`. The package must be public, or run `docker login ghcr.io` first. Pin a release tag instead of `latest` for a fixed build. |
-| Data | SQLite, logs, and caches in `./data` next to the compose file |
+| Data | SQLite, logs, and caches in `./data` next to the compose file. Must be writable by the Compose user. |
+| User | `user:` is `uid:gid` (default `0:0`). Set `COMPOSE_USER` or edit the default in the compose file. |
 | API | Front-end `/api` proxy only |
 | Port | Change the host side of `ports:`. The container side must match `FRONTEND_PORT`. |
 
@@ -72,6 +73,7 @@ cp .env.template .env
 | `TZ` | no | IANA timezone for container log timestamps (default `Etc/UTC`). Example: `America/Denver`. |
 | `FRONTEND_PORT` | | Next.js listen port (default `3030`) |
 | `COMPOSE_PROFILES` | local Compose | `prod` (default) or `dev` (hot reload) |
+| `COMPOSE_USER` | no | Compose `user:` as `uid:gid` (default `0:0`). Not read by the app. The data directory must be writable by that user. Dev profile: the source tree must be writable, and `.env` must be readable. |
 
 `.env` is gitignored. Local compose loads it with `env_file` and mounts it at `/app/.env`. The back-end reads the process environment first and fills gaps from a `.env` file (`python-dotenv`, or `--env-file` / `-e` / `LLM_RANKINGS_ENV_FILE`). Values already set in the environment are kept.
 
